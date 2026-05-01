@@ -1,0 +1,5 @@
+BEGIN;
+SELECT _v.unregister_patch('202605020000_patch_infrastructure');
+DROP TABLE IF EXISTS _v.patches CASCADE;
+DROP SCHEMA IF EXISTS _v CASCADE;
+COMMIT;
