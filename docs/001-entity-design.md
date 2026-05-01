@@ -705,8 +705,7 @@ Deploy workflow:
       cd /app
       git pull origin master
       docker compose pull
-      docker compose up -d
-      npm run db:migrate
+      docker compose up -d --build
 ```
 
 **EC2 security group rules:**
@@ -720,26 +719,79 @@ Two environments only: local (`docker-compose`) + prod (EC2 on AWS).
 
 ### Migrations
 
-Custom patch runner (`db/runner.mjs`) with timestamp-named SQL files in `db/migrations/apply/` and `db/migrations/rollback/`. Each patch self-registers in `_v.patches` via `try_register_patch` / `unregister_patch`.
+Custom patch runner at `db/runner.mjs`. Patches live in `db/migrations/apply/` and `db/migrations/rollback/` as timestamp-named SQL files (`yyyymmddHHmm_description.sql`).
 
-Tracking table (auto-created on first run):
+**Patch infrastructure**
+
+The first patch (`202605020000_patch_infrastructure`) creates the `_v` schema:
 
 ```sql
-CREATE TABLE pgmigrations (
-  id      SERIAL       PRIMARY KEY,
-  name    VARCHAR(255) NOT NULL,
-  run_on  TIMESTAMPTZ  NOT NULL
+CREATE TABLE _v.patches (
+  id           SERIAL       PRIMARY KEY,
+  patch_name   VARCHAR(255) NOT NULL UNIQUE,
+  dependencies TEXT[],
+  description  TEXT,
+  applied_at   TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 ```
 
-npm scripts:
+Each apply script uses `_v.try_register_patch(name, dependencies, description)` inside a `DO $$` block. If the patch is already registered, the block is a no-op. Rollback scripts call `_v.unregister_patch(name)` and then drop/revert the change.
 
-```json
-"db:migrate":  "node-pg-migrate up",
-"db:rollback": "node-pg-migrate down 1"
+**Creating a new migration**
+
+1. Create two files with the same timestamp prefix:
+   - `db/migrations/apply/202605021200_add_leaderboard_index.sql`
+   - `db/migrations/rollback/202605021200_add_leaderboard_index.sql`
+
+2. Declare dependencies in the apply file:
+
+```sql
+DO $$
+DECLARE patch_registered bool default false;
+BEGIN
+    SELECT _v.try_register_patch(
+        '202605021200_add_leaderboard_index',
+        ARRAY['202605020000_patch_infrastructure'],
+        'Add index on game_sessions for leaderboard'
+    ) INTO patch_registered;
+
+    IF patch_registered THEN
+        CREATE INDEX idx_sessions_score ON game_sessions (level_id, score DESC);
+    END IF;
+END $$;
 ```
 
-In prod CI, `db:migrate` runs after `docker compose up -d`. If it fails, the deploy is marked failed — roll back with `npm run db:rollback` and redeploy the previous image.
+3. Write the rollback:
+
+```sql
+BEGIN;
+SELECT _v.unregister_patch('202605021200_add_leaderboard_index');
+DROP INDEX IF EXISTS idx_sessions_score;
+COMMIT;
+```
+
+**Running migrations**
+
+```bash
+# Apply all pending patches
+npm run db:migrate
+
+# Rollback the most recently applied patch
+npm run db:rollback
+```
+
+Root `package.json` scripts:
+
+```json
+{
+  "scripts": {
+    "db:migrate": "node db/runner.mjs up",
+    "db:rollback": "node db/runner.mjs down"
+  }
+}
+```
+
+**In production**, `db:migrate` runs automatically via `web-server/entrypoint.sh` after the server container starts. The deploy workflow does not run it separately — the container handles it on boot. If a patch fails, the container exits and Docker Compose marks it as unhealthy.
 
 # Appendix
 
