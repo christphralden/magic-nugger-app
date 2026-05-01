@@ -124,7 +124,7 @@ CREATE TABLE players (
   oauth_provider           VARCHAR(32),
   oauth_id                 VARCHAR(255),
   password_hash            TEXT,
-  current_elo              INTEGER     NOT NULL DEFAULT 1000,
+  current_elo              INTEGER     NOT NULL DEFAULT 0,
   highest_level_unlocked   INTEGER     NOT NULL DEFAULT 1,
   total_questions_answered INTEGER     NOT NULL DEFAULT 0,
   total_correct            INTEGER     NOT NULL DEFAULT 0,
@@ -200,29 +200,33 @@ CREATE TABLE levels (
 
 ```sql
 CREATE TABLE classrooms (
-  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        VARCHAR(128) NOT NULL,
-  description TEXT,
-  teacher_id  UUID        NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-  visibility  VARCHAR(16) NOT NULL DEFAULT 'private'
-              CHECK (visibility IN ('private', 'public')),
-  elo_cap     INTEGER,
-  invite_code VARCHAR(16) NOT NULL UNIQUE,
-  is_active   BOOLEAN     NOT NULL DEFAULT true,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  name         VARCHAR(128) NOT NULL,
+  description  TEXT,
+  teacher_id   UUID         NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  visibility   VARCHAR(16)  NOT NULL DEFAULT 'private'
+               CHECK (visibility IN ('private', 'public')),
+  starting_elo INTEGER      NOT NULL DEFAULT 0,
+  elo_cap      INTEGER,
+  invite_code  VARCHAR(16)  NOT NULL UNIQUE,
+  is_active    BOOLEAN      NOT NULL DEFAULT true,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  CONSTRAINT elo_cap_above_floor CHECK (elo_cap IS NULL OR elo_cap > starting_elo)
 );
 
 CREATE INDEX idx_classrooms_teacher ON classrooms (teacher_id);
 CREATE INDEX idx_classrooms_invite  ON classrooms (invite_code);
 ```
 
-`elo_cap`: when set, `classroom_members.classroom_elo` is capped at this value at session-end. `NULL` = no cap. Teachers use this to control how fast students progress.
+`starting_elo`: the ELO floor for this classroom. `classroom_members.classroom_elo` is initialised to this value on join and cannot drop below it. The web-app exposes the level list when creating a classroom — selecting a level sets `starting_elo` to that level's `elo_min`. Defaults to 0 if no level is selected.
+
+`elo_cap`: when set, `classroom_members.classroom_elo` is capped at this value at session-end. Must be greater than `starting_elo`. `NULL` = no cap.
 
 `visibility`:
 
 - `private` — only teacher and enrolled students see the classroom leaderboard
-- `public` — classroom leaderboard visible to all authenticated users
+- `public` — classroom is discoverable via search; leaderboard visible to all authenticated users
 
 ---
 
@@ -232,7 +236,7 @@ CREATE INDEX idx_classrooms_invite  ON classrooms (invite_code);
 CREATE TABLE classroom_members (
   classroom_id  UUID    NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE,
   player_id     UUID    NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-  classroom_elo INTEGER NOT NULL DEFAULT 1000,
+  classroom_elo INTEGER NOT NULL,
   joined_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (classroom_id, player_id)
 );
@@ -243,9 +247,9 @@ CREATE INDEX idx_members_player ON classroom_members (player_id);
 Two ELO tracks exist:
 
 - `players.current_elo` — global, uncapped. Used for global leaderboard and level unlock gating.
-- `classroom_members.classroom_elo` — per-classroom, capped at `classrooms.elo_cap`. Used for classroom leaderboard only.
+- `classroom_members.classroom_elo` — per-classroom, floored at `classrooms.starting_elo`, capped at `classrooms.elo_cap`. Used for classroom leaderboard only.
 
-A student can be a member of multiple classrooms. `classroom_elo` starts at the player's current ELO at time of joining.
+A student can be a member of multiple classrooms. `classroom_elo` is set to `classrooms.starting_elo` on join (no DB default — application always supplies it). It can never drop below `starting_elo`.
 
 ---
 
@@ -383,6 +387,17 @@ Return: { is_correct, elo_delta, current_streak, current_score }
 
 ### Session-end transaction (completed or failed)
 
+`$next_level_id` is computed server-side before the transaction:
+
+```sql
+SELECT id FROM levels
+WHERE order_index > (SELECT order_index FROM levels WHERE id = $level_id)
+  AND is_active = true
+ORDER BY order_index ASC
+LIMIT 1;
+-- NULL if $level_id is the last active level; no unlock update applied in that case
+```
+
 ```sql
 BEGIN;
 
@@ -396,7 +411,7 @@ BEGIN;
   UPDATE players
      SET current_elo = GREATEST(0, current_elo + $session_elo_delta),
          highest_level_unlocked = CASE
-           WHEN $status = 'completed'
+           WHEN $status = 'completed' AND $next_level_id IS NOT NULL
            THEN GREATEST(highest_level_unlocked, $next_level_id)
            ELSE highest_level_unlocked
          END,
@@ -411,7 +426,7 @@ BEGIN;
   UPDATE classroom_members cm
      SET classroom_elo = LEAST(
            COALESCE(c.elo_cap, 2147483647),
-           GREATEST(0, cm.classroom_elo + $session_elo_delta)
+           GREATEST(c.starting_elo, cm.classroom_elo + $session_elo_delta)
          )
   FROM classrooms c
    WHERE cm.classroom_id = c.id AND cm.player_id = $player_id;
@@ -426,11 +441,11 @@ Abandoned sessions: no ELO applied, no transaction — `UPDATE game_sessions SET
 
 ### Session outcome summary
 
-| Status    | ELO applied             | Level unlock |
-| --------- | ----------------------- | ------------ |
-| completed | accumulated delta (≥ 0) | yes          |
-| failed    | accumulated delta (≥ 0) | no           |
-| abandoned | none                    | no           |
+| Status    | ELO applied                                    | Level unlock |
+| --------- | ---------------------------------------------- | ------------ |
+| completed | accumulated delta (can be negative); global ELO floored at 0 | yes |
+| failed    | accumulated delta (can be negative); global ELO floored at 0 | no  |
+| abandoned | none                                           | no           |
 
 ### Stale session janitor
 
@@ -498,7 +513,7 @@ Roles seeded from the `roles` table: `student`, `teacher`, `admin`. Checked in `
 
 ## API Design
 
-All endpoints under `/api/v1`.
+All paths below are relative to `/api/v1` (e.g., `GET /players/:id` → `GET /api/v1/players/:id`).
 
 ### Auth
 
@@ -515,7 +530,7 @@ GET  /auth/me
 
 ```
 GET   /players/:id                  public profile
-GET   /players/:id/stats            elo_history + sessions (self | teacher of class | admin)
+GET   /players/:id/stats            elo_history + sessions (public)
 GET   /players/:id/elo-history      { from?, to?, limit? }
 PATCH /players/:id                  { display_name?, avatar_url?, username? }
 ```
@@ -523,7 +538,7 @@ PATCH /players/:id                  { display_name?, avatar_url?, username? }
 ### Levels
 
 ```
-GET    /levels                      list with player unlock status
+GET    /levels                      list with player unlock status (is_active = true only)
 GET    /levels/:id                  detail + question_gen_config for Unity
 POST   /levels                      admin only
 PUT    /levels/:id                  admin only
@@ -541,6 +556,13 @@ POST /sessions/:id/abandon
 GET  /sessions/:id
 ```
 
+`POST /sessions` concurrent session handling:
+
+1. Query for an existing `in_progress` session for the player.
+2. If found and `started_at > now() - 30 minutes` → return `200` with the existing session (client resumes it).
+3. If found and stale (`started_at ≤ now() - 30 minutes`) → abandon it (`UPDATE status = 'abandoned'`), then create and return a new session `201`.
+4. If none found → create and return a new session `201`.
+
 ### Leaderboard
 
 ```
@@ -553,22 +575,25 @@ GET /leaderboard/classrooms/:id     visibility-gated
 ### Classrooms
 
 ```
-POST   /classrooms                  { name, description, visibility, elo_cap? }  teacher only
-GET    /classrooms                  teacher: own classes; admin: all
+POST   /classrooms                  { name, description, visibility, starting_elo?, elo_cap? }  teacher only
+GET    /classrooms                  teacher: own active classes; admin: all active classes
+GET    /classrooms/public           { q?, cursor?, limit? }  search public classrooms (cursor pagination)
 GET    /classrooms/:id              detail + members
-PATCH  /classrooms/:id              { name, description, visibility, elo_cap? }  teacher only
-DELETE /classrooms/:id              teacher only (soft delete)
+PATCH  /classrooms/:id              { name, description, visibility, starting_elo?, elo_cap? }  teacher only
+DELETE /classrooms/:id              teacher only (soft delete via is_active = false)
 GET    /classrooms/:id/members      student list with stats
 POST   /classrooms/join             { invite_code }  student joins
 DELETE /classrooms/:id/leave        student leaves
 ```
+
+`GET /classrooms/public` cursor pagination: response includes `next_cursor` (the last `classroom_id` in the page). Pass as `cursor` on the next request. `limit` defaults to 20.
 
 ### Admin
 
 ```
 GET   /admin/players                { role?, search?, limit, offset }
 PATCH /admin/players/:id/role       { role }
-PATCH /admin/players/:id/elo        { elo, reason }
+PATCH /admin/players/:id/elo        { elo, reason }  also inserts into elo_history (reason = 'admin_adjustment')
 GET   /admin/sessions               { player_id?, level_id?, status?, from?, to? }
 GET   /admin/stats
 ```
@@ -583,13 +608,13 @@ Docker Compose: `postgres:16-alpine` + `server` (ts-node-dev hot reload) + `web`
 
 ### CI — GitHub Actions
 
-`pr-check.yml` on every PR to `main`:
+`pr-check.yml` on every PR to `master`:
 
 - `npm run build` (tsc typecheck)
 - ESLint
 - Jest unit tests
 
-`deploy.yml` on merge to `main`:
+`deploy.yml` on merge to `master`:
 
 - SSH into EC2, pull latest image, run `docker compose up -d`
 - Run DB migrations after containers are up
@@ -603,6 +628,19 @@ EC2 t3.micro
 ├── Nginx               reverse proxy on port 80/443 + serves web static files
 ├── server container    Express app
 └── postgres container  Postgres with EBS volume mount for data persistence
+```
+
+**Rate limiting:** Handled in Nginx — 30 requests/second per client IP, burst of 10:
+
+```nginx
+limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
+
+server {
+    location /api/ {
+        limit_req zone=api burst=10 nodelay;
+        proxy_pass http://server:3000;
+    }
+}
 ```
 
 **SSL:** Certbot (Let's Encrypt) on the EC2, free. Nginx handles termination.
@@ -635,7 +673,7 @@ Deploy workflow:
     key: ${{ secrets.EC2_SSH_KEY }}
     script: |
       cd /app
-      git pull origin main
+      git pull origin master
       docker compose pull
       docker compose up -d
       npm run db:migrate
