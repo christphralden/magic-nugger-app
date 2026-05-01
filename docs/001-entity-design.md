@@ -31,6 +31,11 @@ Each question will have a corresponding point that will contribute to your elo
 - What about frequent writes? we are not going to scale so i think node can easily handle 100rps
 - WAL? pretty overkill, lets get the base done and implement that later if needed.
 
+# Web App
+
+- React
+- Thats it
+
 # Web Server
 
 - Just use node and express
@@ -39,7 +44,7 @@ Each question will have a corresponding point that will contribute to your elo
 
 ### Use case
 
-> why even having a webserver?
+> Why even having a webserver?
 
 handling authentication, authorization, user sessions and scoreboard
 
@@ -570,33 +575,6 @@ GET   /admin/stats
 
 ---
 
-## Monorepo Structure
-
-```
-magic-nugger-app/
-├── apps/
-│   ├── server/
-│   │   └── src/
-│   │       ├── routes/     auth, players, levels, sessions, leaderboard, classrooms, admin
-│   │       ├── middleware/ authenticate.ts, authorize.ts, validate.ts (Zod)
-│   │       ├── services/   elo.service.ts, session.service.ts, leaderboard.service.ts, classroom.service.ts
-│   │       ├── db/         client.ts, migrations/
-│   │       └── cache/      leaderboard.cache.ts
-│   └── web/
-│       └── src/
-│           ├── pages/      Login, LevelSelect, Game (Unity canvas), Profile, Leaderboard, Classroom
-│           └── hooks/      useUnityBridge.ts
-├── packages/
-│   └── shared/             shared TypeScript types and DTOs
-├── docs/
-├── docker-compose.yml
-└── .env.example
-```
-
-Unity project lives in a separate repo ("MagicNugger", separate team). Unity CI builds the WebGL artifact and uploads it; web CI downloads and bundles it into `apps/web/public/unity/` (gitignored).
-
----
-
 ## Deployment
 
 ### Local
@@ -613,25 +591,70 @@ Docker Compose: `postgres:16-alpine` + `server` (ts-node-dev hot reload) + `web`
 
 `deploy.yml` on merge to `main`:
 
-- Build Docker image for `apps/server` → push to AWS ECR
-- Build `apps/web` static files → sync to S3
-- Run DB migrations
-- Update ECS service to use new server image
+- SSH into EC2, pull latest image, run `docker compose up -d`
+- Run DB migrations after containers are up
 
-### CD — AWS
+### CD — AWS EC2
 
-- **Server** → ECS Fargate (single task, Dockerfile in `apps/server/`)
-- **Web** → S3 + CloudFront (static Vite build, cache invalidation on deploy)
-- **Database** → RDS Postgres t3.micro (managed backups and patching)
-- **Secrets** → SSM Parameter Store / Secrets Manager; GitHub Actions uses OIDC role (no long-lived AWS keys in repo)
+Single EC2 t3.micro (Ubuntu) running Docker Compose. Everything on one machine.
 
-Two environments only: local (`docker-compose`) + prod (AWS).
+```
+EC2 t3.micro
+├── Nginx               reverse proxy on port 80/443 + serves web static files
+├── server container    Express app
+└── postgres container  Postgres with EBS volume mount for data persistence
+```
+
+**SSL:** Certbot (Let's Encrypt) on the EC2, free. Nginx handles termination.
+
+**Secrets management:**
+
+No AWS Secrets Manager (costs money). Use a `.env` file on the EC2 directly:
+
+```bash
+# SSH into EC2 once on first setup
+ssh ubuntu@<your-ec2-ip>
+nano /app/.env          # fill in values manually
+```
+
+`.env` is never committed to git. Docker Compose reads it via `env_file: .env`.
+
+GitHub Actions needs two secrets (stored in GitHub → Settings → Secrets, not AWS):
+
+- `EC2_HOST` — public IP of the EC2
+- `EC2_SSH_KEY` — private SSH key for the EC2 instance
+
+Deploy workflow:
+
+```yaml
+- name: Deploy
+  uses: appleboy/ssh-action@v1
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script: |
+      cd /app
+      git pull origin main
+      docker compose pull
+      docker compose up -d
+      npm run db:migrate
+```
+
+**EC2 security group rules:**
+
+- Port 22 (SSH): your IP only
+- Port 80 (HTTP): 0.0.0.0/0
+- Port 443 (HTTPS): 0.0.0.0/0
+- Port 5432 (Postgres): blocked — only accessible inside the EC2
+
+Two environments only: local (`docker-compose`) + prod (EC2 on AWS).
 
 ### Migrations
 
 `node-pg-migrate` with numbered SQL files in `apps/server/src/db/migrations/`.
 
-Tracking table (auto-created):
+Tracking table (auto-created on first run):
 
 ```sql
 CREATE TABLE pgmigrations (
@@ -648,7 +671,7 @@ npm scripts:
 "db:rollback": "node-pg-migrate down 1"
 ```
 
-In prod CI, `db:migrate` runs before the ECS image swap. If it fails, the deploy halts.
+In prod CI, `db:migrate` runs after `docker compose up -d`. If it fails, the deploy is marked failed — roll back with `npm run db:rollback` and redeploy the previous image.
 
 # Appendix
 

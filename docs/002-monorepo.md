@@ -1,0 +1,83 @@
+Date: 02-05-2026 00:20:00
+Author: christphralden
+Title: 002-monorepo
+
+---
+
+## Monorepo Structure
+
+```
+magic-nugger-app/
+├── web-server/
+│   └── src/
+│       ├── routes/     auth, players, levels, sessions, leaderboard, classrooms, admin
+│       ├── middleware/ authenticate.ts, authorize.ts, validate.ts (Zod)
+│       ├── services/   elo.service.ts, session.service.ts, leaderboard.service.ts, classroom.service.ts
+│       ├── db/         client.ts, migrations/
+│       └── cache/      leaderboard.cache.ts
+├── web-app/
+│   └── src/
+│       ├── pages/      Login, LevelSelect, Game (Unity canvas), Profile, Leaderboard, Classroom
+│       └── hooks/      useUnityBridge.ts
+├── shared/             shared TypeScript types and DTOs
+│   └── src/
+│       └── index.ts    exports all shared types
+├── docs/
+├── docker-compose.yml
+├── .env.example
+└── package.json        workspace root
+```
+
+Unity project lives in a separate repo https://github.com/KRook0110/MagicNagger. Unity CI builds the WebGL artifact and uploads it; web CI downloads and bundles it into `web-app/public/unity/` (gitignored).
+
+### Shared types — npm workspaces
+
+Root `package.json`:
+
+```json
+{
+  "name": "magic-nugger-app",
+  "private": true,
+  "workspaces": ["web-server", "web-app", "shared"]
+}
+```
+
+`shared/package.json`:
+
+```json
+{
+  "name": "@magic-nugger-app/shared",
+  "version": "1.0.0",
+  "types": "./src/index.ts"
+}
+```
+
+`types` points directly to raw TS source — no build step needed on `shared`. Vite and ts-node both handle TS natively and follow the symlink.
+
+Both `web-server/package.json` and `web-app/package.json`:
+
+```json
+{
+  "dependencies": {
+    "@magic-nugger-app/shared": "*"
+  }
+}
+```
+
+`npm install` from the workspace root creates a symlink `node_modules/@magic-nugger-app/shared → ../../shared`. Import in either project:
+
+```ts
+import type { Player, GameSession } from "@magic-nugger-app/shared";
+```
+
+Add to both `web-server/tsconfig.json` and `web-app/tsconfig.json` so `tsc --noEmit` resolves the path:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@magic-nugger-app/shared": ["../shared/src"]
+    }
+  }
+}
+```
