@@ -283,33 +283,45 @@ Components import from `store/hooks.ts` only — never from `store/index.ts`.
 
 One example shows the full chain. All features follow the same structure.
 
-### `actions/{name}.actions.ts`
+### `state/{name}.thunk.ts`
+
+Thunks are just fetch calls — no business logic, no `getState`, no dispatching other actions.
 
 ```ts
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
+import type { RootState } from "@/store";
 import type {
   ApiResponse,
   ResponsePlayer,
   RequestUpdatePlayer,
 } from "@magic-nugger-app/shared";
 
-export async function fetchPlayerById(id: string): Promise<ResponsePlayer> {
-  const res: ApiResponse<ResponsePlayer> = await fetch(
+export const fetchPlayer = createAsyncThunk<
+  ResponsePlayer,
+  string,
+  { state: RootState }
+>("player/fetchById", async (id, { rejectWithValue }) => {
+  const response = await fetch(
     `${WEB_SERVER_URL}/${API_VERSION_BASE}/players/${id}`,
     {
       credentials: "include",
+      headers: { "Content-Type": "application/json" },
     },
-  ).then((r) => r.json());
+  );
+  const data = (await response.json()) as ApiResponse<ResponsePlayer>;
+  if (!response.ok || data.code !== 200) {
+    return rejectWithValue(data.error);
+  }
+  return data.data;
+});
 
-  if (res.code !== 200) throw new Error(res.error);
-  return res.data;
-}
-
-export async function updatePlayer(
-  id: string,
-  body: RequestUpdatePlayer,
-): Promise<ResponsePlayer> {
-  const res: ApiResponse<ResponsePlayer> = await fetch(
+export const patchPlayer = createAsyncThunk<
+  ResponsePlayer,
+  { id: string; body: RequestUpdatePlayer },
+  { state: RootState }
+>("player/update", async ({ id, body }, { rejectWithValue }) => {
+  const response = await fetch(
     `${WEB_SERVER_URL}/${API_VERSION_BASE}/players/${id}`,
     {
       method: "PATCH",
@@ -317,76 +329,48 @@ export async function updatePlayer(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     },
-  ).then((r) => r.json());
-
-  if (res.code !== 200) throw new Error(res.error);
-  return res.data;
-}
+  );
+  const data = (await response.json()) as ApiResponse<ResponsePlayer>;
+  if (!response.ok || data.code !== 200) {
+    return rejectWithValue(data.error);
+  }
+  return data.data;
+});
 ```
 
 Rules:
 
-- No Redux imports
-- Typed with `ApiResponse<T>` at the fetch call site
-- Checks `res.code`, throws on non-200
-- Returns `res.data` (fully typed)
+- Only `fetch` and `rejectWithValue` — no side effects, no `dispatch`, no `getState`
+- Check `response.ok` (and `data.code` when applicable)
+- Owns exactly one `pending/fulfilled/rejected` lifecycle
 
 ---
 
 ### `state/{name}.slice.ts`
 
+Slice, reducers, and selectors live together.
+
 ```ts
-import {
-  createSlice,
-  createAsyncThunk,
-  createSelector,
-} from "@reduxjs/toolkit";
-import { tryCatch } from "@magic-nugger-app/shared";
-import {
-  fetchPlayerById,
-  updatePlayer,
-} from "@/feature/player/actions/player.actions";
+import { createSlice, createSelector } from "@reduxjs/toolkit";
+import { weakMapMemoize } from "@reduxjs/toolkit";
+import { fetchPlayer, patchPlayer } from "./player.thunk";
 import type { RootState } from "@/store";
-import type {
-  ResponsePlayer,
-  RequestUpdatePlayer,
-} from "@magic-nugger-app/shared";
-
-export const fetchPlayer = createAsyncThunk(
-  "player/fetchById",
-  async (id: string, { rejectWithValue }) => {
-    const [err, player] = await tryCatch(fetchPlayerById(id));
-    if (err) return rejectWithValue(err.message);
-    return player;
-  },
-);
-
-export const patchPlayer = createAsyncThunk(
-  "player/update",
-  async (
-    { id, body }: { id: string; body: RequestUpdatePlayer },
-    { rejectWithValue },
-  ) => {
-    const [err, player] = await tryCatch(updatePlayer(id, body));
-    if (err) return rejectWithValue(err.message);
-    return player;
-  },
-);
+import type { ResponsePlayer } from "@magic-nugger-app/shared";
 
 type PlayerState = {
-  current: ResponsePlayer | null;
+  players: Record<string, ResponsePlayer>;
   loading: boolean;
   error: string | null;
 };
 
 const playerSlice = createSlice({
   name: "player",
-  initialState: { current: null, loading: false, error: null } as PlayerState,
-  reducers: {
-    clearPlayer: (state) => {
-      state.current = null;
-    },
-  },
+  initialState: {
+    players: {},
+    loading: false,
+    error: null,
+  } as PlayerState,
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchPlayer.pending, (state) => {
@@ -395,7 +379,7 @@ const playerSlice = createSlice({
       })
       .addCase(fetchPlayer.fulfilled, (state, action) => {
         state.loading = false;
-        state.current = action.payload;
+        state.players[action.payload.id] = action.payload;
       })
       .addCase(fetchPlayer.rejected, (state, action) => {
         state.loading = false;
@@ -407,38 +391,136 @@ const playerSlice = createSlice({
       })
       .addCase(patchPlayer.fulfilled, (state, action) => {
         state.loading = false;
-        state.current = action.payload;
+        state.players[action.payload.id] = action.payload;
       })
       .addCase(patchPlayer.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
   },
+  selectors: {
+    selectPlayerLoading: (state) => state.loading,
+    selectPlayerError: (state) => state.error,
+    selectPlayerById = createSelector(
+      [
+        (state: RootState) => state.player,
+        (_state: RootState, id: string) => id,
+      ],
+      (playerState, id) => playerState.players[id] ?? null,
+      { memoize: weakMapMemoize },
+    ),
+    selectPlayerCount = createSelector(
+      [(state: RootState) => state.player],
+      (playerState) => Object.keys(playerState.players).length,
+    ),
+    selectPlayerIds = createSelector(
+      [(state: RootState) => state.player],
+      (playerState) => Object.keys(playerState.players),
+    ),
+  },
 });
 
-export const { clearPlayer } = playerSlice.actions;
+export const { clearPlayers } = playerSlice.actions;
+export const {
+  selectPlayerLoading,
+  selectPlayerError,
+  selectPlayerById,
+  selectPlayerCount,
+  selectPlayerId,
+} = playerSlice.selectors;
 export const playerReducer = playerSlice.reducer;
-
-const selectPlayerState = (state: RootState) => state.player;
-export const selectCurrentPlayer = createSelector(
-  selectPlayerState,
-  (s) => s.current,
-);
-export const selectPlayerLoading = createSelector(
-  selectPlayerState,
-  (s) => s.loading,
-);
-export const selectPlayerError = createSelector(
-  selectPlayerState,
-  (s) => s.error,
-);
 ```
 
 Rules:
 
-- `tryCatch` always wraps the action call — no raw try/catch in thunks
+- Slice contains reducers and `extraReducers` only — thunks are imported from `.thunk.ts`
 - `builder.addCase` (not map form) for full type inference on `action.payload`
-- `createSelector` for every selector, even simple ones
+- Simple selectors go in `createSlice.selectors`
+- Memoized / parametric selectors use `createSelector` and live in the same file
+- Parametric selectors use `weakMapMemoize` so every argument gets its own cache
+
+---
+
+### `actions/{name}.actions.ts`
+
+Logic actions are manual thunks that orchestrate multiple operations: sequential dispatches, `getState` guards, cross-slice updates, and side effects. They do not import `store`.
+
+```ts
+import { isFulfilled } from "@reduxjs/toolkit";
+import type { AppDispatch } from "@/store";
+import type { RootState } from "@/store";
+import { fetchPlayer, patchPlayer } from "@/feature/player/state/player.thunk";
+import type { RequestUpdatePlayer } from "@magic-nugger-app/shared";
+
+export const handlePlayerLoad =
+  (playerId: string) =>
+  async (dispatch: AppDispatch, getState: () => RootState) => {
+    // Guard: skip if already loaded
+    const { player } = getState();
+    if (player.players[playerId]) return;
+
+    const result = await dispatch(fetchPlayer(playerId));
+
+    if (isFulfilled(fetchPlayer)(result)) {
+      console.log("Player loaded:", result.payload);
+    } else {
+      console.error("Failed to load player", result.payload);
+    }
+  };
+
+export const handlePlayerUpdate =
+  (playerId: string, body: RequestUpdatePlayer) =>
+  async (dispatch: AppDispatch) => {
+    const result = await dispatch(patchPlayer({ id: playerId, body }));
+
+    if (isFulfilled(patchPlayer)(result)) {
+      // dispatch();
+    }
+  };
+```
+
+Waterfall orchestration — dispatch thunks sequentially without breaking SRP:
+
+```ts
+import { createClassroom } from "@/feature/classroom/state/classroom.thunk";
+import { sendInvite } from "@/feature/invite/state/invite.thunk";
+import { classroomActions } from "@/feature/classroom/state/classroom.slice";
+import { uiActions } from "@/feature/ui/state/ui.slice";
+import type { CreateClassroomPayload } from "@magic-nugger-app/shared";
+
+export const handleCreateClassroomAndInvite =
+  (classroomData: CreateClassroomPayload, inviteeEmail: string) =>
+  async (dispatch: AppDispatch, getState: () => RootState) => {
+    // Step 1
+    const classroomResult = await dispatch(createProject(classroomData));
+    if (!isFulfilled(createClassroom)(classroomResult)) return;
+
+    const classroomId = classroomResult.payload.id;
+
+    // Step 2 — waterfall depends on step 1 result
+    const inviteResult = await dispatch(
+      sendInvite({ classroomId, email: inviteeEmail }),
+    );
+    if (!isFulfilled(sendInvite)(inviteResult)) {
+      dispatch(classroomActions.markInviteFailed(projectId));
+      return;
+    }
+
+    // Step 3 — cross-slice updates
+    dispatch(uiActions.showToast("Classroom created and invite sent"));
+    dispatch(classroomActions.setActiveClassroom(classroomId));
+  };
+```
+
+Rules:
+
+- Actions are manual thunks `(args) => async (dispatch, getState) => { ... }`
+- Never import `store` — `dispatch` and `getState` are injected by the thunk middleware
+- Never call `fetch` directly — dispatch thunks instead
+- Branch on thunk results using `isFulfilled(thunk)(result)`
+- Use `getState` for idempotent guards and conditional logic
+- Can dispatch regular slice actions or thunks from any feature
+- Each orchestrated thunk keeps its own lifecycle — no SRP violation
 
 ---
 
@@ -446,11 +528,11 @@ Rules:
 
 ```ts
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchPlayer } from "@/feature/player/state/player.thunk";
+import { handlePlayerLoad } from "@/feature/player/actions/player.actions";
 import {
-  fetchPlayer,
-  patchPlayer,
-  clearPlayer,
-  selectCurrentPlayer,
+  clearPlayers,
+  selectPlayerById,
   selectPlayerLoading,
   selectPlayerError,
 } from "@/feature/player/state/player.slice";
@@ -458,7 +540,7 @@ import type { RequestUpdatePlayer } from "@magic-nugger-app/shared";
 
 export function usePlayer(id: string) {
   const dispatch = useAppDispatch();
-  const player = useAppSelector(selectCurrentPlayer);
+  const player = useAppSelector((state) => selectPlayerById(state, id));
   const loading = useAppSelector(selectPlayerLoading);
   const error = useAppSelector(selectPlayerError);
 
@@ -466,9 +548,9 @@ export function usePlayer(id: string) {
     player,
     loading,
     error,
-    load: () => dispatch(fetchPlayer(id)),
-    update: (body: RequestUpdatePlayer) => dispatch(patchPlayer({ id, body })),
-    clear: () => dispatch(clearPlayer()),
+    load: () => dispatch(handlePlayerLoad(id)),
+    directLoad: () => dispatch(fetchPlayer(id)),
+    clear: () => dispatch(clearPlayers()),
   };
 }
 ```
@@ -509,19 +591,35 @@ Rules:
 
 ## Data flow
 
+Fetch thunk:
+
 ```
 Component
   → use-{name} hook
     → dispatch(thunk)
-      → {name}.actions.ts
+      → state/{name}.thunk.ts
         → fetch /api/v1/...  (typed ApiResponse<T>)
             → validate → authenticate → authorize
             → route handler → service → db
           ← ApiResponse<T>
         ← res.data (typed)
-      ← slice updated via extraReducers
-    ← selector
+      ← slice updated via extraReducers (state/{name}.slice.ts)
+    ← selector (state/{name}.slice.ts)
   ← typed state
+```
+
+Logic action (orchestration / waterfall):
+
+```
+Component / Hook / Event Listener
+  → dispatch(logicAction(args))
+    → actions/{name}.actions.ts
+      → getState() guard?
+      → dispatch(fetchThunkA)
+      → isFulfilled? → dispatch(fetchThunkB) → isFulfilled?
+      → dispatch(crossSliceActions)
+    ← thunks handle their own state slices
+  ← no React re-render during orchestration
 ```
 
 ---
@@ -532,8 +630,9 @@ Component
 | ---------------------------------------------------------- | ----------- |
 | Services never import Express                              | services/   |
 | Only `AppError` thrown from services                       | services/   |
-| No raw try/catch in thunks — use `tryCatch`                | state/      |
+| Thunks are just fetch calls — no business logic            | state/      |
+| Selectors live in the slice file                           | state/      |
 | Every `res.json` uses `satisfies ApiResponse<T>`           | routes/     |
 | Components never call `fetch`, `dispatch`, or import store | components/ |
-| Thunks live in state/, fetch calls live in actions/        | feature/    |
+| Actions are manual thunks — no store import                | actions/    |
 | All filenames are kebab-case                               | everywhere  |
