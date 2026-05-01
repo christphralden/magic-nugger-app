@@ -1,0 +1,88 @@
+name: Test
+
+on:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run tests
+        run: |
+          npm test --workspace=web-app    -- --ci --json --outputFile=/tmp/web-app-results.json    || true
+          npm test --workspace=web-server -- --ci --json --outputFile=/tmp/web-server-results.json || true
+
+      - name: Write test summary
+        if: always()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require('fs');
+
+            function readResults(path) {
+              try { return JSON.parse(fs.readFileSync(path, 'utf8')); }
+              catch { return null; }
+            }
+
+            const workspaces = [
+              { name: 'web-app',    path: '/tmp/web-app-results.json' },
+              { name: 'web-server', path: '/tmp/web-server-results.json' },
+            ];
+
+            let anyFailed = false;
+
+            await core.summary.addHeading('Test Results');
+
+            for (const { name, path } of workspaces) {
+              const r = readResults(path);
+
+              await core.summary.addHeading(name, 3);
+
+              if (!r) {
+                await core.summary.addRaw('No results — tests may have failed to run.\n');
+                anyFailed = true;
+                continue;
+              }
+
+              await core.summary.addTable([
+                [{ data: '', header: true }, { data: 'Suites', header: true }, { data: 'Tests', header: true }],
+                ['Passed', String(r.numPassedTestSuites), String(r.numPassedTests)],
+                ['Failed', String(r.numFailedTestSuites), String(r.numFailedTests)],
+                ['Total',  String(r.numTotalTestSuites),  String(r.numTotalTests)],
+              ]);
+
+              if (r.numFailedTests > 0) {
+                anyFailed = true;
+                const lines = ['**Failed tests**\n'];
+                for (const suite of r.testResults) {
+                  const failed = suite.testResults.filter(t => t.status === 'failed');
+                  if (!failed.length) continue;
+                  const file = suite.testFilePath.replace(process.cwd() + '/', '');
+                  lines.push(`${file}`);
+                  for (const t of failed) {
+                    lines.push(`- ${t.fullName}`);
+                    if (t.failureMessages?.length) {
+                      lines.push(`  ${t.failureMessages[0].split('\n')[0]}`);
+                    }
+                  }
+                }
+                await core.summary.addRaw(lines.join('\n') + '\n');
+              }
+            }
+
+            await core.summary.write();
+            if (anyFailed) process.exit(1);

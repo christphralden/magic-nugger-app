@@ -1,0 +1,23 @@
+name: Deploy server
+description: Builds the server Docker image and starts the container. Migrations run automatically via entrypoint.sh.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        script: |
+          cd /app
+          docker compose build server
+          docker compose up -d server

@@ -1,0 +1,32 @@
+name: Health check
+description: Polls /health until the server is up or times out after 30 attempts.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        script: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/health >/dev/null 2>&1; then
+              echo "Health check passed"
+              exit 0
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Health check failed after 30 attempts"
+              docker compose logs --tail=50 server
+              exit 1
+            fi
+            sleep 2
+          done

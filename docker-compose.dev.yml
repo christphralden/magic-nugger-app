@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  postgres:
+    extends:
+      file: docker-compose.yml
+      service: postgres
+    ports:
+      - "5432:5432"
+
+  server:
+    extends:
+      file: docker-compose.yml
+      service: server
+    build:
+      target: dev
+    volumes:
+      - ./web-server:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      ENVIRONMENT: local
+
+  web:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ./web-app:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: development

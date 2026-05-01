@@ -1,0 +1,72 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ secrets.ENABLE_REMOTE_DEPLOYMENT == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Write env
+        uses: ./.github/actions/write-env
+        with:
+          host:                 ${{ secrets.EC2_HOST }}
+          username:             ${{ secrets.EC2_USERNAME }}
+          ssh_key:              ${{ secrets.EC2_SSH_KEY }}
+          database_url:         ${{ secrets.DATABASE_URL }}
+          postgres_user:        ${{ secrets.POSTGRES_USER }}
+          postgres_password:    ${{ secrets.POSTGRES_PASSWORD }}
+          postgres_db:          ${{ secrets.POSTGRES_DB }}
+          session_secret:       ${{ secrets.SESSION_SECRET }}
+          google_client_id:     ${{ secrets.GOOGLE_CLIENT_ID }}
+          google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          cors_origin:          ${{ secrets.CORS_ORIGIN }}
+
+      - name: Pull code
+        uses: ./.github/actions/pull-code
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key:  ${{ secrets.EC2_SSH_KEY }}
+          repo_url: ${{ github.server_url }}/${{ github.repository }}.git
+
+      - name: Deploy frontend
+        uses: ./.github/actions/deploy-frontend
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key:  ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy server
+        uses: ./.github/actions/deploy-server
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key:  ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Health check
+        uses: ./.github/actions/health-check
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key:  ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Cleanup
+        uses: ./.github/actions/cleanup
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key:  ${{ secrets.EC2_SSH_KEY }}

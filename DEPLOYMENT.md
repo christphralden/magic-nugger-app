@@ -1,13 +1,13 @@
 # Deployment Guide
 
-Single EC2 instance running Docker Compose. Nginx on the host handles static files + reverse proxy. SSL via Certbot.
+Single EC2 instance. Nginx on the host handles static files + reverse proxy. SSL via Certbot. All secrets and deploys are managed by the CI/CD pipeline — no manual server configuration after initial setup.
 
 ---
 
 ## Prerequisites
 
 - AWS account
-- Registered domain (or subdomain) pointing to your EC2 public IP
+- Registered domain pointing to your EC2 public IP
 - GitHub repository with `master` branch
 
 ---
@@ -16,112 +16,52 @@ Single EC2 instance running Docker Compose. Nginx on the host handles static fil
 
 Launch an Ubuntu 22.04 LTS `t3.micro` (or larger) with:
 
-| Port | Source | Purpose |
-|---|---|---|
-| 22 | Your IP | SSH |
-| 80 | 0.0.0.0/0 | HTTP → Nginx redirect to HTTPS |
-| 443 | 0.0.0.0/0 | HTTPS |
+| Port | Source    | Purpose  |
+| ---- | --------- | -------- |
+| 22   | Your IP   | SSH      |
+| 80   | 0.0.0.0/0 | HTTP     |
+| 443  | 0.0.0.0/0 | HTTPS    |
 
 **Storage:** Add a 20GB EBS volume for Postgres data.
 
 ---
 
-## 2. Initial Server Setup
+## 2. Bootstrap the Server
 
-SSH into the instance and install dependencies:
+Run `scripts/bootstrap.sh` as root. The easiest way is to paste it into the EC2 **User Data** field before launching — it runs automatically on first boot. Alternatively, SSH in and run it manually:
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-
-# Docker
-sudo apt install -y docker.io docker-compose-v2
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Nginx + Certbot
-sudo apt install -y nginx certbot python3-certbot-nginx
-
-# Node (for running migrations from host if needed)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+sudo bash scripts/bootstrap.sh
 ```
+
+This installs Docker, Nginx, Certbot, Node 20, and creates `/app` and `/var/www/magic-nugger/web-app`.
 
 ---
 
-## 3. Clone & Configure
+## 3. Configure Nginx
+
+Copy the config from this repo to the server and set your domain:
 
 ```bash
-sudo mkdir -p /app
-sudo chown $USER:$USER /app
-cd /app
-git clone https://github.com/YOUR_ORG/magic-nugger-app.git .
-```
-
-Create the production `.env`:
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Fill in real values:
-
-```bash
-DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@postgres:5432/magic_nugger
-SESSION_SECRET=generate-a-long-random-string
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-NODE_ENV=production
-CORS_ORIGIN=https://your-domain.com
-PORT=3000
-```
-
-Generate a session secret:
-
-```bash
-openssl rand -base64 32
-```
-
----
-
-## 4. Nginx Setup
-
-Copy the frontend config:
-
-```bash
-sudo cp nginx/frontend.nginx.conf /etc/nginx/nginx.conf
-```
-
-**Edit** `/etc/nginx/nginx.conf` and replace `server_name _;` with your actual domain:
-
-```nginx
-server_name your-domain.com;
-```
-
-Create the web app static directory:
-
-```bash
-sudo mkdir -p /var/www/magic-nugger/web-app
-```
-
-Test and reload:
-
-```bash
+scp nginx/frontend.nginx.conf ubuntu@<EC2_IP>:/tmp/
+ssh ubuntu@<EC2_IP>
+sudo cp /tmp/frontend.nginx.conf /etc/nginx/nginx.conf
+sudo sed -i 's/your-domain\.com/youractualdomain.com/g' /etc/nginx/nginx.conf
 sudo nginx -t
 sudo systemctl restart nginx
 ```
 
 ---
 
-## 5. SSL (Certbot)
+## 4. SSL (Certbot)
+
+Point your DNS A record to the EC2 public IP first, then:
 
 ```bash
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d youractualdomain.com
 ```
 
-Follow prompts. Certbot will modify the Nginx config automatically.
-
-Auto-renewal is handled by a systemd timer (installed by certbot). Verify:
+Certbot adds the 443 block, SSL cert paths, HTTP redirect, and HSTS automatically. Verify auto-renewal:
 
 ```bash
 sudo certbot renew --dry-run
@@ -129,45 +69,63 @@ sudo certbot renew --dry-run
 
 ---
 
-## 6. Build & Start
+## 5. GitHub Secrets
 
-Build the web app for production:
+Go to: **GitHub → Settings → Secrets and variables → Actions → New repository secret**
 
-```bash
-cd /app/web-app && npm ci && npm run build
-sudo cp -r /app/web-app/dist/* /var/www/magic-nugger/web-app/
-```
+| Secret                 | Description                                            |
+| ---------------------- | ------------------------------------------------------ |
+| `EC2_HOST`             | Public IP of your EC2                                  |
+| `EC2_USERNAME`         | SSH username (`ubuntu` for Ubuntu AMIs)                |
+| `EC2_SSH_KEY`          | Private SSH key for the EC2 user                       |
+| `DATABASE_URL`         | `postgresql://user:password@postgres:5432/db`          |
+| `POSTGRES_USER`        | Postgres superuser name                                |
+| `POSTGRES_PASSWORD`    | Postgres superuser password                            |
+| `POSTGRES_DB`          | Database name (e.g. `magic_nugger`)                    |
+| `SESSION_SECRET`       | Long random string — `openssl rand -base64 32`         |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                 |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                             |
+| `CORS_ORIGIN`          | Frontend origin (e.g. `https://youractualdomain.com`)  |
+| `ENABLE_REMOTE_DEPLOYMENT` | Set to `true` to enable deploys — omit or leave unset to disable |
 
-Start services:
-
-```bash
-cd /app
-docker compose up -d
-```
-
-The server container will automatically run migrations via `entrypoint.sh` on boot.
-
-Check status:
-
-```bash
-docker compose ps
-docker compose logs -f server
-```
+Also create a `production` environment under **GitHub → Settings → Environments** — this gates the deploy workflow and allows adding required reviewers.
 
 ---
 
-## 7. Database Migrations in Production
+## 6. Deploy
 
-Migrations run automatically when the server container starts (via `entrypoint.sh`).
+Push to `master`. The pipeline handles everything:
 
-If you need to run a migration manually:
+1. Writes `/app/.env` on EC2 from GitHub Secrets
+2. Clones the repo to `/app` on first run, fetches + resets on subsequent deploys
+3. Builds the frontend, rsyncs to `/var/www/magic-nugger/web-app/`, reloads Nginx
+4. Builds and starts the server container — migrations run automatically on boot
+5. Health-checks `http://127.0.0.1:3000/health`, fails the pipeline if the server doesn't come up
+
+---
+
+## 7. CI/CD Workflows
+
+| Workflow       | Trigger            | What it does                                  |
+| -------------- | ------------------ | --------------------------------------------- |
+| `test.yml`     | Push to any branch | Runs Jest, writes test summary to job summary |
+| `pr-check.yml` | PR to `master`     | Typecheck, lint, Docker build                 |
+| `deploy.yml`   | Push to `master`   | Full deploy via composite actions             |
+
+---
+
+## 8. Database Migrations
+
+Migrations run automatically when the server container starts via `entrypoint.sh`.
+
+Manual migration if needed:
 
 ```bash
-cd /app
-npm run db:migrate
+ssh ubuntu@<EC2_IP>
+cd /app && npm run db:migrate
 ```
 
-If a migration fails, the server container exits and Docker Compose marks it as unhealthy. Fix the patch, then restart:
+If a migration fails the container exits — fix the patch and restart:
 
 ```bash
 docker compose restart server
@@ -175,96 +133,56 @@ docker compose restart server
 
 ---
 
-## 8. CI/CD (GitHub Actions)
+## 9. Rollback
 
-The deploy workflow (`.github/workflows/deploy.yml`) runs on every push to `master`.
-
-**Required GitHub secrets:**
-
-| Secret | Description |
-|---|---|
-| `EC2_HOST` | Public IP of your EC2 |
-| `EC2_SSH_KEY` | Private SSH key for the EC2 `ubuntu` user |
-
-**What the deploy does:**
-
-1. SSH into EC2
-2. `git pull origin master`
-3. `docker compose pull`
-4. `docker compose up -d --build`
-5. The server container auto-runs migrations on boot
-
-**To set up secrets:**
-
-GitHub → Settings → Secrets and variables → Actions → New repository secret
-
----
-
-## 9. Updating Static Files
-
-The web app is served as static files by Nginx (not a container). After any frontend deploy, rebuild and copy:
+### Application code
 
 ```bash
-cd /app/web-app && npm ci && npm run build
-sudo cp -r /app/web-app/dist/* /var/www/magic-nugger/web-app/
+ssh ubuntu@<EC2_IP>
+cd /app
+git log --oneline -5
+git reset --hard <commit-hash>
+
+cd web-app && npm ci && npm run build
+sudo rsync -a --delete /app/web-app/dist/ /var/www/magic-nugger/web-app/
+sudo nginx -s reload
+
+cd /app
+docker compose build server
+docker compose up -d server
 ```
 
-Or automate this in the deploy workflow by adding a step that runs the copy command over SSH.
-
----
-
-## 10. Rollback
-
-### Rollback application code
+### Database
 
 ```bash
-cd /app
-git log --oneline -5          # find the last good commit
-git checkout <commit-hash>    # or git revert <bad-commit>
-docker compose up -d --build
-```
-
-### Rollback database
-
-```bash
-cd /app
-npm run db:rollback   # rolls back the most recent patch
+cd /app && npm run db:rollback
 docker compose restart server
 ```
 
-If the rollback itself is broken, restore from a Postgres dump:
+Restore from dump if needed:
 
 ```bash
-# Restore from a pre-deploy dump
 docker exec -i magic-nugger-app-postgres-1 psql -U postgres magic_nugger < backup.sql
 ```
 
 ---
 
-## 11. Backup Strategy
+## 10. Backup
 
-Daily Postgres dump to S3 (recommended):
+Daily Postgres dump to S3:
 
 ```bash
-# Add to crontab
-0 3 * * * docker exec magic-nugger-app-postgres-1 pg_dump -U postgres magic_nugger | aws s3 cp - s3://your-backup-bucket/magic-nugger-$(date +\%Y\%m\%d).sql
+# crontab -e
+0 3 * * * docker exec magic-nugger-app-postgres-1 pg_dump -U postgres magic_nugger | aws s3 cp - s3://your-bucket/magic-nugger-$(date +\%Y\%m\%d).sql
 ```
 
 ---
 
-## 12. Monitoring
-
-Check container health:
+## 11. Monitoring
 
 ```bash
 docker compose ps
 docker compose logs -f server
-docker compose logs -f postgres
-```
-
-Nginx logs:
-
-```bash
 sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```
@@ -287,7 +205,6 @@ Internet
    ▼       ▼
 ┌──────┐ ┌────────────┐
 │ /api │ │ / (static) │
-│  │   │ │            │
 └──┼───┘ └────────────┘
    │
    ▼
@@ -299,6 +216,5 @@ Internet
          ▼
 ┌─────────────────┐
 │ postgres cont.  │  PostgreSQL 16 + EBS volume
-│  (data persist) │
 └─────────────────┘
 ```

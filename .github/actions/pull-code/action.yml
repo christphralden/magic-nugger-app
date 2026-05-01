@@ -1,0 +1,31 @@
+name: Pull latest code
+description: Clones the repo on first run, then hard-resets to origin/master on subsequent deploys.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+  repo_url:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      env:
+        REPO_URL: ${{ inputs.repo_url }}
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        envs: REPO_URL
+        script: |
+          if [ ! -d /app/.git ]; then
+            git clone "$REPO_URL" /app
+          fi
+          cd /app
+          git fetch origin
+          git reset --hard origin/master

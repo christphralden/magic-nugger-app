@@ -1,0 +1,25 @@
+name: Deploy frontend
+description: Builds the React app and syncs it to the nginx static directory.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        script: |
+          cd /app/web-app
+          npm ci
+          npm run build
+          sudo rsync -a --delete /app/web-app/dist/ /var/www/magic-nugger/web-app/
+          sudo nginx -s reload

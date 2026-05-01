@@ -1,0 +1,64 @@
+name: Write env file
+description: Writes /app/.env on the server from secrets. Covers docker-compose variable substitution and server container env.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+  database_url:
+    required: true
+  postgres_user:
+    required: true
+  postgres_password:
+    required: true
+  postgres_db:
+    required: true
+  session_secret:
+    required: true
+  google_client_id:
+    required: true
+  google_client_secret:
+    required: true
+  cors_origin:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      env:
+        DATABASE_URL:         ${{ inputs.database_url }}
+        POSTGRES_USER:        ${{ inputs.postgres_user }}
+        POSTGRES_PASSWORD:    ${{ inputs.postgres_password }}
+        POSTGRES_DB:          ${{ inputs.postgres_db }}
+        SESSION_SECRET:       ${{ inputs.session_secret }}
+        GOOGLE_CLIENT_ID:     ${{ inputs.google_client_id }}
+        GOOGLE_CLIENT_SECRET: ${{ inputs.google_client_secret }}
+        CORS_ORIGIN:          ${{ inputs.cors_origin }}
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        envs: DATABASE_URL,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN
+        script: |
+          {
+            printf 'DATABASE_URL=%s\n'          "$DATABASE_URL"
+            printf 'POSTGRES_USER=%s\n'         "$POSTGRES_USER"
+            printf 'POSTGRES_PASSWORD=%s\n'     "$POSTGRES_PASSWORD"
+            printf 'POSTGRES_DB=%s\n'           "$POSTGRES_DB"
+            printf 'SESSION_SECRET=%s\n'        "$SESSION_SECRET"
+            printf 'GOOGLE_CLIENT_ID=%s\n'      "$GOOGLE_CLIENT_ID"
+            printf 'GOOGLE_CLIENT_SECRET=%s\n'  "$GOOGLE_CLIENT_SECRET"
+            printf 'CORS_ORIGIN=%s\n'           "$CORS_ORIGIN"
+            printf 'NODE_ENV=production\n'
+            printf 'PORT=3000\n'
+            printf 'RPS_LIMIT=45\n'
+            printf 'DB_POOL_MAX=20\n'
+            printf 'DB_POOL_IDLE_TIMEOUT_MS=30000\n'
+            printf 'DB_POOL_CONNECTION_TIMEOUT_MS=5000\n'
+            printf 'DB_QUERY_TIMEOUT_MS=30000\n'
+            printf 'DB_SSL_MODE=prefer\n'
+          } > /app/.env
