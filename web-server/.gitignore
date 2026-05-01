@@ -1,0 +1,21 @@
+# Build output
+dist/
+
+# Coverage
+coverage/
+
+# Local env files
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+.coverage/
+
+# Misc
+*.tsbuildinfo
+.nodemon-debug.json

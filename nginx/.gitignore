@@ -1,0 +1,7 @@
+# Local SSL certs
+*.pem
+*.key
+*.crt
+
+# Temp configs
+*.conf.bak

@@ -1,0 +1,5 @@
+# Build output (if ever compiled)
+dist/
+
+# Misc
+*.tsbuildinfo

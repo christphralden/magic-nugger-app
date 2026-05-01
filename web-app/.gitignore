@@ -1,0 +1,20 @@
+# Build output
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Local env files
+.env.local
+.env.*.local
+
+# Vite
+.vite/
+*.local
+
+# Testing
+.coverage/
+
+# Misc
+*.tsbuildinfo
