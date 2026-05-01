@@ -10,23 +10,37 @@ Title: 002-monorepo
 magic-nugger-app/
 ├── web-server/
 │   └── src/
-│       ├── routes/     auth, players, levels, sessions, leaderboard, classrooms, admin
-│       ├── middleware/ authenticate.ts, authorize.ts, validate.ts (Zod)
-│       ├── services/   elo.service.ts, session.service.ts, leaderboard.service.ts, classroom.service.ts
-│       ├── db/         client.ts, migrations/
-│       └── cache/      leaderboard.cache.ts
+│       ├── routes/       auth, players, levels, sessions, leaderboard, classrooms, admin
+│       ├── middleware/   authenticate.ts, authorize.ts, validate.ts, error-handler.ts
+│       ├── services/     elo.service.ts, session.service.ts, leaderboard.service.ts, classroom.service.ts
+│       ├── errors/       app-error.ts
+│       ├── db/           client.ts, migrations/
+│       └── cache/        leaderboard.cache.ts
 ├── web-app/
 │   └── src/
-│       ├── pages/      Login, LevelSelect, Game (Unity canvas), Profile, Leaderboard, Classroom
-│       └── hooks/      useUnityBridge.ts
-├── shared/             shared TypeScript types and DTOs
+│       ├── pages/        login, level-select, game, profile, leaderboard, classroom
+│       ├── feature/
+│       │   └── {name}/
+│       │       ├── components/
+│       │       ├── hooks/
+│       │       ├── state/        {name}.slice.ts
+│       │       └── actions/      {name}.actions.ts
+│       ├── store/        index.ts, hooks.ts
+│       ├── lib/          api.ts
+│       └── hooks/        use-unity-bridge.ts
+├── shared/
 │   └── src/
-│       └── index.ts    exports all shared types
+│       ├── types/        {entity}.types.ts
+│       ├── utils/        try-catch.ts
+│       ├── constants/    error-codes.ts
+│       └── index.ts
 ├── docs/
 ├── docker-compose.yml
 ├── .env.example
-└── package.json        workspace root
+└── package.json          workspace root
 ```
+
+All filenames are kebab-case across the entire codebase.
 
 Unity project lives in a separate repo https://github.com/KRook0110/MagicNagger. Unity CI builds the WebGL artifact and uploads it; web CI downloads and bundles it into `web-app/public/unity/` (gitignored).
 
