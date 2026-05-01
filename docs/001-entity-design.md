@@ -176,10 +176,14 @@ CREATE TABLE levels (
 
 ```json
 {
-  "operations": ["addition", "subtraction"],
-  "range_min": 0,
-  "range_max": 20,
-  "count": 10
+    "schema": 1
+    "data":{
+        "operations": ["addition", "subtraction"],
+        "range_min": 0,
+        "range_max": 20,
+        "count": 10
+    }
+
 }
 ```
 
@@ -439,17 +443,33 @@ Handles browser crash and network drop cases where the client never sends `/aban
 
 ## Web Server
 
-### Event flow (HTTP only — no WebSocket)
+### Event flow
 
 ```
 POST /api/v1/sessions
-  Body:    { level_id }
-  Returns: { session_id, level_config: { elo_gain_correct, elo_loss_incorrect,
-             enemy_wave_config, question_gen_config, time_limit_seconds } }
+    Body: { level_id }
+    Returns: {
+        session_id,
+        level_config: {
+            elo_gain_correct,
+            elo_loss_incorrect,
+            enemy_wave_config,
+            question_gen_config,
+            time_limit_seconds
+        }
+    }
 
 POST /api/v1/sessions/:id/answers
-  Body:    { is_correct, time_taken_ms }
-  Returns: { is_correct, elo_delta, current_streak, current_score }
+    Body: {
+        is_correct,
+        time_taken_ms
+    }
+    Returns: {
+        is_correct,
+        elo_delta,
+        current_streak,
+        current_score
+    }
 
 POST /api/v1/sessions/:id/complete | /fail | /abandon
   Returns: { final_elo, elo_delta, new_levels_unlocked }
