@@ -48,17 +48,7 @@ export type ApiResponse<T> = {
 };
 ```
 
-Usage:
-
-```ts
-// server
-res.json({ code: 200, error: "", data: session } satisfies ApiResponse<ResponseSession>);
-
-// client
-const { data } = await fetch(...).then(r => r.json()) as ApiResponse<ResponseSession>;
-```
-
-### Example — one entity
+### Example
 
 ```ts
 // shared/src/types/player.types.ts
