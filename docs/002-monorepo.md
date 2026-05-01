@@ -8,13 +8,23 @@ Title: 002-monorepo
 
 ```
 magic-nugger-app/
+├── db/
+│   ├── migrations/
+│   │   ├── apply/        atomic schema patches (DO block with _v.try_register_patch)
+│   │   └── rollback/     corresponding rollback scripts
+│   └── runner.mjs        custom patch runner (up / down)
+├── nginx/
+│   └── frontend.nginx.conf  production reverse proxy + CSP
 ├── web-server/
 │   └── src/
 │       ├── routes/       auth, players, levels, sessions, leaderboard, classrooms, admin
 │       ├── middleware/   authenticate.ts, authorize.ts, validate.ts, error-handler.ts
-│       ├── services/     elo.service.ts, session.service.ts, leaderboard.service.ts, classroom.service.ts
+│       ├── services/     elo.service.ts, session.service.ts, leaderboard.service.ts, classroom.service.ts, player.service.ts
+│       ├── dto/          player.dto.ts (response DTOs — strip sensitive fields)
 │       ├── errors/       app-error.ts
-│       ├── db/           client.ts, migrations/
+│       ├── db/           client.ts
+│       ├── config/       passport.ts
+│       ├── types/        express.d.ts (Express.User augmentation)
 │       └── cache/        leaderboard.cache.ts
 ├── web-app/
 │   └── src/
@@ -23,19 +33,20 @@ magic-nugger-app/
 │       │   └── {name}/
 │       │       ├── components/
 │       │       ├── hooks/
-│       │       ├── state/        {name}.slice.ts
+│       │       ├── state/        {name}.slice.ts, {name}.thunk.ts
 │       │       └── actions/      {name}.actions.ts
 │       ├── store/        index.ts, hooks.ts
 │       ├── lib/          api.ts
 │       └── hooks/        use-unity-bridge.ts
 ├── shared/
 │   └── src/
-│       ├── types/        {entity}.types.ts
+│       ├── types/        {entity}.types.ts (Zod schemas + inferred types)
 │       ├── utils/        try-catch.ts
 │       ├── constants/    error-codes.ts
 │       └── index.ts
 ├── docs/
-├── docker-compose.yml
+├── .github/workflows/    pr-check.yml, deploy.yml
+├── docker-compose.yml + docker-compose.dev.yml
 ├── .env.example
 └── package.json          workspace root
 ```

@@ -78,18 +78,25 @@ Rules:
 `web-server/src/routes/{entity}.ts`
 
 Pipeline: `validate → authenticate → authorize → handler`
-authenticate and authorize should live in middleware layer
+
+- `authenticate` and `authorize` are the **only** auth middleware. No wrapper middleware for ownership checks.
+- Ownership checks (e.g. "is this user the teacher of this classroom?") live **inline in the handler**, not in middleware.
+- Use `currentUser(req)` to access `req.user` safely — never use `req.user!`.
 
 ```ts
 import { Router } from "express";
 import { playerService } from "@/services/player.service";
 import { validate } from "@/middleware/validate";
+import { authenticate, currentUser } from "@/middleware/authenticate";
+import { authorize } from "@/middleware/authorize";
+import { toResponsePlayer } from "@/dto/player.dto";
 import { AppError } from "@/errors/app-error";
 import { RequestUpdatePlayerSchema, ErrorCode } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
 
 export const playersRouter = Router();
 
+// Public
 playersRouter.get("/:id", async (req, res) => {
   const player = await playerService.getById(req.params.id);
   res.json({
@@ -99,14 +106,16 @@ playersRouter.get("/:id", async (req, res) => {
   } satisfies ApiResponse<ResponsePlayer>);
 });
 
+// Authenticated
+playersRouter.use(authenticate);
+
 playersRouter.patch(
   "/:id",
+  authorize("player:update"),
   validate(RequestUpdatePlayerSchema),
   async (req, res) => {
-    if (
-      req.session.playerId !== req.params.id &&
-      req.session.role !== "admin"
-    ) {
+    const user = currentUser(req);
+    if (user.id !== req.params.id) {
       throw new AppError(ErrorCode.FORBIDDEN, "Forbidden");
     }
     const player = await playerService.update(req.params.id, req.body);
@@ -119,21 +128,73 @@ playersRouter.patch(
 );
 ```
 
-No try/catch in route handlers — Express 5 propagates async errors automatically. On Express 4, wrap with an `async-handler` utility.
+No try/catch in route handlers — Express 5 propagates async errors automatically.
 
-Every `res.json` call uses `satisfies ApiResponse<T>` so TypeScript verifies the shape at compile time. But code should explicitly show that it is ApiResponse always type explicitly
+Every `res.json` call uses `satisfies ApiResponse<T>` so TypeScript verifies the shape at compile time.
 
 ---
 
-### middleware
+### Middleware
 
-authentication, authorization, request validation should be handled here
+`web-server/src/middleware/`
 
-`web-server/src/middleware/validate.ts`
+Only two auth middleware exist: `authenticate` and `authorize`. No wrapper middleware (no `requireOwner`, `requireSelfOrPermission`, etc.).
+
+`authenticate.ts`
 
 ```ts
-import { ZodSchema } from "zod";
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
+import { AppError } from "@/errors/app-error";
+import { ErrorCode } from "@magic-nugger-app/shared";
+
+export const authenticate = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    throw new AppError(ErrorCode.UNAUTHORIZED, "Unauthorized");
+  }
+  next();
+};
+
+export function currentUser(req: Request): Express.User {
+  if (!req.user) {
+    throw new AppError(ErrorCode.UNAUTHORIZED, "Unauthorized");
+  }
+  return req.user;
+}
+```
+
+`authorize.ts`
+
+```ts
+import type { Request, Response, NextFunction } from "express";
+import { AppError } from "@/errors/app-error";
+import { ErrorCode } from "@magic-nugger-app/shared";
+
+export const authorize =
+  (...permissions: string[]) =>
+  (req: Request, _res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user) {
+      throw new AppError(ErrorCode.UNAUTHORIZED, "Unauthorized");
+    }
+    const perms = user.role_permissions ?? [];
+    if (perms.includes("*")) return next();
+    const hasAll = permissions.every((p) => perms.includes(p));
+    if (!hasAll) {
+      throw new AppError(ErrorCode.FORBIDDEN, "Forbidden");
+    }
+    next();
+  };
+```
+
+`validate.ts`
+
+```ts
+import type { ZodSchema } from "zod";
+import type { Request, Response, NextFunction } from "express";
 import { AppError } from "@/errors/app-error";
 import { ErrorCode } from "@magic-nugger-app/shared";
 
@@ -624,12 +685,62 @@ Component / Hook / Event Listener
 
 ---
 
+## DTOs
+
+When we are transforming objects, we should have a dedicated plain transforming function that live in /dto/{entity}.dto.ts
+
+Example: we would never want to expose the full attribute of a user, we transform to reduce sensitive fields to be consumed
+
+`web-server/src/dto/player.dto.ts`
+
+```ts
+import type { AppUser, ResponsePlayer } from "@magic-nugger-app/shared";
+
+export function toResponsePlayer(
+  user: AppUser | null | undefined,
+): ResponsePlayer | null {
+  if (!user) return null;
+  return {
+    id: user.id,
+    username: user.username,
+    display_name: user.display_name,
+    current_elo: user.current_elo,
+    highest_level_unlocked: user.highest_level_unlocked,
+    avatar_url: user.avatar_url,
+  };
+}
+```
+
+---
+
+## Type Augmentation
+
+`web-server/src/types/express.d.ts`
+
+```ts
+import type { AppUser } from "@magic-nugger-app/shared";
+
+declare global {
+  namespace Express {
+    interface User extends AppUser {}
+  }
+}
+```
+
+This lets `req.user` be typed as `AppUser` across the entire backend without casting.
+
+---
+
 ## Invariants
 
 | Rule                                                       | Layer       |
 | ---------------------------------------------------------- | ----------- |
 | Services never import Express                              | services/   |
 | Only `AppError` thrown from services                       | services/   |
+| Only `authenticate` and `authorize` middleware exist       | middleware/ |
+| Never use `req.user!` — use `currentUser(req)`             | routes/     |
+| Never return `AppUser` in API responses — use DTOs         | routes/     |
+| Ownership checks live inline in handlers, not middleware   | routes/     |
 | Thunks are just fetch calls — no business logic            | state/      |
 | Selectors live in the slice file                           | state/      |
 | Every `res.json` uses `satisfies ApiResponse<T>`           | routes/     |

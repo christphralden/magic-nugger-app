@@ -84,7 +84,7 @@ export type ResponsePlayer = z.infer<typeof ResponsePlayerSchema>;
 shared/src/
 ├── types/
 │   ├── api.types.ts        ApiResponse<T>
-│   ├── player.types.ts
+│   ├── player.types.ts     Player, ResponsePlayer, AppUser
 │   ├── level.types.ts
 │   ├── classroom.types.ts
 │   ├── session.types.ts

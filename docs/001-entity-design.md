@@ -94,6 +94,19 @@ level: maxx points
 
 ## Database Schema
 
+### `permissions`
+
+```sql
+CREATE TABLE permissions (
+  id   SERIAL      PRIMARY KEY,
+  name VARCHAR(64) NOT NULL UNIQUE
+);
+```
+
+Canonical permission strings follow `domain:action` (e.g. `classroom:create`, `player:read`). The wildcard `*` grants all permissions.
+
+---
+
 ### `roles`
 
 ```sql
@@ -104,10 +117,27 @@ CREATE TABLE roles (
 );
 
 -- Seed
-INSERT INTO roles (name) VALUES ('student'), ('teacher'), ('admin');
+INSERT INTO roles (name, description) VALUES
+  ('student', 'Default student role'),
+  ('teacher', 'Teacher role'),
+  ('admin',   'Admin with full access');
 ```
 
 One role per player. A player cannot hold multiple roles.
+
+---
+
+### `role_permissions`
+
+```sql
+CREATE TABLE role_permissions (
+  role_id       INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id INTEGER NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  PRIMARY KEY (role_id, permission_id)
+);
+```
+
+Many-to-many join. All RBAC checks are database-centric; changing what a role can do requires a migration that updates this table.
 
 ---
 
@@ -507,7 +537,7 @@ WebSocket is not used. Question answer frequency is too low (a child solving mat
 
 ### Authorization (RBAC)
 
-Roles seeded from the `roles` table: `student`, `teacher`, `admin`. Checked in `authorize.ts` middleware by `roles.name`.
+Permissions are stored in `permissions` and linked to `roles` via `role_permissions`. The `authorize.ts` middleware checks whether the authenticated user's role holds the required permission string(s). Admin uses `*` as a wildcard. No permission logic lives in application code.
 
 ---
 
@@ -690,7 +720,7 @@ Two environments only: local (`docker-compose`) + prod (EC2 on AWS).
 
 ### Migrations
 
-`node-pg-migrate` with numbered SQL files in `apps/server/src/db/migrations/`.
+Custom patch runner (`db/runner.mjs`) with timestamp-named SQL files in `db/migrations/apply/` and `db/migrations/rollback/`. Each patch self-registers in `_v.patches` via `try_register_patch` / `unregister_patch`.
 
 Tracking table (auto-created on first run):
 
