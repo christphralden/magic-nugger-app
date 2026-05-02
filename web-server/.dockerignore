@@ -10,3 +10,4 @@ coverage
 README.md
 Dockerfile
 .dockerignore
+**/.DS_Store
