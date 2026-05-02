@@ -52,7 +52,7 @@ Run Postgres in Docker, run the web app and server locally for hot reload.
 
 ```bash
 # 1. Start only Postgres
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d magic-nugger-postgres
 
 # 2. Install dependencies
 npm install
@@ -75,23 +75,28 @@ cd web-app && npm run dev
 
 ### Option C: No Docker (everything local)
 
-You need a local PostgreSQL 16 instance.
+You need a local PostgreSQL 16 instance, or use Docker (see below).
 
 ```bash
-# 1. Create the database
-createdb magic_nugger
-
-# 2. Environment
+# 1. Environment
 cp .env.example .env
-# Set DATABASE_URL=postgresql://user:pass@localhost:5432/magic_nugger
+# Set APP_USER, APP_USER_PASSWORD, POSTGRES_DB, then:
+# DATABASE_URL=postgresql://<APP_USER>:<APP_USER_PASSWORD>@localhost:5432/<POSTGRES_DB>
 
-# 3. Install & migrate
+# 2. Install & migrate
 npm install
 npm run db:migrate
 
-# 4. Start services
+# 3. Start services
 cd web-server && npm run dev
 cd web-app && npm run dev
+```
+
+**Or use Docker for Postgres** (recommended):
+
+```bash
+docker compose -f docker-compose.dev.yml up -d magic-nugger-postgres
+# DATABASE_URL uses localhost:5432 — port is mapped from the container
 ```
 
 ---
