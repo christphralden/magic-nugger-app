@@ -16,11 +16,11 @@ Single EC2 instance. Nginx on the host handles static files + reverse proxy. SSL
 
 Launch an Ubuntu 22.04 LTS `t3.micro` (or larger) with:
 
-| Port | Source    | Purpose  |
-| ---- | --------- | -------- |
-| 22   | Your IP   | SSH      |
-| 80   | 0.0.0.0/0 | HTTP     |
-| 443  | 0.0.0.0/0 | HTTPS    |
+| Port | Source    | Purpose |
+| ---- | --------- | ------- |
+| 22   | Your IP   | SSH     |
+| 80   | 0.0.0.0/0 | HTTP    |
+| 443  | 0.0.0.0/0 | HTTPS   |
 
 **Storage:** Add a 20GB EBS volume for Postgres data.
 
@@ -80,8 +80,8 @@ Go to: **GitHub → Settings → Secrets and variables → Actions → New repos
 | `EC2_SSH_KEY`              | Private SSH key for the EC2 user                                 |
 | `POSTGRES_USER`            | Database superuser name                                          |
 | `POSTGRES_PASSWORD`        | Database superuser password                                      |
-| `POSTGRES_DB`              | Database name (e.g. `magic_nugger`)                             |
-| `APP_USER`                 | Database app user (SELECT/INSERT/UPDATE/DELETE)                  |
+| `POSTGRES_DB`              | Database name                                                    |
+| `APP_USER`                 | Database app user                                                |
 | `APP_USER_PASSWORD`        | Database app user password                                       |
 | `APP_RO_USER`              | Database read only user                                          |
 | `APP_RO_PASSWORD`          | Database read only user password                                 |

@@ -268,14 +268,14 @@ Copy `.env.example` to `.env` and fill in:
 
 | Variable               | Required | Description                                             |
 | ---------------------- | -------- | ------------------------------------------------------- |
-| `DATABASE_URL`         | Yes      | Postgres connection string (prod:built with envs below) |
-| `POSTGRES_USER`        | Yes      | Postgres user                                           |
-| `POSTGRES_PASSWORD`    | Yes      | Postgres password                                       |
-| `POSTGRES_DB`          | Yes      | Postgres db                                             |
-| `APP_USER`             | Yes      | Postgres app level user                                 |
-| `APP_USER_PASSWORD`    | Yes      | Postgres app level user password                        |
-| `APP_RO_USER`          | Yes      | Postgres read only user                                 |
-| `APP_RO_USER_PASSWORD` | Yes      | Postgres read only user password                        |
+| `DATABASE_URL`         | Yes      | Database connection string (prod:built with envs below) |
+| `POSTGRES_USER`        | Yes      | Database superuser name                                 |
+| `POSTGRES_PASSWORD`    | Yes      | Database upseruser password                             |
+| `POSTGRES_DB`          | Yes      | Database name                                           |
+| `APP_USER`             | Yes      | Database app user                                       |
+| `APP_USER_PASSWORD`    | Yes      | Database app user password                              |
+| `APP_RO_USER`          | Yes      | Database read only user                                 |
+| `APP_RO_USER_PASSWORD` | Yes      | Database read only user password                        |
 | `SESSION_SECRET`       | Yes      | Cookie session secret                                   |
 | `GOOGLE_CLIENT_ID`     | Yes\*    | Google OAuth client ID                                  |
 | `GOOGLE_CLIENT_SECRET` | Yes\*    | Google OAuth client secret                              |
