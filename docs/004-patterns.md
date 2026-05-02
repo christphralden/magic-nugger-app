@@ -1,5 +1,5 @@
 ---
-Date: 02-05-2026
+Date: 2026-05-02
 Author: christphralden
 Title: 004-patterns
 ---
