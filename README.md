@@ -96,6 +96,12 @@ cd web-app && npm run dev
 
 ---
 
+## Entity Relationship Diagram
+
+![ERD](docs/20250502_erd.png)
+
+---
+
 ## Project Structure
 
 ```
