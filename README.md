@@ -98,7 +98,7 @@ cd web-app && npm run dev
 
 ## Entity Relationship Diagram (2025-05-02)
 
-````mermaid
+```mermaid
 erDiagram
     permissions {
         serial      id   PK
@@ -226,11 +226,13 @@ erDiagram
     game_sessions    ||--o{ session_answers   : "session_id"
     players          ||--o{ elo_history       : "player_id"
     game_sessions    |o--o{ elo_history       : "session_id"
-```---
+```
+
+---
 
 ## Project Structure
 
-````
+```
 
 magic-nugger-app/
 ├── db/
@@ -241,7 +243,7 @@ magic-nugger-app/
 ├── web-server/
 └── .github/workflows/
 
-````
+```
 
 ---
 
@@ -256,7 +258,7 @@ npm run test --workspace=web-app
 
 # All tests
 npm test
-````
+```
 
 ---
 
