@@ -4,7 +4,7 @@ services:
   magic-nugger-postgres:
     extends:
       file: docker-compose.yml
-      service: postgres
+      service: magic-nugger-postgres
     container_name: magic-nugger-postgres-dev
 
   magic-nugger-web-server:
