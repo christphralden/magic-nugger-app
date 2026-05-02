@@ -97,16 +97,16 @@ Go to **GitHub → Settings → Secrets and variables → Actions**.
 
 Non-sensitive config passed via `vars.*`:
 
-| Variable                       | Value                     |
-| ------------------------------ | ------------------------- |
-| `POSTGRES_HOST`                | `magic-nugger-postgres`   |
-| `PORT`                         | `3000`                    |
-| `RPS_LIMIT`                    | `45`                      |
-| `DB_POOL_MAX`                  | `20`                      |
-| `DB_POOL_IDLE_TIMEOUT_MS`      | `30000`                   |
-| `DB_POOL_CONNECTION_TIMEOUT_MS`| `5000`                    |
-| `DB_QUERY_TIMEOUT_MS`          | `30000`                   |
-| `DB_SSL_MODE`                  | `prefer`                  |
+| Variable                        | Value                   |
+| ------------------------------- | ----------------------- |
+| `POSTGRES_HOST`                 | `magic-nugger-postgres` |
+| `PORT`                          | `3000`                  |
+| `RPM_LIMIT`                     | `3000`                  |
+| `DB_POOL_MAX`                   | `20`                    |
+| `DB_POOL_IDLE_TIMEOUT_MS`       | `30000`                 |
+| `DB_POOL_CONNECTION_TIMEOUT_MS` | `5000`                  |
+| `DB_QUERY_TIMEOUT_MS`           | `30000`                 |
+| `DB_SSL_MODE`                   | `prefer`                |
 
 Also create a `production` environment under **GitHub → Settings → Environments** — this gates the deploy workflow and allows adding required reviewers.
 

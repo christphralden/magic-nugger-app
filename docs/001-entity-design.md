@@ -636,19 +636,6 @@ GET   /admin/stats
 
 Docker Compose: `postgres:16-alpine` + `server` (ts-node-dev hot reload) + `web` (Vite dev server)
 
-### CI — GitHub Actions
-
-`pr-check.yml` on every PR to `master`:
-
-- `npm run build` (tsc typecheck)
-- ESLint
-- Jest unit tests
-
-`deploy.yml` on merge to `master`:
-
-- SSH into EC2, pull latest image, run `docker compose up -d`
-- Run DB migrations after containers are up
-
 ### CD — AWS EC2
 
 Single EC2 t3.micro (Ubuntu) running Docker Compose. Everything on one machine.
@@ -660,18 +647,17 @@ EC2 t3.micro
 └── postgres container  Postgres with EBS volume mount for data persistence
 ```
 
-**Rate limiting:** Handled in Nginx — 30 requests/second per client IP, burst of 10:
+**Rate limiting:**
 
-```nginx
-limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
+- nginx:
 
-server {
-    location /api/ {
-        limit_req zone=api burst=10 nodelay;
-        proxy_pass http://server:3000;
-    }
-}
-```
+  - api: 60 rps per client IP, burst of 30:
+  - auth: 10 rpm, burst of 5
+
+- web-server:
+  - also rate limiet
+
+````
 
 **SSL:** Certbot (Let's Encrypt) on the EC2, free. Nginx handles termination.
 
@@ -683,7 +669,7 @@ No AWS Secrets Manager (costs money). Use a `.env` file on the EC2 directly:
 # SSH into EC2 once on first setup
 ssh ubuntu@<your-ec2-ip>
 nano /app/.env          # fill in values manually
-```
+````
 
 `.env` is never committed to git. Docker Compose reads it via `env_file: .env`.
 

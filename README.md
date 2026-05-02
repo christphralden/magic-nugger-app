@@ -260,7 +260,7 @@ Copy `.env.local.example` to `.env.local` for local dev. See `.env.production.ex
 | `GOOGLE_CLIENT_SECRET`          | Google OAuth client secret                            |
 | `CORS_ORIGIN`                   | Frontend origin (default: `http://localhost:5173`)    |
 | `PORT`                          | Server port (default: `3000`)                         |
-| `RPS_LIMIT`                     | Max requests per second per IP                        |
+| `RPM_LIMIT`                     | Max requests per minute per IP                        |
 | `DB_POOL_MAX`                   | Max DB pool connections                               |
 | `DB_POOL_IDLE_TIMEOUT_MS`       | DB pool idle timeout                                  |
 | `DB_POOL_CONNECTION_TIMEOUT_MS` | DB pool connection timeout                            |
