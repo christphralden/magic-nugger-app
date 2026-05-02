@@ -1,7 +1,7 @@
+---
 Date: 02-05-2026 00:20:00
 Author: christphralden
 Title: 002-monorepo
-
 ---
 
 ## Monorepo Structure

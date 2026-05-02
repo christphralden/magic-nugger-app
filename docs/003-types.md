@@ -1,7 +1,7 @@
+---
 Date: 02-05-2026 00:54:00
 Author: christphralden
 Title: 003-types
-
 ---
 
 ## Shared Types

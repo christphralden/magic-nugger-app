@@ -1,7 +1,7 @@
+---
 Date: 01-05-2026 23:20:00
 Author: christphralden
 Title: 001-entity-design
-
 ---
 
 # Magic Nugger Entity Relationship Design
@@ -15,13 +15,13 @@ Affected Services:
 
 # Preface
 
-This is an education tower defence game. Age 6-12
-Online game in a web using unity
+This is an education tower defence game. Age 6-12\n
+Online game in a web using unity\n
 
-Enemies are moving towards you, you need to solve math equations to defend against them
-There will be n levels where each level the question gets gradually harder
-Each player will have an elo associated with them
-Each question will have a corresponding point that will contribute to your elo
+Enemies are moving towards you, you need to solve math equations to defend against them\n
+There will be n levels where each level the question gets gradually harder\n
+Each player will have an elo associated with them\n
+Each question will have a corresponding point that will contribute to your elo\n
 
 # Database
 
@@ -50,29 +50,29 @@ handling authentication, authorization, user sessions and scoreboard
 
 ### Authentication
 
-who doesnt have google right now? just use OAuth
-or simple password sign-in
+who doesnt have google right now? just use OAuth\n
+or simple password sign-in\n
 
-jwt? do we really wanna handle refresh tokens and shit? no. just use session i dont care
+jwt? do we really wanna handle refresh tokens and shit? no. just use session i dont care\n
 
 ### Authorization
 
-ur typical RBAC
-roles: student, teacher / parent (i have no idea), admin
+ur typical RBAC\n
+roles: student, teacher / parent (i have no idea), admin\n
 
 ### User Sessions
 
 > Concept
 
-We have concepts of:
+We have concepts of:\n
 
 - Level: each stage is a level. it determines how hard the level and what questions are generated
 - Elo: a point system that determines your level
 
-Each player has an elo
-Each level has a minimum elo
+Each player has an elo\n
+Each level has a minimum elo\n
 
-Punish wrong answers, while add correct answers
+Punish wrong answers, while add correct answers\n
 
 > What to track?
 
@@ -83,10 +83,10 @@ Punish wrong answers, while add correct answers
 
 ### Leaderboard
 
-We have a global and a level leaderboard
+We have a global and a level leaderboard\n
 
-global: maxx elo
-level: maxx points
+global: maxx elo\n
+level: maxx points\n
 
 ---
 
@@ -471,11 +471,11 @@ Abandoned sessions: no ELO applied, no transaction — `UPDATE game_sessions SET
 
 ### Session outcome summary
 
-| Status    | ELO applied                                    | Level unlock |
-| --------- | ---------------------------------------------- | ------------ |
-| completed | accumulated delta (can be negative); global ELO floored at 0 | yes |
-| failed    | accumulated delta (can be negative); global ELO floored at 0 | no  |
-| abandoned | none                                           | no           |
+| Status    | ELO applied                                                  | Level unlock |
+| --------- | ------------------------------------------------------------ | ------------ |
+| completed | accumulated delta (can be negative); global ELO floored at 0 | yes          |
+| failed    | accumulated delta (can be negative); global ELO floored at 0 | no           |
+| abandoned | none                                                         | no           |
 
 ### Stale session janitor
 
@@ -740,6 +740,7 @@ Each apply script uses `_v.try_register_patch(name, dependencies, description)` 
 **Creating a new migration**
 
 1. Create two files with the same timestamp prefix:
+
    - `db/migrations/apply/202605021200_add_leaderboard_index.sql`
    - `db/migrations/rollback/202605021200_add_leaderboard_index.sql`
 
