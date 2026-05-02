@@ -42,11 +42,11 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${APP_USER}:${APP_USER_PASSWORD}@postgres:5432/${POSTGRES_DB:-magic_nugger}
+      DATABASE_URL: postgresql://${APP_USER}:${APP_USER_PASSWORD}@magic-nugger-postgres:5432/${POSTGRES_DB:-magic_nugger}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
-      postgres:
+      magic-nugger-postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
