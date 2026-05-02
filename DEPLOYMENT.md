@@ -69,9 +69,11 @@ sudo certbot renew --dry-run
 
 ---
 
-## 5. GitHub Secrets
+## 5. GitHub Secrets and Variables
 
-Go to: **GitHub → Settings → Secrets and variables → Actions → New repository secret**
+Go to **GitHub → Settings → Secrets and variables → Actions**.
+
+### Secrets
 
 | Secret                     | Description                                                      |
 | -------------------------- | ---------------------------------------------------------------- |
@@ -81,15 +83,30 @@ Go to: **GitHub → Settings → Secrets and variables → Actions → New repos
 | `POSTGRES_USER`            | Database superuser name                                          |
 | `POSTGRES_PASSWORD`        | Database superuser password                                      |
 | `POSTGRES_DB`              | Database name                                                    |
-| `APP_USER`                 | Database app user                                                |
+| `APP_USER`                 | Database app user (SELECT/INSERT/UPDATE/DELETE)                  |
 | `APP_USER_PASSWORD`        | Database app user password                                       |
-| `APP_RO_USER`              | Database read only user                                          |
+| `APP_RO_USER`              | Database read only user (SELECT only)                            |
 | `APP_RO_PASSWORD`          | Database read only user password                                 |
 | `SESSION_SECRET`           | Session secret — `openssl rand -base64 32`                       |
 | `GOOGLE_CLIENT_ID`         | Google OAuth client ID                                           |
 | `GOOGLE_CLIENT_SECRET`     | Google OAuth client secret                                       |
 | `CORS_ORIGIN`              | Server CORS origin (e.g. `https://youractualdomain.com`)         |
 | `ENABLE_REMOTE_DEPLOYMENT` | Set to `true` to enable deploys — omit or leave unset to disable |
+
+### Variables
+
+Non-sensitive config passed via `vars.*`:
+
+| Variable                       | Value                     |
+| ------------------------------ | ------------------------- |
+| `POSTGRES_HOST`                | `magic-nugger-postgres`   |
+| `PORT`                         | `3000`                    |
+| `RPS_LIMIT`                    | `45`                      |
+| `DB_POOL_MAX`                  | `20`                      |
+| `DB_POOL_IDLE_TIMEOUT_MS`      | `30000`                   |
+| `DB_POOL_CONNECTION_TIMEOUT_MS`| `5000`                    |
+| `DB_QUERY_TIMEOUT_MS`          | `30000`                   |
+| `DB_SSL_MODE`                  | `prefer`                  |
 
 Also create a `production` environment under **GitHub → Settings → Environments** — this gates the deploy workflow and allows adding required reviewers.
 

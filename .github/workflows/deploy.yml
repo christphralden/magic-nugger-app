@@ -20,23 +20,40 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Validate secrets
+        run: |
+          if [[ -z "${{ secrets.SESSION_SECRET }}" ]]; then
+            echo "::error::SESSION_SECRET is not set in GitHub Secrets" && exit 1
+          fi
+          if [[ -z "${{ secrets.POSTGRES_PASSWORD }}" ]]; then
+            echo "::error::POSTGRES_PASSWORD is not set in GitHub Secrets" && exit 1
+          fi
+
       - name: Write env
         uses: ./.github/actions/write-env
         with:
-          host:                 ${{ secrets.EC2_HOST }}
-          username:             ${{ secrets.EC2_USERNAME }}
-          ssh_key:              ${{ secrets.EC2_SSH_KEY }}
-          postgres_user:        ${{ secrets.POSTGRES_USER }}
-          postgres_password:    ${{ secrets.POSTGRES_PASSWORD }}
-          postgres_db:          ${{ secrets.POSTGRES_DB }}
-          app_user:             ${{ secrets.APP_USER }}
-          app_user_password:    ${{ secrets.APP_USER_PASSWORD }}
-          app_ro_user:          ${{ secrets.APP_RO_USER }}
-          app_ro_password:      ${{ secrets.APP_RO_PASSWORD }}
-          session_secret:       ${{ secrets.SESSION_SECRET }}
-          google_client_id:     ${{ secrets.GOOGLE_CLIENT_ID }}
-          google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          cors_origin:          ${{ secrets.CORS_ORIGIN }}
+          host:                          ${{ secrets.EC2_HOST }}
+          username:                      ${{ secrets.EC2_USERNAME }}
+          ssh_key:                       ${{ secrets.EC2_SSH_KEY }}
+          postgres_user:                 ${{ secrets.POSTGRES_USER }}
+          postgres_password:             ${{ secrets.POSTGRES_PASSWORD }}
+          postgres_db:                   ${{ secrets.POSTGRES_DB }}
+          postgres_host:                 ${{ vars.POSTGRES_HOST }}
+          app_user:                      ${{ secrets.APP_USER }}
+          app_user_password:             ${{ secrets.APP_USER_PASSWORD }}
+          app_ro_user:                   ${{ secrets.APP_RO_USER }}
+          app_ro_password:               ${{ secrets.APP_RO_PASSWORD }}
+          session_secret:                ${{ secrets.SESSION_SECRET }}
+          google_client_id:              ${{ secrets.GOOGLE_CLIENT_ID }}
+          google_client_secret:          ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          cors_origin:                   ${{ secrets.CORS_ORIGIN }}
+          port:                          ${{ vars.PORT }}
+          rps_limit:                     ${{ vars.RPS_LIMIT }}
+          db_pool_max:                   ${{ vars.DB_POOL_MAX }}
+          db_pool_idle_timeout_ms:       ${{ vars.DB_POOL_IDLE_TIMEOUT_MS }}
+          db_pool_connection_timeout_ms: ${{ vars.DB_POOL_CONNECTION_TIMEOUT_MS }}
+          db_query_timeout_ms:           ${{ vars.DB_QUERY_TIMEOUT_MS }}
+          db_ssl_mode:                   ${{ vars.DB_SSL_MODE }}
 
       - name: Pull code
         uses: ./.github/actions/pull-code

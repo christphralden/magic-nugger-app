@@ -10,8 +10,8 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "db:migrate": "node db/runner.mjs up",
-    "db:rollback": "node db/runner.mjs down"
+    "db:migrate": "node --env-file=.env.local db/runner.mjs up",
+    "db:rollback": "node --env-file=.env.local db/runner.mjs down"
   },
   "devDependencies": {
     "pg": "^8.11.5"

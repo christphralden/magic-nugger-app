@@ -19,5 +19,5 @@ runs:
         key: ${{ inputs.ssh_key }}
         script: |
           cd /magic-nugger
-          docker compose build magic-nugger-web-server
-          docker compose up -d magic-nugger-web-server
+          docker compose --env-file .env.production build magic-nugger-web-server
+          docker compose --env-file .env.production up -d magic-nugger-web-server

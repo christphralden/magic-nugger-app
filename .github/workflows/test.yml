@@ -26,6 +26,14 @@ jobs:
           npm test --workspace=web-app    -- --ci --json --outputFile=/tmp/web-app-results.json    || true
           npm test --workspace=web-server -- --ci --json --outputFile=/tmp/web-server-results.json || true
 
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: /tmp/*-results.json
+          retention-days: 30
+
       - name: Write test summary
         if: always()
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1

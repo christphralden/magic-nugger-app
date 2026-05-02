@@ -20,6 +20,7 @@ async function isApplied(client, patchName) {
 }
 
 async function runUp(client) {
+  console.log("[migration] run up\n\n");
   const dir = path.join(__dirname, "migrations", "apply");
   const files = (await fs.readdir(dir))
     .filter((f) => f.endsWith(".sql"))
@@ -27,19 +28,22 @@ async function runUp(client) {
 
   for (const file of files) {
     const patchName = file.replace(".sql", "");
+
+    console.log(`=== ${patchName} ===`);
     if (await isApplied(client, patchName)) {
-      console.log(`\t[migration] - skip\t${patchName}`);
+      console.log(`[migration] - skipped`);
       continue;
     }
 
-    console.log(`[migration] - apply\t${patchName}`);
+    console.log(`[migration] - applied`);
     const sql = await fs.readFile(path.join(dir, file), "utf8");
     await client.query(sql);
-    console.log(`\t[migration] - ok\t${patchName}`);
+    console.log(`[migration] - ok`);
   }
 }
 
 async function runDown(client) {
+  console.log("[migration] run down\n\n");
   const { rows } = await client.query(
     "SELECT patch_name FROM _v.patches ORDER BY applied_at DESC LIMIT 1",
   );
@@ -56,10 +60,10 @@ async function runDown(client) {
     `${patchName}.sql`,
   );
 
-  console.log(`[migration] - rollback\t${patchName}`);
+  console.log(`=== ${patchName} ===`);
   const sql = await fs.readFile(filePath, "utf8");
   await client.query(sql);
-  console.log(`\t[migration] - ok\t${patchName}`);
+  console.log(`[migration] - ok`);
 }
 
 async function main() {
@@ -69,7 +73,9 @@ async function main() {
     process.exit(1);
   }
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const host = process.env.POSTGRES_HOST ?? "localhost";
+  const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
+  const client = new Client({ connectionString });
   await client.connect();
 
   try {
