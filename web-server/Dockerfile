@@ -1,5 +1,5 @@
 FROM node:20-alpine AS base
-WORKDIR /app
+WORKDIR /magic-nugger
 COPY package*.json ./
 RUN npm ci
 
@@ -15,14 +15,14 @@ RUN npm run build
 FROM node:20-alpine AS production
 # dumb-init handles PID 1 signal forwarding properly
 RUN apk add --no-cache dumb-init wget
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/db ./db
-COPY --from=builder /app/package*.json ./
+WORKDIR /magic-nugger
+COPY --from=builder /magic-nugger/dist ./dist
+COPY --from=builder /magic-nugger/db ./db
+COPY --from=builder /magic-nugger/package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+COPY entrypoint.sh /magic-nugger/entrypoint.sh
+RUN chmod +x /magic-nugger/entrypoint.sh
 USER node
 EXPOSE 3000
-ENTRYPOINT ["dumb-init", "--", "/app/entrypoint.sh"]
+ENTRYPOINT ["dumb-init", "--", "/magic-nugger/entrypoint.sh"]
 CMD ["node", "dist/index.js"]

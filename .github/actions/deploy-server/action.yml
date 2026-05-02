@@ -19,5 +19,5 @@ runs:
         key: ${{ inputs.ssh_key }}
         script: |
           cd /app
-          docker compose build server
-          docker compose up -d server
+          docker compose build magic-nugger-web-server
+          docker compose up -d magic-nugger-web-server

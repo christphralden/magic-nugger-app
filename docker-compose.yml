@@ -1,6 +1,9 @@
+name: magic-nugger
+
 services:
-  postgres:
+  magic-nugger-postgres:
     image: postgres:16-alpine
+    container_name: magic-nugger-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,7 +18,11 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-magic_nugger}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-magic_nugger}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,10 +32,13 @@ services:
       -c log_min_duration_statement=1000
       -c max_connections=200
 
-  server:
+  magic-nugger-web-server:
+    container_name: magic-nugger-web-server
     build:
       context: ./web-server
       dockerfile: Dockerfile
+      tags:
+        - magic-nugger-web-server:latest
     env_file: .env
     environment:
       NODE_ENV: production
@@ -40,7 +50,11 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:3000/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --quiet --tries=1 --spider http://127.0.0.1:3000/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -53,3 +67,4 @@ services:
 
 volumes:
   postgres_data:
+    name: magic-nugger-postgres-data

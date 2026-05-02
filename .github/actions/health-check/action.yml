@@ -25,7 +25,7 @@ runs:
             fi
             if [ "$i" -eq 30 ]; then
               echo "Health check failed after 30 attempts"
-              docker compose logs --tail=50 server
+              docker compose logs --tail=50 magic-nugger-web-server
               exit 1
             fi
             sleep 2

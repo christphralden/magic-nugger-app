@@ -8,13 +8,19 @@ inputs:
     required: true
   ssh_key:
     required: true
-  database_url:
-    required: true
   postgres_user:
     required: true
   postgres_password:
     required: true
   postgres_db:
+    required: true
+  app_user:
+    required: true
+  app_user_password:
+    required: true
+  app_ro_user:
+    required: true
+  app_ro_password:
     required: true
   session_secret:
     required: true
@@ -30,10 +36,13 @@ runs:
   steps:
     - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
       env:
-        DATABASE_URL:         ${{ inputs.database_url }}
         POSTGRES_USER:        ${{ inputs.postgres_user }}
         POSTGRES_PASSWORD:    ${{ inputs.postgres_password }}
         POSTGRES_DB:          ${{ inputs.postgres_db }}
+        APP_USER:             ${{ inputs.app_user }}
+        APP_USER_PASSWORD:    ${{ inputs.app_user_password }}
+        APP_RO_USER:          ${{ inputs.app_ro_user }}
+        APP_RO_PASSWORD:      ${{ inputs.app_ro_password }}
         SESSION_SECRET:       ${{ inputs.session_secret }}
         GOOGLE_CLIENT_ID:     ${{ inputs.google_client_id }}
         GOOGLE_CLIENT_SECRET: ${{ inputs.google_client_secret }}
@@ -42,13 +51,16 @@ runs:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
-        envs: DATABASE_URL,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN
+        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN
         script: |
           {
-            printf 'DATABASE_URL=%s\n'          "$DATABASE_URL"
             printf 'POSTGRES_USER=%s\n'         "$POSTGRES_USER"
             printf 'POSTGRES_PASSWORD=%s\n'     "$POSTGRES_PASSWORD"
             printf 'POSTGRES_DB=%s\n'           "$POSTGRES_DB"
+            printf 'APP_USER=%s\n'              "$APP_USER"
+            printf 'APP_USER_PASSWORD=%s\n'     "$APP_USER_PASSWORD"
+            printf 'APP_RO_USER=%s\n'           "$APP_RO_USER"
+            printf 'APP_RO_PASSWORD=%s\n'       "$APP_RO_PASSWORD"
             printf 'SESSION_SECRET=%s\n'        "$SESSION_SECRET"
             printf 'GOOGLE_CLIENT_ID=%s\n'      "$GOOGLE_CLIENT_ID"
             printf 'GOOGLE_CLIENT_SECRET=%s\n'  "$GOOGLE_CLIENT_SECRET"

@@ -26,10 +26,13 @@ jobs:
           host:                 ${{ secrets.EC2_HOST }}
           username:             ${{ secrets.EC2_USERNAME }}
           ssh_key:              ${{ secrets.EC2_SSH_KEY }}
-          database_url:         ${{ secrets.DATABASE_URL }}
           postgres_user:        ${{ secrets.POSTGRES_USER }}
           postgres_password:    ${{ secrets.POSTGRES_PASSWORD }}
           postgres_db:          ${{ secrets.POSTGRES_DB }}
+          app_user:             ${{ secrets.APP_USER }}
+          app_user_password:    ${{ secrets.APP_USER_PASSWORD }}
+          app_ro_user:          ${{ secrets.APP_RO_USER }}
+          app_ro_password:      ${{ secrets.APP_RO_PASSWORD }}
           session_secret:       ${{ secrets.SESSION_SECRET }}
           google_client_id:     ${{ secrets.GOOGLE_CLIENT_ID }}
           google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
