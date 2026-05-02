@@ -34,7 +34,7 @@ Run `scripts/bootstrap.sh` as root. The easiest way is to paste it into the EC2 
 sudo bash scripts/bootstrap.sh
 ```
 
-This installs Docker, Nginx, Certbot, Node 20, and creates `/app` and `/var/www/magic-nugger/web-app`.
+This installs Docker, Nginx, Certbot, Node 20, and creates `/magic-nugger` and `/var/www/magic-nugger/web-app`.
 
 ---
 
@@ -73,22 +73,27 @@ sudo certbot renew --dry-run
 
 Go to: **GitHub → Settings → Secrets and variables → Actions → New repository secret**
 
-| Secret                 | Description                                            |
-| ---------------------- | ------------------------------------------------------ |
-| `EC2_HOST`             | Public IP of your EC2                                  |
-| `EC2_USERNAME`         | SSH username (`ubuntu` for Ubuntu AMIs)                |
-| `EC2_SSH_KEY`          | Private SSH key for the EC2 user                       |
-| `DATABASE_URL`         | `postgresql://user:password@postgres:5432/db`          |
-| `POSTGRES_USER`        | Postgres superuser name                                |
-| `POSTGRES_PASSWORD`    | Postgres superuser password                            |
-| `POSTGRES_DB`          | Database name (e.g. `magic_nugger`)                    |
-| `SESSION_SECRET`       | Long random string — `openssl rand -base64 32`         |
-| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                 |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                             |
-| `CORS_ORIGIN`          | Frontend origin (e.g. `https://youractualdomain.com`)  |
+| Secret                     | Description                                                      |
+| -------------------------- | ---------------------------------------------------------------- |
+| `EC2_HOST`                 | Public IP of your EC2                                            |
+| `EC2_USERNAME`             | SSH username (`ubuntu` for Ubuntu AMIs)                          |
+| `EC2_SSH_KEY`              | Private SSH key for the EC2 user                                 |
+| `POSTGRES_USER`            | Database superuser name                                          |
+| `POSTGRES_PASSWORD`        | Database superuser password                                      |
+| `POSTGRES_DB`              | Database name (e.g. `magic_nugger`)                             |
+| `APP_USER`                 | Database app user (SELECT/INSERT/UPDATE/DELETE)                  |
+| `APP_USER_PASSWORD`        | Database app user password                                       |
+| `APP_RO_USER`              | Database read only user                                          |
+| `APP_RO_PASSWORD`          | Database read only user password                                 |
+| `SESSION_SECRET`           | Session secret — `openssl rand -base64 32`                       |
+| `GOOGLE_CLIENT_ID`         | Google OAuth client ID                                           |
+| `GOOGLE_CLIENT_SECRET`     | Google OAuth client secret                                       |
+| `CORS_ORIGIN`              | Server CORS origin (e.g. `https://youractualdomain.com`)         |
 | `ENABLE_REMOTE_DEPLOYMENT` | Set to `true` to enable deploys — omit or leave unset to disable |
 
 Also create a `production` environment under **GitHub → Settings → Environments** — this gates the deploy workflow and allows adding required reviewers.
+
+> `DATABASE_URL` is constructed by docker-compose from `APP_USER`, `APP_USER_PASSWORD`, and `POSTGRES_DB` — no need to set it as a secret.
 
 ---
 
@@ -96,8 +101,8 @@ Also create a `production` environment under **GitHub → Settings → Environme
 
 Push to `master`. The pipeline handles everything:
 
-1. Writes `/app/.env` on EC2 from GitHub Secrets
-2. Clones the repo to `/app` on first run, fetches + resets on subsequent deploys
+1. Writes `/magic-nugger/.env` on EC2 from GitHub Secrets
+2. Clones the repo to `/magic-nugger` on first run, fetches + resets on subsequent deploys
 3. Builds the frontend, rsyncs to `/var/www/magic-nugger/web-app/`, reloads Nginx
 4. Builds and starts the server container — migrations run automatically on boot
 5. Health-checks `http://127.0.0.1:3000/health`, fails the pipeline if the server doesn't come up
@@ -122,13 +127,13 @@ Manual migration if needed:
 
 ```bash
 ssh ubuntu@<EC2_IP>
-cd /app && npm run db:migrate
+cd /magic-nugger && npm run db:migrate
 ```
 
 If a migration fails the container exits — fix the patch and restart:
 
 ```bash
-docker compose restart server
+docker compose restart magic-nugger-web-server
 ```
 
 ---
@@ -139,30 +144,30 @@ docker compose restart server
 
 ```bash
 ssh ubuntu@<EC2_IP>
-cd /app
+cd /magic-nugger
 git log --oneline -5
 git reset --hard <commit-hash>
 
 cd web-app && npm ci && npm run build
-sudo rsync -a --delete /app/web-app/dist/ /var/www/magic-nugger/web-app/
+sudo rsync -a --delete /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
 sudo nginx -s reload
 
-cd /app
-docker compose build server
-docker compose up -d server
+cd /magic-nugger
+docker compose build magic-nugger-web-server
+docker compose up -d magic-nugger-web-server
 ```
 
 ### Database
 
 ```bash
-cd /app && npm run db:rollback
-docker compose restart server
+cd /magic-nugger && npm run db:rollback
+docker compose restart magic-nugger-web-server
 ```
 
 Restore from dump if needed:
 
 ```bash
-docker exec -i magic-nugger-app-postgres-1 psql -U postgres magic_nugger < backup.sql
+docker exec -i magic-nugger-postgres psql -U postgres magic_nugger < backup.sql
 ```
 
 ---
@@ -173,7 +178,7 @@ Daily Postgres dump to S3:
 
 ```bash
 # crontab -e
-0 3 * * * docker exec magic-nugger-app-postgres-1 pg_dump -U postgres magic_nugger | aws s3 cp - s3://your-bucket/magic-nugger-$(date +\%Y\%m\%d).sql
+0 3 * * * docker exec magic-nugger-postgres pg_dump -U postgres magic_nugger | aws s3 cp - s3://your-bucket/magic-nugger-$(date +\%Y\%m\%d).sql
 ```
 
 ---
@@ -182,7 +187,7 @@ Daily Postgres dump to S3:
 
 ```bash
 docker compose ps
-docker compose logs -f server
+docker compose logs -f magic-nugger-web-server
 sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```

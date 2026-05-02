@@ -23,9 +23,9 @@ runs:
         key: ${{ inputs.ssh_key }}
         envs: REPO_URL
         script: |
-          if [ ! -d /app/.git ]; then
-            git clone "$REPO_URL" /app
+          if [ ! -d /magic-nugger/.git ]; then
+            git clone "$REPO_URL" /magic-nugger
           fi
-          cd /app
+          cd /magic-nugger
           git fetch origin
           git reset --hard origin/master

@@ -19,8 +19,8 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
 
 echo "=== Creating directories ==="
-mkdir -p /app
-chown ubuntu:ubuntu /app
+mkdir -p /magic-nugger
+chown ubuntu:ubuntu /magic-nugger
 mkdir -p /var/www/magic-nugger/web-app
 
 echo "=== Bootstrap complete ==="

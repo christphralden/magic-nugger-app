@@ -1,5 +1,5 @@
 name: Write env file
-description: Writes /app/.env on the server from secrets. Covers docker-compose variable substitution and server container env.
+description: Writes /magic-nugger/.env on the server from secrets. Covers docker-compose variable substitution and server container env.
 
 inputs:
   host:
@@ -73,4 +73,4 @@ runs:
             printf 'DB_POOL_CONNECTION_TIMEOUT_MS=5000\n'
             printf 'DB_QUERY_TIMEOUT_MS=30000\n'
             printf 'DB_SSL_MODE=prefer\n'
-          } > /app/.env
+          } > /magic-nugger/.env

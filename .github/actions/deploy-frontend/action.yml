@@ -18,8 +18,8 @@ runs:
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         script: |
-          cd /app/web-app
+          cd /magic-nugger/web-app
           npm ci
           npm run build
-          sudo rsync -a --delete /app/web-app/dist/ /var/www/magic-nugger/web-app/
+          sudo rsync -a --delete /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
           sudo nginx -s reload

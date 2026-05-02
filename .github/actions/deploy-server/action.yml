@@ -18,6 +18,6 @@ runs:
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         script: |
-          cd /app
+          cd /magic-nugger
           docker compose build magic-nugger-web-server
           docker compose up -d magic-nugger-web-server
