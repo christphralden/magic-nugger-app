@@ -655,7 +655,7 @@ EC2 t3.micro
   - auth: 10 rpm, burst of 5
 
 - web-server:
-  - also rate limiet
+  - also rate limit under nginx
 
 ````
 
@@ -668,10 +668,10 @@ No AWS Secrets Manager (costs money). Use a `.env` file on the EC2 directly:
 ```bash
 # SSH into EC2 once on first setup
 ssh ubuntu@<your-ec2-ip>
-nano /app/.env          # fill in values manually
+nano /magic-nugger/.env          # fill in values manually
 ````
 
-`.env` is never committed to git. Docker Compose reads it via `env_file: .env`.
+Docker Compose inject env via --env-file='.env.(production|local)'
 
 GitHub Actions needs two secrets (stored in GitHub → Settings → Secrets, not AWS):
 
@@ -680,19 +680,7 @@ GitHub Actions needs two secrets (stored in GitHub → Settings → Secrets, not
 
 Deploy workflow:
 
-```yaml
-- name: Deploy
-  uses: appleboy/ssh-action@v1
-  with:
-    host: ${{ secrets.EC2_HOST }}
-    username: ubuntu
-    key: ${{ secrets.EC2_SSH_KEY }}
-    script: |
-      cd /app
-      git pull origin master
-      docker compose pull
-      docker compose up -d --build
-```
+look at `.github/workflows`
 
 **EC2 security group rules:**
 
