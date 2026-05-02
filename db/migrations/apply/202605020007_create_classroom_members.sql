@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -22,3 +24,5 @@ BEGIN
         CREATE INDEX idx_members_player ON classroom_members (player_id);
     END IF;
 END $$;
+
+COMMIT;

@@ -34,15 +34,8 @@ async function runUp(client) {
 
     console.log(`[migration] - apply\t${patchName}`);
     const sql = await fs.readFile(path.join(dir, file), "utf8");
-    await client.query("BEGIN");
-    try {
-      await client.query(sql);
-      await client.query("COMMIT");
-      console.log(`\t[migration] - ok\t${patchName}`);
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    }
+    await client.query(sql);
+    console.log(`\t[migration] - ok\t${patchName}`);
   }
 }
 
@@ -65,15 +58,8 @@ async function runDown(client) {
 
   console.log(`[migration] - rollback\t${patchName}`);
   const sql = await fs.readFile(filePath, "utf8");
-  await client.query("BEGIN");
-  try {
-    await client.query(sql);
-    await client.query("COMMIT");
-    console.log(`\t[migration] - ok\t${patchName}`);
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  }
+  await client.query(sql);
+  console.log(`\t[migration] - ok\t${patchName}`);
 }
 
 async function main() {

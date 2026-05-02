@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -39,3 +41,5 @@ BEGIN
           WHERE oauth_provider IS NOT NULL;
     END IF;
 END $$;
+
+COMMIT;

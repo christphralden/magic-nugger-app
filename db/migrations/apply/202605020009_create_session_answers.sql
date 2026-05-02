@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -20,3 +22,5 @@ BEGIN
         CREATE INDEX idx_answers_session ON session_answers (session_id, answered_at);
     END IF;
 END $$;
+
+COMMIT;

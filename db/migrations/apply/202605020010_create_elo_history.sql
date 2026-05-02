@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -26,3 +28,5 @@ BEGIN
         CREATE INDEX idx_elo_history_player ON elo_history (player_id, created_at DESC);
     END IF;
 END $$;
+
+COMMIT;

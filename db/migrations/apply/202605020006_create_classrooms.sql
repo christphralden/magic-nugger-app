@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -28,3 +30,5 @@ BEGIN
         CREATE INDEX idx_classrooms_invite  ON classrooms (invite_code);
     END IF;
 END $$;
+
+COMMIT;

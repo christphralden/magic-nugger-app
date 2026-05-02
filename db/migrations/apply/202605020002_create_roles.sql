@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -20,3 +22,5 @@ BEGIN
           ('admin',   'Admin with full access');
     END IF;
 END $$;
+
+COMMIT;

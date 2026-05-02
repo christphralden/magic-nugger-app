@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 DECLARE patch_registered bool default false;
 BEGIN
@@ -37,3 +39,5 @@ BEGIN
           WHERE status = 'completed';
     END IF;
 END $$;
+
+COMMIT;
