@@ -3,10 +3,12 @@ import { playerService } from "@/services/player.service.js";
 import { validate } from "@/middleware/validate.js";
 import { authenticate, currentUser } from "@/middleware/authenticate.js";
 import { authorize } from "@/middleware/authorize.js";
-import { RequestUpdatePlayerSchema, ErrorCode } from "@magic-nugger-app/shared";
+import { RequestUpdatePlayerSchema } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
 
 export const playersRouter = Router();
+
+playersRouter.use(authenticate);
 
 playersRouter.get("/:id", async (req, res) => {
   const player = await playerService.getById(req.params.id);
@@ -16,8 +18,6 @@ playersRouter.get("/:id", async (req, res) => {
     data: player,
   } satisfies ApiResponse<ResponsePlayer>);
 });
-
-playersRouter.use(authenticate);
 
 playersRouter.patch(
   "/",
