@@ -46,6 +46,10 @@ inputs:
     required: true
   db_ssl_mode:
     required: true
+  partman_password:
+    required: true
+  internal_secret:
+    required: true
 
 runs:
   using: composite
@@ -71,6 +75,8 @@ runs:
         DB_POOL_CONNECTION_TIMEOUT_MS: ${{ inputs.db_pool_connection_timeout_ms }}
         DB_QUERY_TIMEOUT_MS: ${{ inputs.db_query_timeout_ms }}
         DB_SSL_MODE: ${{ inputs.db_ssl_mode }}
+        PARTMAN_PASSWORD: ${{ inputs.partman_password }}
+        internal_secret: ${{ inputs.internal_secret }}
       with:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
@@ -86,6 +92,7 @@ runs:
             printf 'APP_USER_PASSWORD=%s\n'               "$APP_USER_PASSWORD"
             printf 'APP_RO_USER=%s\n'                     "$APP_RO_USER"
             printf 'APP_RO_PASSWORD=%s\n'                 "$APP_RO_PASSWORD"
+            printf 'PARTMAN_PASSWORD=%s\n'                "$PARTMAN_PASSWORD"
             printf 'SESSION_SECRET=%s\n'                  "$SESSION_SECRET"
             printf 'GOOGLE_CLIENT_ID=%s\n'                "$GOOGLE_CLIENT_ID"
             printf 'GOOGLE_CLIENT_SECRET=%s\n'            "$GOOGLE_CLIENT_SECRET"
@@ -93,6 +100,7 @@ runs:
             printf 'NODE_ENV=production\n'
             printf 'PORT=%s\n'                            "$PORT"
             printf 'RPM_LIMIT=%s\n'                       "$RPM_LIMIT"
+            printf 'INTERNAL_SECRET=%s\n'                 "$INTERNAL_SECRET"
             printf 'DB_POOL_MAX=%s\n'                     "$DB_POOL_MAX"
             printf 'DB_POOL_IDLE_TIMEOUT_MS=%s\n'         "$DB_POOL_IDLE_TIMEOUT_MS"
             printf 'DB_POOL_CONNECTION_TIMEOUT_MS=%s\n'   "$DB_POOL_CONNECTION_TIMEOUT_MS"
