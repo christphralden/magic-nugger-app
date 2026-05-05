@@ -11,7 +11,7 @@ Educational tower defense game for ages 6–12. Solve math equations to defend a
 - [Node.js](https://nodejs.org/) 20+
 - [npm](https://www.npmjs.com/) 10+
 - [Docker](https://www.docker.com/) + [Docker Compose](https://docs.docker.com/compose/)
-- PostgreSQL 16 (if not using Docker for DB)
+- PostgreSQL 16 + `pg_partman` (if not using Docker for DB)
 
 ---
 
@@ -254,6 +254,7 @@ Copy `.env.local.example` to `.env.local` for local dev. See `.env.production.ex
 | `APP_USER_PASSWORD`             | Database app user password                            |
 | `APP_RO_USER`                   | Database read only user (SELECT only)                 |
 | `APP_RO_PASSWORD`               | Database read only user password                      |
+| `PARTMAN_PASSWORD`              | Password for `partman_user` — pg_partman BGW role     |
 | `DATABASE_URL`                  | App connection string — set manually for local dev    |
 | `SESSION_SECRET`                | Cookie session secret — `openssl rand -base64 32`     |
 | `GOOGLE_CLIENT_ID`              | Google OAuth client ID                                |

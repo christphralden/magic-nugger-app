@@ -87,6 +87,7 @@ Go to **GitHub → Settings → Secrets and variables → Actions**.
 | `APP_USER_PASSWORD`        | Database app user password                                       |
 | `APP_RO_USER`              | Database read only user (SELECT only)                            |
 | `APP_RO_PASSWORD`          | Database read only user password                                 |
+| `PARTMAN_PASSWORD`         | Password for `partman_user` — pg_partman maintenance role        |
 | `SESSION_SECRET`           | Session secret — `openssl rand -base64 32`                       |
 | `GOOGLE_CLIENT_ID`         | Google OAuth client ID                                           |
 | `GOOGLE_CLIENT_SECRET`     | Google OAuth client secret                                       |

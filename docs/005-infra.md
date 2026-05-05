@@ -52,19 +52,27 @@ Defines two services: `magic-nugger-postgres` and `magic-nugger-web-server`.
 
 **Postgres service:**
 
+Built from `db/Dockerfile` — a custom image on top of `postgres:16-alpine` that compiles and installs `pg_partman` from source (pinned commit) using `clang19`/`llvm19-dev` to match the LLVM version PostgreSQL 16 was compiled with.
+
 ```yaml
-image: postgres:16-alpine
-shm_size: 256mb
+build:
+  context: ./db
+  dockerfile: Dockerfile
 command: >
   postgres
   -c log_min_duration_statement=1000
   -c max_connections=200
+  -c shared_preload_libraries='pg_partman_bgw'
+  -c pg_partman_bgw.interval=3600
+  -c pg_partman_bgw.role=partman_user
+  -c pg_partman_bgw.dbname=${POSTGRES_DB:-magic_nugger}
 ```
 
 - `log_min_duration_statement=1000` — logs any query taking over 1 second. Tune this down during debugging.
 - `max_connections=200` — sized for the t3.micro. The app pool (`DB_POOL_MAX`) defaults to 20, so there is headroom.
 - `shm_size: 256mb` — prevents shared memory exhaustion under moderate load on Alpine.
 - Postgres port is bound to `127.0.0.1:5432` — not reachable from outside the EC2.
+- `pg_partman_bgw` runs every 3600s as `partman_user` to create new monthly partitions for `audit.audit_events` ahead of time (`p_premake=3`).
 - Init scripts from `./db/init/` run once on first container startup (when the named volume is empty).
 - Data persists in the named volume `magic-nugger-postgres-data`.
 
@@ -245,17 +253,20 @@ upstream api {
 
 ### User model
 
-Three Postgres roles are created at first startup via `db/init/001_users.sh`:
+Four Postgres roles are created at first startup via `db/init/`:
 
-| Role            | Privileges                                                       | Used by                                 |
-| --------------- | ---------------------------------------------------------------- | --------------------------------------- |
-| `POSTGRES_USER` | Superuser                                                        | Migrations runner, init scripts only    |
-| `APP_USER`      | SELECT, INSERT, UPDATE, DELETE on all tables; USAGE on sequences | Express app (`DATABASE_URL`)            |
-| `APP_RO_USER`   | SELECT only on all tables                                        | Read-only queries, analytics, debugging |
+| Role            | Created by         | Privileges                                                            | Used by                                    |
+| --------------- | ------------------ | --------------------------------------------------------------------- | ------------------------------------------ |
+| `POSTGRES_USER` | Docker / manual    | Superuser                                                             | Migrations runner, init scripts only       |
+| `APP_USER`      | `001_users.sh`     | SELECT, INSERT, UPDATE, DELETE on public tables; USAGE on sequences   | Express app (`DATABASE_URL`)               |
+| `APP_RO_USER`   | `001_users.sh`     | SELECT only on public tables                                          | Read-only queries, analytics, debugging    |
+| `partman_user`  | `002_extensions.sh`| ALL on `partman` schema; ALL on `audit` schema; owns partition tables | `pg_partman_bgw` background worker         |
 
-`APP_USER` and `APP_RO_USER` are created by the init script with `ALTER DEFAULT PRIVILEGES`, meaning new tables automatically inherit the correct grants without manual intervention after each migration.
+`APP_USER` and `APP_RO_USER` are created with `ALTER DEFAULT PRIVILEGES`, meaning new tables in `public` automatically inherit the correct grants without manual intervention after each migration.
 
-The init script only runs when the Postgres data volume is empty (first boot). It is not re-executed on restarts.
+`partman_user` owns the `audit.audit_events` partitioned table and all its child partitions. The `pg_partman_bgw` background worker runs as this role to create new monthly partitions automatically.
+
+Init scripts only run when the Postgres data volume is empty (first boot). They are not re-executed on restarts.
 
 ### Migration system
 
@@ -376,6 +387,7 @@ Workflow file: `.github/workflows/deploy.yml`
 | `APP_USER_PASSWORD`    | secret | App DB user password                                             |
 | `APP_RO_USER`          | secret | Read-only DB user name                                           |
 | `APP_RO_PASSWORD`      | secret | Read-only DB user password                                       |
+| `PARTMAN_PASSWORD`     | secret | Password for `partman_user` — pg_partman maintenance role        |
 | `SESSION_SECRET`       | secret | Express session secret (generate with `openssl rand -base64 32`) |
 | `GOOGLE_CLIENT_ID`     | secret | Google OAuth client ID                                           |
 | `GOOGLE_CLIENT_SECRET` | secret | Google OAuth client secret                                       |
