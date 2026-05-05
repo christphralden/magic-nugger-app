@@ -1,5 +1,6 @@
 export * from "./constants/error-codes";
 export * from "./utils/try-catch";
+export * from "./utils/zod";
 export * from "./types/api.types";
 export * from "./types/player.types";
 export * from "./types/level.types";
