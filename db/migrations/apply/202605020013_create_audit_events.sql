@@ -5,18 +5,12 @@ DO $$
 DECLARE patch_registered bool default false;
 BEGIN
     SELECT _v.try_register_patch(
-      '202605020012_create_audit_events',
-      ARRAY['202605020004_create_players'],
+      '202605020013_create_audit_events',
+      ARRAY['202605020012_create_pg_partman', '202605020004_create_players'],
       'Create audit schema and partitioned audit events table'
     ) INTO patch_registered;
 
     IF patch_registered THEN
-        GRANT USAGE ON SCHEMA partman TO partman_user;
-        GRANT ALL ON ALL TABLES IN SCHEMA partman TO partman_user;
-        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA partman TO partman_user;
-        GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA partman TO partman_user;
-        EXECUTE format('GRANT TEMPORARY ON DATABASE %I TO partman_user', current_database());
-
         CREATE SCHEMA audit;
         GRANT ALL ON SCHEMA audit TO partman_user;
         GRANT USAGE ON SCHEMA audit TO app;

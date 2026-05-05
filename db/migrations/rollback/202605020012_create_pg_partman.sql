@@ -1,0 +1,6 @@
+BEGIN;
+SELECT _v.unregister_patch('202605020012_create_pg_partman');
+DROP EXTENSION IF EXISTS pg_partman CASCADE;
+DROP SCHEMA IF EXISTS partman CASCADE;
+DROP ROLE IF EXISTS partman_user;
+COMMIT;
