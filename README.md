@@ -1,17 +1,6 @@
 # Magic Nugger App
 
-Educational tower defense game for ages 6–12. Solve math equations to defend against enemies.
-
-**Monorepo:** `web-app` (React + Vite) · `web-server` (Express 5 + PostgreSQL) · `shared` (Zod schemas + types)
-
----
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) 20+
-- [npm](https://www.npmjs.com/) 10+
-- [Docker](https://www.docker.com/) + [Docker Compose](https://docs.docker.com/compose/)
-- PostgreSQL 16 + `pg_partman` (if not using Docker for DB)
+## Educational tower defense game for ages 6–12. Solve math equations to defend against enemies.
 
 ---
 
@@ -301,7 +290,7 @@ Copy `.env.local.example` to `.env.local` for local dev. See `.env.production.ex
 | Frontend | React 18, Vite, Redux Toolkit, Tailwind CSS, shadcn/ui  |
 | Backend  | Express 5,                                              |
 | Database | PostgreSQL 16                                           |
-| Shared   | Application global types, shared utils                  |
+| Shared   | @magic-nugger-app lib                                   |
 | Auth     | Cookie sessions (no JWT), Google OAuth + local password |
 | Tests    | Jest (backend + frontend), jsdom                        |
 | Deploy   | Docker Compose on EC2, Nginx reverse proxy              |
