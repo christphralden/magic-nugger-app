@@ -197,6 +197,7 @@ erDiagram
         text        user_agent
         jsonb       metadata
         timestamptz created_at
+        varchar     http_method
     }
 
     roles            ||--|{ role_permissions    : "role_id"

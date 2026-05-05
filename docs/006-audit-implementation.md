@@ -22,6 +22,7 @@ audit.audit_events (
   user_agent  TEXT
   metadata    JSONB        -- sanitized request body, only populated on status >= 400
   created_at  TIMESTAMPTZ  DEFAULT now()
+  http_method VARCHAR(10) DEFAULT NULL -- HTTP method
 )
 PARTITION BY RANGE (created_at)
 ```
@@ -43,10 +44,10 @@ New partitions inherit all indexes from the parent automatically.
 
 ### Roles
 
-| Role           | Privileges on `audit`                                      |
-| -------------- | ---------------------------------------------------------- |
-| `partman_user` | ALL on schema + table owner — creates/manages partitions   |
-| `app`          | INSERT only — write-only, cannot read audit data           |
+| Role           | Privileges on `audit`                                    |
+| -------------- | -------------------------------------------------------- |
+| `partman_user` | ALL on schema + table owner — creates/manages partitions |
+| `app`          | INSERT only — write-only, cannot read audit data         |
 
 `ALTER DEFAULT PRIVILEGES FOR ROLE partman_user IN SCHEMA audit GRANT INSERT ON TABLES TO app` ensures INSERT is automatically granted on every new partition `partman_user` creates.
 
@@ -74,10 +75,11 @@ Audit failures are logged to stderr and never surface to the client.
 
 ## Migrations
 
-| Migration                          | What it does                                                  |
-| ---------------------------------- | ------------------------------------------------------------- |
-| `202605020012_create_pg_partman`   | Creates `partman` schema, installs extension, creates role    |
-| `202605020013_create_audit_events` | Creates `audit` schema, partitioned table, registers partman  |
+| Migration                                      | What it does                                                 |
+| ---------------------------------------------- | ------------------------------------------------------------ |
+| `202605020012_create_pg_partman`               | Creates `partman` schema, installs extension, creates role   |
+| `202605020013_create_audit_events`             | Creates `audit` schema, partitioned table, registers partman |
+| `202605060001_update_audit_events_http_method` | Updates `audit` schema to have `http_method`                 |
 
 ---
 
