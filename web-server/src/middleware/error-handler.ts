@@ -25,21 +25,26 @@ export const errorHandler = (
       case PgErrorCode.UNIQUE_VIOLATION:
         return res.status(ErrorCode.CONFLICT).json({
           code: ErrorCode.CONFLICT,
-          error: "Resource already exists",
+          error: `Resource already exists. Hint: ${error.message}`,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.FOREIGN_KEY_VIOLATION:
         return res.status(ErrorCode.BAD_REQUEST).json({
           code: ErrorCode.BAD_REQUEST,
-          error: "Invalid reference",
+          error: `Invalid reference. Hint: ${error.message}`,
+          data: null,
+        } satisfies ApiResponse<null>);
+      case PgErrorCode.INVALID_TEXT_REPRESENTATION:
+        return res.status(ErrorCode.BAD_REQUEST).json({
+          code: ErrorCode.BAD_REQUEST,
+          error: `Invalid parameter format. Hint: ${error.message}`,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.NOT_NULL_VIOLATION:
       case PgErrorCode.CHECK_VIOLATION:
-      case PgErrorCode.INVALID_TEXT_REPRESENTATION:
         return res.status(ErrorCode.BAD_REQUEST).json({
           code: ErrorCode.BAD_REQUEST,
-          error: "Invalid input",
+          error: `Invalid input. Hint: ${error.message}`,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.INVALID_PERMISSION:
