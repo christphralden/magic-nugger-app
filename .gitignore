@@ -36,6 +36,12 @@ docker-compose.override.yml
 coverage/
 *.lcov
 
+# Build artifacts
+**/dist/
+shared/src/**/*.js
+shared/src/**/*.js.map
+shared/src/**/*.d.ts
+
 # Misc
 *.pem
 *.key

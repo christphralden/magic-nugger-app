@@ -44,3 +44,10 @@ export type RequestCreateLevel = z.infer<typeof RequestCreateLevelSchema>;
 
 export const RequestUpdateLevelSchema = RequestCreateLevelSchema.partial();
 export type RequestUpdateLevel = z.infer<typeof RequestUpdateLevelSchema>;
+
+export const RequestUpdateActiveLevelSchema = z.object({
+  is_active: z.boolean(),
+});
+export type RequestUpdateActiveLevel = z.infer<
+  typeof RequestUpdateActiveLevelSchema
+>;
