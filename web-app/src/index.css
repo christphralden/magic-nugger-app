@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rot: 0deg;
+}
+
+html,
+body {
+  background-color: #fff4d6;
+  font-family: "Nunito", "Quicksand", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}

@@ -1,0 +1,12 @@
+export const CREAM = "#FFF4D6";
+export const CREAM_2 = "#FFE9B0";
+export const GOLD = "#FFB627";
+export const GOLD_DEEP = "#E89500";
+export const CORAL = "#FF6B6B";
+export const CORAL_DEEP = "#E04848";
+export const TEAL = "#4ECDC4";
+export const TEAL_DEEP = "#2BA89E";
+export const INK = "#2A1B3D";
+export const INK_SOFT = "#4A3A5C";
+export const PAPER = "#FFFBEF";
+export const SHADOW_INK = "rgba(42, 27, 61, 0.18)";
