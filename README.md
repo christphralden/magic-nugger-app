@@ -74,7 +74,7 @@ cd web-app && npm run dev
 
 ---
 
-## Entity Relationship Diagram (2025-05-02)
+## Entity Relationship Diagram (2026-05-06)
 
 ```mermaid
 erDiagram
@@ -193,18 +193,40 @@ erDiagram
         timestamptz created_at
     }
 
-    roles            ||--|{ role_permissions  : "role_id"
-    permissions      ||--|{ role_permissions  : "permission_id"
-    roles            ||--o{ players           : "role_id"
-    players          ||--o{ classrooms        : "teacher_id"
-    players          ||--o{ classroom_members : "player_id"
-    classrooms       ||--o{ classroom_members : "classroom_id"
-    players          ||--o{ game_sessions     : "player_id"
-    levels           ||--o{ game_sessions     : "level_id"
-    game_sessions    ||--o{ session_answers   : "session_id"
-    players          ||--o{ elo_history       : "player_id"
-    game_sessions    |o--o{ elo_history       : "session_id"
+    session {
+        varchar     sid    PK
+        json        sess
+        timestamp   expire
+    }
+
+    audit.audit_events {
+        uuid        id          PK
+        uuid        user_id     FK
+        varchar     url
+        smallint    status_code
+        inet        ip_address
+        text        user_agent
+        jsonb       metadata
+        timestamptz created_at
+    }
+
+    roles            ||--|{ role_permissions    : "role_id"
+    permissions      ||--|{ role_permissions    : "permission_id"
+    roles            ||--o{ players             : "role_id"
+    players          ||--o{ classrooms          : "teacher_id"
+    players          ||--o{ classroom_members   : "player_id"
+    classrooms       ||--o{ classroom_members   : "classroom_id"
+    players          ||--o{ game_sessions       : "player_id"
+    levels           ||--o{ game_sessions       : "level_id"
+    game_sessions    ||--o{ session_answers     : "session_id"
+    players          ||--o{ elo_history         : "player_id"
+    game_sessions    |o--o{ elo_history         : "session_id"
+    players          |o--o{ audit.audit_events  : "user_id"
+
 ```
+
+- `session` managed sessions added 2026-05-06.
+- `audit_events` (monthly partitioned, `audit` schema) added 2026-05-06.
 
 ---
 
