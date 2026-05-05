@@ -50,14 +50,19 @@ levelsRouter.post(
   },
 );
 
-levelsRouter.put("/:id", authorize("level:update"), async (req, res) => {
-  const level = await levelService.update(req.params.id, req.body);
-  res.json({
-    code: 200,
-    error: null,
-    data: level,
-  } satisfies ApiResponse<Level>);
-});
+levelsRouter.put(
+  "/:id",
+  authorize("level:update"),
+  validate(RequestUpdateLevelSchema),
+  async (req, res) => {
+    const level = await levelService.update(req.params.id, req.body);
+    res.json({
+      code: 200,
+      error: null,
+      data: level,
+    } satisfies ApiResponse<Level>);
+  },
+);
 
 levelsRouter.put(
   "/active/:id",
