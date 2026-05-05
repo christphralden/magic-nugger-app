@@ -9,7 +9,7 @@ import connectPgSimple from "connect-pg-simple";
 import { db } from "@/db/client";
 import { errorHandler } from "@/middleware/error-handler";
 import { authRouter } from "@/routes/auth";
-// import { playersRouter } from "@/routes/players";
+import { playersRouter } from "@/routes/players";
 // import { levelsRouter } from "@/routes/levels";
 // import { sessionsRouter } from "@/routes/sessions";
 // import { leaderboardRouter } from "@/routes/leaderboard";
@@ -90,7 +90,7 @@ app.use(audit);
 
 app.use("/api/v1/internal", internalRouter);
 app.use("/api/v1/auth", authRouter);
-// app.use("/api/v1/players", playersRouter);
+app.use("/api/v1/players", playersRouter);
 // app.use("/api/v1/levels", levelsRouter);
 // app.use("/api/v1/sessions", sessionsRouter);
 // app.use("/api/v1/leaderboard", leaderboardRouter);
