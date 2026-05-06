@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { levelService } from "@/services/level.service.js";
-import { authenticate } from "@/middleware/authenticate.js";
-import { authorize } from "@/middleware/authorize.js";
-import { validate } from "@/middleware/validate.js";
+import { levelService } from "@/services/level.service";
+import { authenticate } from "@/middleware/authenticate";
+import { authorize } from "@/middleware/authorize";
+import { validate } from "@/middleware/validate";
 import {
   ErrorCode,
   RequestCreateLevelSchema,

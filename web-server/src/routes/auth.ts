@@ -1,10 +1,10 @@
 import { Router } from "express";
 import passport from "passport";
 import bcrypt from "bcrypt";
-import { db } from "@/db/client.js";
-import { validate } from "@/middleware/validate.js";
-import { authenticate } from "@/middleware/authenticate.js";
-import { toResponsePlayer } from "@/dto/player.dto.js";
+import { db } from "@/db/client";
+import { validate } from "@/middleware/validate";
+import { authenticate } from "@/middleware/authenticate";
+import { toResponsePlayer } from "@/dto/player.dto";
 import {
   RequestCreatePlayerSchema,
   RequestLoginSchema,

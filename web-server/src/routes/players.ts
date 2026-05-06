@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { playerService } from "@/services/player.service.js";
-import { validate } from "@/middleware/validate.js";
-import { authenticate, currentUser } from "@/middleware/authenticate.js";
-import { authorize } from "@/middleware/authorize.js";
+import { playerService } from "@/services/player.service";
+import { validate } from "@/middleware/validate";
+import { authenticate, currentUser } from "@/middleware/authenticate";
+import { authorize } from "@/middleware/authorize";
 import { RequestUpdatePlayerSchema } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
 
