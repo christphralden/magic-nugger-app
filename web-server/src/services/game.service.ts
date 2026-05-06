@@ -44,10 +44,10 @@ export const gameService = {
       const level = await levelService.getById(String(levelId));
 
       const questionGenConfigRes = JSONBSchema(
-        z.object({ count: z.number().optional() }),
+        z.object({ total_questions: z.number().optional() }).passthrough(),
       ).safeParse(level.question_gen_config);
 
-      const maxAnswers = questionGenConfigRes.data?.data.count ?? 0;
+      const maxAnswers = questionGenConfigRes.data?.data.total_questions ?? 0;
 
       const session = await gameSessionService.create({
         userId,
@@ -81,7 +81,10 @@ export const gameService = {
         session.correct_count + session.incorrect_count >=
         session.max_answers
       ) {
-        throw new AppError(ErrorCode.CONFLICT, "Session already complete");
+        throw new AppError(
+          ErrorCode.NOT_MODIFIED,
+          "Session max answers reached",
+        );
       }
 
       const level = await levelService.getById(String(session.level_id));
@@ -90,7 +93,7 @@ export const gameService = {
         ? level.elo_gain_correct
         : -level.elo_loss_incorrect;
 
-      const newScore = session.score + (isCorrect ? level.elo_gain_correct : 0);
+      const newScore = session.score + delta;
       const newCorrect = session.correct_count + (isCorrect ? 1 : 0);
       const newIncorrect = session.incorrect_count + (isCorrect ? 0 : 1);
       const newStreak = isCorrect ? session.current_streak + 1 : 0;
