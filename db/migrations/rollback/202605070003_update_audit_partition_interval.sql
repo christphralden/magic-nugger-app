@@ -1,5 +1,5 @@
 BEGIN;
-SELECT _v.unregister_patch('202605070002_update_audit_partition_interval');
+SELECT _v.unregister_patch('202605070003_update_audit_partition_interval');
 DO $$
 BEGIN
     UPDATE partman.part_config
