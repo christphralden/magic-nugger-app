@@ -11,7 +11,7 @@ Background maintenance tasks run in a dedicated `magic-nugger-cron`
 **Source:** `db/cron/`  
 **Base image:** `node:20-alpine` + `postgresql-client`  
 **Connects to:** Postgres via `POSTGRES_*` env vars (same pattern as `db/runner.mjs`)  
-**Docker Compose service:** `magic-nugger-cron-dev` (dev only)
+**Docker Compose service:** `magic-nugger-cron-dev`
 
 The container runs BusyBox `crond` in the foreground. All job output is redirected to `/proc/1/fd/1` so it appears in `docker logs magic-nugger-cron-dev`.
 

@@ -260,7 +260,7 @@ Internet
          │
          ▼
 ┌─────────────────┐     ┌─────────────────┐
-│ postgres cont.  │◄────│  cron container │  session cleanup + backup (dev only)
+│ postgres cont.  │◄────│  cron container │  session cleanup + backup
 │ PostgreSQL 16   │     │  (node:alpine)  │
 └─────────────────┘     └─────────────────┘
 ```
