@@ -1,2 +1,2 @@
-0 * * * * node /app/session-cleanup.mjs >> /proc/1/fd/1 2>&1
+0 * * * * node /app/game-session-cleanup.mjs >> /proc/1/fd/1 2>&1
 0 2 * * 0 sh /app/backup.sh >> /proc/1/fd/1 2>&1

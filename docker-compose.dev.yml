@@ -36,6 +36,10 @@ services:
       magic-nugger-postgres:
         condition: service_healthy
     volumes:
+      - ./db/cron/crontab:/app/crontab:ro
+      - ./db/cron/game-session-cleanup.mjs:/app/game-session-cleanup.mjs:ro
+      - ./db/cron/log-event.mjs:/app/log-event.mjs:ro
+      - ./db/cron/backup.sh:/app/backup.sh:ro
       - ./db/backups:/backups
     command: sh -c "crontab /app/crontab && crond -f -d 8"
 
