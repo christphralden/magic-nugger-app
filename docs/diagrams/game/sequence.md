@@ -9,6 +9,10 @@ All endpoints require `authenticate`. No additional permission required.
 - `POST /:id/fail` — fail session
 - `POST /:id/abandon` — abandon session
 
+---
+
+## POST /
+
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
@@ -17,13 +21,10 @@ sequenceDiagram
     participant GS as "<<service>> GameService"
     participant GSS as "<<service>> GameSessionService"
     participant LS as "<<service>> LevelService"
-    participant PS as "<<service>> PlayerService"
-    participant ES as "<<service>> EloService"
     participant LBS as "<<service>> LeaderboardService"
     participant LOG as "<<service>> LoggingService"
     participant DB as "<<dataAccess>> Database"
 
-    Note over C,DB: POST / — Start or Resume Game Session
     C->>R: 1. startGame(levelId)
     R->>R: 1.1. authenticate()
     alt unauthenticated
@@ -63,21 +64,33 @@ sequenceDiagram
     R->>LBS: 1.5. invalidateByLevel(levelId)
     R->>LOG: 1.6. log(session:started)
     R-->>C: 201 GameSession
+```
 
-    Note over C,DB: POST /:id/answer — Submit Answer
+## POST /:id/answer
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+sequenceDiagram
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> GameRoute"
+    participant GS as "<<service>> GameService"
+    participant GSS as "<<service>> GameSessionService"
+    participant LS as "<<service>> LevelService"
+    participant DB as "<<dataAccess>> Database"
+
     loop until max_answers reached or session ended
-        C->>R: 2. submitAnswer(sessionId, is_correct, time_taken_ms?)
-        R->>R: 2.1. authenticate()
+        C->>R: 1. submitAnswer(sessionId, is_correct, time_taken_ms?)
+        R->>R: 1.1. authenticate()
         alt unauthenticated
             R-->>C: 401 Unauthorized
         end
-        R->>R: 2.2. validate(RequestAnswerSchema)
+        R->>R: 1.2. validate(RequestAnswerSchema)
         alt invalid payload
             R-->>C: 400 BadRequest
         end
-        R->>GS: 2.3. answer(sessionId, isCorrect, timeTakenMs)
-        GS->>GSS: 2.3.1. getActiveById(sessionId)
-        GSS->>DB: 2.3.1.1. query(GameSession)
+        R->>GS: 1.3. answer(sessionId, isCorrect, timeTakenMs)
+        GS->>GSS: 1.3.1. getActiveById(sessionId)
+        GSS->>DB: 1.3.1.1. query(GameSession)
         DB-->>GSS: GameSession?
         GSS-->>GS: GameSession?
         alt not found or not in_progress
@@ -88,117 +101,161 @@ sequenceDiagram
             GS-->>R: 409 Conflict
             R-->>C: 409 Conflict
         end
-        GS->>LS: 2.3.2. getById(session.level_id)
-        LS->>DB: 2.3.2.1. query(Level)
+        GS->>LS: 1.3.2. getById(session.level_id)
+        LS->>DB: 1.3.2.1. query(Level)
         DB-->>LS: Level
         LS-->>GS: Level
-        GS->>GS: 2.3.3. computeDelta(isCorrect, elo_gain_correct, elo_loss_incorrect)
-        GS->>GS: 2.3.4. computeStats(score, streak, maxStreak, eloDelta)
+        GS->>GS: 1.3.3. computeDelta(isCorrect, elo_gain_correct, elo_loss_incorrect)
+        GS->>GS: 1.3.4. computeStats(score, streak, maxStreak, eloDelta)
         par update session stats
-            GS->>GSS: 2.3.5. updateStats(sessionId, score, correctCount, incorrectCount, currentStreak, maxStreak, eloDelta)
-            GSS->>DB: 2.3.5.1. query(GameSession)
+            GS->>GSS: 1.3.5. updateStats(sessionId, score, correctCount, incorrectCount, currentStreak, maxStreak, eloDelta)
+            GSS->>DB: 1.3.5.1. query(GameSession)
             DB-->>GSS: ok
         and insert answer record
-            GS->>GSS: 2.3.6. insertAnswer(sessionId, isCorrect, delta, timeTakenMs)
-            GSS->>DB: 2.3.6.1. query(SessionAnswer)
+            GS->>GSS: 1.3.6. insertAnswer(sessionId, isCorrect, delta, timeTakenMs)
+            GSS->>DB: 1.3.6.1. query(SessionAnswer)
             DB-->>GSS: ok
         end
         GS-->>R: ResponseAnswer
         R-->>C: 200 ResponseAnswer
     end
+```
 
-    Note over C,DB: POST /:id/end — Complete Session
-    C->>R: 3. endSession(sessionId)
-    R->>R: 3.1. authenticate()
+## POST /:id/end
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+sequenceDiagram
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> GameRoute"
+    participant GS as "<<service>> GameService"
+    participant GSS as "<<service>> GameSessionService"
+    participant LS as "<<service>> LevelService"
+    participant PS as "<<service>> PlayerService"
+    participant ES as "<<service>> EloService"
+    participant LBS as "<<service>> LeaderboardService"
+    participant LOG as "<<service>> LoggingService"
+    participant DB as "<<dataAccess>> Database"
+
+    C->>R: 1. endSession(sessionId)
+    R->>R: 1.1. authenticate()
     alt unauthenticated
         R-->>C: 401 Unauthorized
     end
-    R->>GS: 3.2. end(sessionId, userId, currentElo, status: completed)
-    GS->>GSS: 3.2.1. getActiveById(sessionId)
-    GSS->>DB: 3.2.1.1. query(GameSession)
+    R->>GS: 1.2. end(sessionId, userId, currentElo, status: completed)
+    GS->>GSS: 1.2.1. getActiveById(sessionId)
+    GSS->>DB: 1.2.1.1. query(GameSession)
     DB-->>GSS: GameSession?
     GSS-->>GS: GameSession?
     alt not found
         GS-->>R: 404 NotFound
         R-->>C: 404 NotFound
     end
-    GS->>LS: 3.2.2. getNextActive(afterId: session.level_id)
-    LS->>DB: 3.2.2.1. query(Level)
+    GS->>LS: 1.2.2. getNextActive(afterId: session.level_id)
+    LS->>DB: 1.2.2.1. query(Level)
     DB-->>LS: Level?
     LS-->>GS: nextLevelId?
-    GS->>GS: 3.2.3. computeFinalElo(currentElo, session.elo_delta)
+    GS->>GS: 1.2.3. computeFinalElo(currentElo, session.elo_delta)
     Note right of GS: finalElo = MAX(0, currentElo + elo_delta)
     par finalize session
-        GS->>GSS: 3.2.4. finalize(sessionId, completed, finalElo)
-        GSS->>DB: 3.2.4.1. query(GameSession)
+        GS->>GSS: 1.2.4. finalize(sessionId, completed, finalElo)
+        GSS->>DB: 1.2.4.1. query(GameSession)
         DB-->>GSS: ok
     and update player
-        GS->>PS: 3.2.5. updateAfterSession(userId, eloDelta, completed, nextLevelId, stats)
-        PS->>DB: 3.2.5.1. query(Player)
+        GS->>PS: 1.2.5. updateAfterSession(userId, eloDelta, completed, nextLevelId, stats)
+        PS->>DB: 1.2.5.1. query(Player)
         DB-->>PS: ok
     and append elo history
-        GS->>ES: 3.2.6. append(userId, sessionId, eloBefore, eloAfter, delta, session_completed)
-        ES->>DB: 3.2.6.1. query(EloHistory)
+        GS->>ES: 1.2.6. append(userId, sessionId, eloBefore, eloAfter, delta, session_completed)
+        ES->>DB: 1.2.6.1. query(EloHistory)
         DB-->>ES: ok
     end
     GS-->>R: {levelId}
-    R->>LBS: 3.3. invalidateGlobal()
-    R->>LBS: 3.4. invalidateByLevel(levelId)
-    R->>LOG: 3.5. log(session:ended)
-    R->>LOG: 3.6. log(elo:updated)
+    R->>LBS: 1.3. invalidateGlobal()
+    R->>LBS: 1.4. invalidateByLevel(levelId)
+    R->>LOG: 1.5. log(session:ended)
+    R->>LOG: 1.6. log(elo:updated)
     R-->>C: 200 null
+```
 
-    Note over C,DB: POST /:id/fail — Fail Session
-    C->>R: 4. failSession(sessionId)
-    R->>R: 4.1. authenticate()
+## POST /:id/fail
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+sequenceDiagram
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> GameRoute"
+    participant GS as "<<service>> GameService"
+    participant GSS as "<<service>> GameSessionService"
+    participant LS as "<<service>> LevelService"
+    participant PS as "<<service>> PlayerService"
+    participant ES as "<<service>> EloService"
+    participant LBS as "<<service>> LeaderboardService"
+    participant LOG as "<<service>> LoggingService"
+    participant DB as "<<dataAccess>> Database"
+
+    C->>R: 1. failSession(sessionId)
+    R->>R: 1.1. authenticate()
     alt unauthenticated
         R-->>C: 401 Unauthorized
     end
-    R->>GS: 4.2. end(sessionId, userId, currentElo, status: failed)
-    GS->>GSS: 4.2.1. getActiveById(sessionId)
-    GSS->>DB: 4.2.1.1. query(GameSession)
+    R->>GS: 1.2. end(sessionId, userId, currentElo, status: failed)
+    GS->>GSS: 1.2.1. getActiveById(sessionId)
+    GSS->>DB: 1.2.1.1. query(GameSession)
     DB-->>GSS: GameSession?
     GSS-->>GS: GameSession?
     alt not found
         GS-->>R: 404 NotFound
         R-->>C: 404 NotFound
     end
-    GS->>LS: 4.2.2. getNextActive(afterId: session.level_id)
-    LS->>DB: 4.2.2.1. query(Level)
+    GS->>LS: 1.2.2. getNextActive(afterId: session.level_id)
+    LS->>DB: 1.2.2.1. query(Level)
     DB-->>LS: Level?
-    Note right of GS: finalElo = currentElo (no delta on fail)
+    Note right of GS: finalElo = currentElo — no delta applied on fail
     par finalize session
-        GS->>GSS: 4.2.3. finalize(sessionId, failed, currentElo)
-        GSS->>DB: 4.2.3.1. query(GameSession)
+        GS->>GSS: 1.2.3. finalize(sessionId, failed, currentElo)
+        GSS->>DB: 1.2.3.1. query(GameSession)
         DB-->>GSS: ok
     and update player stats
-        GS->>PS: 4.2.4. updateAfterSession(userId, eloDelta: 0, failed, stats)
-        PS->>DB: 4.2.4.1. query(Player)
+        GS->>PS: 1.2.4. updateAfterSession(userId, eloDelta: 0, failed, stats)
+        PS->>DB: 1.2.4.1. query(Player)
         DB-->>PS: ok
     and append elo history
-        GS->>ES: 4.2.5. append(userId, sessionId, delta: 0, session_failed)
-        ES->>DB: 4.2.5.1. query(EloHistory)
+        GS->>ES: 1.2.5. append(userId, sessionId, delta: 0, session_failed)
+        ES->>DB: 1.2.5.1. query(EloHistory)
         DB-->>ES: ok
     end
     GS-->>R: {levelId}
-    R->>LBS: 4.3. invalidateGlobal()
-    R->>LBS: 4.4. invalidateByLevel(levelId)
-    R->>LOG: 4.5. log(session:failed)
-    R->>LOG: 4.6. log(elo:updated)
+    R->>LBS: 1.3. invalidateGlobal()
+    R->>LBS: 1.4. invalidateByLevel(levelId)
+    R->>LOG: 1.5. log(session:failed)
+    R->>LOG: 1.6. log(elo:updated)
     R-->>C: 200 null
+```
 
-    Note over C,DB: POST /:id/abandon — Abandon Session
-    C->>R: 5. abandonSession(sessionId)
-    R->>R: 5.1. authenticate()
+## POST /:id/abandon
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+sequenceDiagram
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> GameRoute"
+    participant GS as "<<service>> GameService"
+    participant GSS as "<<service>> GameSessionService"
+    participant LOG as "<<service>> LoggingService"
+    participant DB as "<<dataAccess>> Database"
+
+    C->>R: 1. abandonSession(sessionId)
+    R->>R: 1.1. authenticate()
     alt unauthenticated
         R-->>C: 401 Unauthorized
     end
-    R->>GS: 5.2. abandon(sessionId)
-    GS->>GSS: 5.2.1. abandon(sessionId)
-    GSS->>DB: 5.2.1.1. query(GameSession)
+    R->>GS: 1.2. abandon(sessionId)
+    GS->>GSS: 1.2.1. abandon(sessionId)
+    GSS->>DB: 1.2.1.1. query(GameSession)
     DB-->>GSS: ok
     GS-->>R: void
-    R->>LOG: 5.3. log(session:abandoned)
+    R->>LOG: 1.3. log(session:abandoned)
     R-->>C: 200 null
 ```
 

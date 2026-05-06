@@ -1,7 +1,5 @@
 # Classrooms Route — Flowchart
 
-All endpoints require `authenticate`. Specific endpoints additionally require `authorize(permission)`.
-
 ## Endpoints
 - `POST /` — create classroom
 - `GET /` — list classrooms
@@ -11,68 +9,117 @@ All endpoints require `authenticate`. Specific endpoints additionally require `a
 - `POST /join` — join by invite code
 - `DELETE /:id/leave` — leave classroom
 
+---
+
+## POST /
+
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 flowchart TD
-    REQ([Client Request]) --> AUTH{authenticate}
-    AUTH -->|not logged in| E401[401 Unauthorized]
-    AUTH -->|ok| EP{Which endpoint?}
+    START([POST /]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| AZ{authorize classroom:create}
+    AZ -->|forbidden| E403[403 Forbidden]
+    AZ -->|ok| V{validate RequestCreateClassroomSchema}
+    V -->|invalid| E400[400 BadRequest]
+    V -->|valid| GEN[classroomService.create + generateInviteCode]
+    GEN --> DB[query Classroom]
+    DB --> R201[201 Classroom]
+```
 
-    %% --- POST / (create) ---
-    EP -->|POST /| C_AZ{authorize classroom:create}
-    C_AZ -->|forbidden| E403[403 Forbidden]
-    C_AZ -->|ok| C_V[validate RequestCreateClassroomSchema]
-    C_V -->|invalid| E400[400 Bad Request]
-    C_V -->|valid| C_SVC[classroomService.create teacherId + body]
-    C_SVC --> C_GEN["Generate invite_code = UUID.slice(0,8).toUpperCase()"]
-    C_GEN --> C_INS[INSERT INTO classrooms]
-    C_INS --> C201[201 Classroom]
+## GET /
 
-    %% --- GET / (list) ---
-    EP -->|GET /| GL_RES["200 [] (TODO: filter by role)"]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([GET /]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| R200[200 empty array]
+```
 
-    %% --- GET /:id ---
-    EP -->|GET /:id| GI_SVC[classroomService.getById id]
-    GI_SVC --> GI_Q["SELECT * FROM classrooms WHERE id=$1 AND is_active=true"]
-    GI_Q -->|not found| GI_404[404 Not Found]
-    GI_Q -->|found| GI200[200 Classroom]
+## GET /:id
 
-    %% --- PATCH /:id (update) ---
-    EP -->|PATCH /:id| U_AZ{authorize classroom:update}
-    U_AZ -->|forbidden| E403
-    U_AZ -->|ok| U_V[validate RequestUpdateClassroomSchema]
-    U_V -->|invalid| E400
-    U_V -->|valid| U_TEACH["SELECT teacher_id FROM classrooms WHERE id=$1"]
-    U_TEACH -->|teacher_id != user.id| E403_T[403 Forbidden]
-    U_TEACH -->|is teacher| U_SVC[classroomService.update id + body]
-    U_SVC --> U_Q["UPDATE classrooms SET COALESCE fields WHERE id=$1 AND is_active=true"]
-    U_Q -->|not found| U_404[404 Not Found]
-    U_Q -->|updated| U200[200 Classroom]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([GET /:id]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| SVC[classroomService.getById classroomId]
+    SVC --> DB[query Classroom]
+    DB --> CHECK{found?}
+    CHECK -->|not found| E404[404 NotFound]
+    CHECK -->|found| R200[200 Classroom]
+```
 
-    %% --- DELETE /:id (delete) ---
-    EP -->|DELETE /:id| D_AZ{authorize classroom:delete}
-    D_AZ -->|forbidden| E403
-    D_AZ -->|ok| D_TEACH["SELECT teacher_id FROM classrooms WHERE id=$1"]
-    D_TEACH -->|teacher_id != user.id| E403_D[403 Forbidden]
-    D_TEACH -->|is teacher| D_SVC[classroomService.delete id]
-    D_SVC --> D_Q["UPDATE classrooms SET is_active=false, updated_at=now()"]
-    D_Q -->|not found| D_404[404 Not Found]
-    D_Q -->|soft deleted| D200[200 null]
+## PATCH /:id
 
-    %% --- POST /join ---
-    EP -->|POST /join| J_AZ{authorize classroom:join}
-    J_AZ -->|forbidden| E403
-    J_AZ -->|ok| J_V[validate RequestJoinClassroomSchema]
-    J_V -->|invalid| E400
-    J_V -->|valid| J_SVC[classroomService.join playerId + inviteCode]
-    J_SVC --> J_Q["SELECT id, starting_elo FROM classrooms WHERE invite_code=$1 AND is_active=true"]
-    J_Q -->|not found| J_404[404 Invalid invite code]
-    J_Q -->|found| J_INS["INSERT INTO classroom_members classroom_elo=starting_elo ON CONFLICT DO NOTHING"]
-    J_INS --> J200[200 null]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([PATCH /:id]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| AZ{authorize classroom:update}
+    AZ -->|forbidden| E403[403 Forbidden]
+    AZ -->|ok| V{validate RequestUpdateClassroomSchema}
+    V -->|invalid| E400[400 BadRequest]
+    V -->|valid| DB1[query Classroom for teacher_id]
+    DB1 --> OWN{teacher_id == user.id?}
+    OWN -->|no| E403_T[403 Forbidden]
+    OWN -->|yes| SVC[classroomService.update classroomId + body]
+    SVC --> DB2[query Classroom]
+    DB2 --> CHECK{found?}
+    CHECK -->|not found| E404[404 NotFound]
+    CHECK -->|found| R200[200 Classroom]
+```
 
-    %% --- DELETE /:id/leave ---
-    EP -->|DELETE /:id/leave| L_AZ{authorize classroom:leave}
-    L_AZ -->|forbidden| E403
-    L_AZ -->|ok| L_SVC[classroomService.leave playerId + classroomId]
-    L_SVC --> L_Q[DELETE FROM classroom_members WHERE classroom_id=$1 AND player_id=$2]
-    L_Q --> L200[200 null]
+## DELETE /:id
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([DELETE /:id]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| AZ{authorize classroom:delete}
+    AZ -->|forbidden| E403[403 Forbidden]
+    AZ -->|ok| DB1[query Classroom for teacher_id]
+    DB1 --> OWN{teacher_id == user.id?}
+    OWN -->|no| E403_T[403 Forbidden]
+    OWN -->|yes| SVC[classroomService.delete classroomId]
+    SVC --> DB2[query Classroom soft delete]
+    DB2 --> CHECK{found?}
+    CHECK -->|not found| E404[404 NotFound]
+    CHECK -->|deleted| R200[200 null]
+```
+
+## POST /join
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([POST /join]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| AZ{authorize classroom:join}
+    AZ -->|forbidden| E403[403 Forbidden]
+    AZ -->|ok| V{validate RequestJoinClassroomSchema}
+    V -->|invalid| E400[400 BadRequest]
+    V -->|valid| SVC[classroomService.join playerId + invite_code]
+    SVC --> DB1[query Classroom by invite_code]
+    DB1 --> CHECK{valid invite code?}
+    CHECK -->|not found| E404[404 NotFound]
+    CHECK -->|found| DB2[query ClassroomMember insert on conflict ignore]
+    DB2 --> R200[200 null]
+```
+
+## DELETE /:id/leave
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([DELETE /:id/leave]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| AZ{authorize classroom:leave}
+    AZ -->|forbidden| E403[403 Forbidden]
+    AZ -->|ok| SVC[classroomService.leave playerId + classroomId]
+    SVC --> DB[query ClassroomMember delete]
+    DB --> R200[200 null]
 ```

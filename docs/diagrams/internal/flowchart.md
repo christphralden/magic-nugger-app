@@ -1,24 +1,30 @@
 # Internal Route — Flowchart
 
-All endpoints require `internal` middleware (not exposed to public clients).
-
 ## Endpoints
 - `POST /memory` — server memory usage
 - `POST /cache/leaderboard` — leaderboard cache state
 
+---
+
+## POST /memory
+
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 flowchart TD
-    REQ([Internal Client Request]) --> AUTH{internal middleware}
-    AUTH -->|unauthorized| E401[401 Unauthorized]
-    AUTH -->|ok| EP{Which endpoint?}
+    START([POST /memory]) --> AUTH{authorize internal}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| MEM[memoryUsage]
+    MEM --> FMT[formatMemory bytes to MB]
+    FMT --> R200[200 MemoryStats]
+```
 
-    %% --- POST /memory ---
-    EP -->|POST /memory| MEM[process.memoryUsage]
-    MEM --> MEM_FMT["Format bytes → MB x.xx MB\nrss, heapTotal, heapUsed, external, arrayBuffers"]
-    MEM_FMT --> MEM200[200 memory stats object]
+## POST /cache/leaderboard
 
-    %% --- POST /cache/leaderboard ---
-    EP -->|POST /cache/leaderboard| CACHE[leaderboardCache.serialize]
-    CACHE --> CACHE_LOG[console.log cache]
-    CACHE_LOG --> CACHE200[200 cache state object]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([POST /cache/leaderboard]) --> AUTH{authorize internal}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| CACHE[leaderboardCache.serialize]
+    CACHE --> R200[200 CacheSnapshot]
 ```

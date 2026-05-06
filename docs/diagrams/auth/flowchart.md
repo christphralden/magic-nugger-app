@@ -8,47 +8,78 @@
 - `POST /logout`
 - `GET /me`
 
+---
+
+## POST /register
+
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 flowchart TD
-    REQ([Client Request]) --> EP{Which endpoint?}
+    START([POST /register]) --> V{validate RequestCreatePlayerSchema}
+    V -->|invalid| E400[400 BadRequest]
+    V -->|valid| HASH[bcrypt.hash password]
+    HASH --> DB[query Player]
+    DB --> R201[201 ResponsePlayer]
+```
 
-    %% --- REGISTER ---
-    EP -->|POST /register| RV[validate RequestCreatePlayerSchema]
-    RV -->|invalid| RV_ERR[400 Bad Request]
-    RV -->|valid| RH[bcrypt.hash password, salt=12]
-    RH --> RI[INSERT INTO players]
-    RI --> R201[201 ResponsePlayer]
+## POST /login
 
-    %% --- LOGIN ---
-    EP -->|POST /login| LV[validate RequestLoginSchema]
-    LV -->|invalid| LV_ERR[400 Bad Request]
-    LV -->|valid| LP[passport.authenticate local]
-    LP -->|invalid credentials| LP_ERR[401 Unauthorized]
-    LP -->|success| LLogin[req.logIn — establish session]
-    LLogin --> LLog[log auth:login]
-    LLog --> L200[200 ResponsePlayer]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([POST /login]) --> V{validate RequestLoginSchema}
+    V -->|invalid| E400[400 BadRequest]
+    V -->|valid| AUTH[authenticate local]
+    AUTH --> DB[query Player]
+    DB --> CMP{bcrypt.compare password}
+    CMP -->|invalid| E401[401 Unauthorized]
+    CMP -->|valid| SESSION[logIn user]
+    SESSION --> LOG[log auth:login]
+    LOG --> R200[200 ResponsePlayer]
+```
 
-    %% --- GOOGLE OAUTH INITIATE ---
-    EP -->|GET /oauth/google| GO[passport.authenticate google]
-    GO --> GO_R[Redirect → Google OAuth consent screen]
+## GET /oauth/google
 
-    %% --- GOOGLE OAUTH CALLBACK ---
-    EP -->|GET /oauth/google/callback| CB[passport.authenticate google callback]
-    CB -->|fail| CB_FAIL[Redirect → /]
-    CB -->|success| CB_LOGIN[req.logIn — establish session]
-    CB_LOGIN --> CB_LOG[log auth:oauth_login]
-    CB_LOG --> CB_R[Redirect → /levels]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([GET /oauth/google]) --> AUTH[authenticate google]
+    AUTH --> REDIRECT[302 Redirect to Google OAuth]
+```
 
-    %% --- LOGOUT ---
-    EP -->|POST /logout| OUT_AUTH{authenticate}
-    OUT_AUTH -->|not logged in| OUT_401[401 Unauthorized]
-    OUT_AUTH -->|ok| OUT[req.logout — destroy session]
-    OUT --> OUT_LOG[log auth:logout]
-    OUT_LOG --> OUT200[200 null]
+## GET /oauth/google/callback
 
-    %% --- ME ---
-    EP -->|GET /me| ME_AUTH{authenticate}
-    ME_AUTH -->|not logged in| ME_401[401 Unauthorized]
-    ME_AUTH -->|ok| ME_MAP[toResponsePlayer req.user]
-    ME_MAP --> ME200[200 ResponsePlayer]
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([GET /oauth/google/callback]) --> AUTH[authenticate google callback]
+    AUTH --> DB[query Player upsert by oauth_id]
+    DB --> CHECK{success?}
+    CHECK -->|fail| FAIL[302 Redirect to /]
+    CHECK -->|ok| SESSION[logIn user]
+    SESSION --> LOG[log auth:oauth_login]
+    LOG --> R302[302 Redirect to /levels]
+```
+
+## POST /logout
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([POST /logout]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| OUT[logout]
+    OUT --> LOG[log auth:logout]
+    LOG --> R200[200 null]
+```
+
+## GET /me
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([GET /me]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| MAP[toResponsePlayer user]
+    MAP --> R200[200 ResponsePlayer]
 ```
