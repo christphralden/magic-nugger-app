@@ -1,6 +1,6 @@
 import { tx } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
-import { ErrorCode, JSONBSchema } from "@magic-nugger-app/shared";
+import { HttpCode, JSONBSchema } from "@magic-nugger-app/shared";
 import type {
   EloHistoryReason,
   GameSession,
@@ -76,7 +76,7 @@ export const gameService = {
       const session = await gameSessionService.getActiveById({ sessionId });
 
       if (!session) {
-        throw new AppError(ErrorCode.NOT_FOUND, "Session not found");
+        throw new AppError(HttpCode.NOT_FOUND, "Session not found");
       }
 
       if (
@@ -84,7 +84,7 @@ export const gameService = {
         session.max_answers
       ) {
         throw new AppError(
-          ErrorCode.NOT_MODIFIED,
+          HttpCode.NOT_MODIFIED,
           "Session max answers reached",
         );
       }
@@ -143,7 +143,7 @@ export const gameService = {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
       if (!session) {
-        throw new AppError(ErrorCode.NOT_FOUND, "Session not found");
+        throw new AppError(HttpCode.NOT_FOUND, "Session not found");
       }
 
       const nextLevelId = await levelService.getNextActive({

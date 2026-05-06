@@ -4,7 +4,7 @@ import { authenticate, currentUser } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { validate } from "@/middleware/validate";
 import { parsePagination } from "@/utils/pagination";
-import { RequestAdjustEloSchema, ErrorCode } from "@magic-nugger-app/shared";
+import { RequestAdjustEloSchema, HttpCode } from "@magic-nugger-app/shared";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { loggingService } from "@/services/logging.service";
 import type {
@@ -40,7 +40,7 @@ adminRouter.get("/players", async (req, res) => {
     userId: admin.id,
   });
   res.json({
-    code: 200,
+    code: HttpCode.OK,
     error: null,
     data: { items: rows, next_cursor },
   } satisfies ApiResponse<PaginatedData<Player>>);
@@ -56,8 +56,8 @@ adminRouter.patch(
       [req.params.id, req.body.role],
     );
     if (!rows[0]) {
-      return res.status(404).json({
-        code: ErrorCode.NOT_FOUND,
+      return res.status(HttpCode.NOT_FOUND).json({
+        code: HttpCode.NOT_FOUND,
         error: "Player not found",
         data: null,
       } satisfies ApiResponse<null>);
@@ -69,7 +69,7 @@ adminRouter.patch(
       metadata: { target_player_id: req.params.id, new_role: req.body.role },
     });
     res.json({
-      code: 200,
+      code: HttpCode.OK,
       error: null,
       data: null,
     } satisfies ApiResponse<null>);
@@ -87,8 +87,8 @@ adminRouter.patch(
       [req.params.id],
     );
     if (!playerRows[0]) {
-      return res.status(404).json({
-        code: ErrorCode.NOT_FOUND,
+      return res.status(HttpCode.NOT_FOUND).json({
+        code: HttpCode.NOT_FOUND,
         error: "Player not found",
         data: null,
       } satisfies ApiResponse<null>);
@@ -127,7 +127,7 @@ adminRouter.patch(
       metadata: { adjusted_by: admin.id, before, after, delta },
     });
     res.json({
-      code: 200,
+      code: HttpCode.OK,
       error: null,
       data: null,
     } satisfies ApiResponse<null>);
@@ -149,7 +149,7 @@ adminRouter.get("/game-sessions/active", async (req, res) => {
     metadata: { filter: "active" },
   });
   res.json({
-    code: 200,
+    code: HttpCode.OK,
     error: null,
     data: rows,
   } satisfies ApiResponse<GameSession[]>);
@@ -197,7 +197,7 @@ adminRouter.get("/game-sessions", async (req, res) => {
     metadata: { filter: { player_id, level_id, status } },
   });
   res.json({
-    code: 200,
+    code: HttpCode.OK,
     error: null,
     data: { items: rows, next_cursor },
   } satisfies ApiResponse<PaginatedData<GameSession>>);
@@ -215,7 +215,7 @@ adminRouter.get("/stats", async (_req, res) => {
       (SELECT COUNT(*) FROM game_sessions WHERE status = 'completed') as completed_sessions`,
   );
   res.json({
-    code: 200,
+    code: HttpCode.OK,
     error: null,
     data: rows[0],
   } satisfies ApiResponse<{

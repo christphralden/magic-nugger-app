@@ -7,7 +7,7 @@ import { toResponsePlayer } from "@/dto/player.dto";
 import {
   RequestCreatePlayerSchema,
   RequestLoginSchema,
-  ErrorCode,
+  HttpCode,
 } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
 import { getDb } from "@/db/transaction-context";
@@ -47,7 +47,7 @@ authRouter.post("/login", validate(RequestLoginSchema), (req, res, next) => {
   passport.authenticate("local", (err: unknown, user: Express.User) => {
     if (err || !user) {
       return res.status(401).json({
-        code: ErrorCode.UNAUTHORIZED,
+        code: HttpCode.UNAUTHORIZED,
         error: "Invalid credentials",
         data: null,
       } satisfies ApiResponse<null>);

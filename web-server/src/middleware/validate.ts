@@ -1,6 +1,6 @@
 import type { ZodSchema } from "zod";
 import type { Request, Response, NextFunction } from "express";
-import { ApiResponse, ErrorCode, jzod } from "@magic-nugger-app/shared";
+import { ApiResponse, HttpCode, jzod } from "@magic-nugger-app/shared";
 import { loggingService } from "@/services/logging.service";
 
 export const validate =
@@ -17,8 +17,8 @@ export const validate =
         level: "error",
         description: message,
       });
-      return res.status(ErrorCode.BAD_REQUEST).json({
-        code: ErrorCode.BAD_REQUEST,
+      return res.status(HttpCode.BAD_REQUEST).json({
+        code: HttpCode.BAD_REQUEST,
         data: {
           schema: jzod(schema),
         },

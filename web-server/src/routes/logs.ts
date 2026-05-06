@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticate, currentUser } from "@/middleware/authenticate.js";
 import { validate } from "@/middleware/validate.js";
-import { RequestLogEventSchema } from "@magic-nugger-app/shared";
+import { HttpCode, RequestLogEventSchema } from "@magic-nugger-app/shared";
 import { loggingService } from "@/services/logging.service.js";
 import type { ApiResponse } from "@magic-nugger-app/shared";
 
@@ -18,5 +18,9 @@ logsRouter.post("/", validate(RequestLogEventSchema), async (req, res) => {
     description: req.body.description ?? null,
     metadata: req.body.metadata ?? null,
   });
-  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: null,
+  } satisfies ApiResponse<null>);
 });

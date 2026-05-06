@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "@/errors/app-error.js";
-import { ErrorCode } from "@magic-nugger-app/shared";
+import { HttpCode } from "@magic-nugger-app/shared";
 import { loggingService } from "@/services/logging.service";
 
 export const authorize =
@@ -13,7 +13,7 @@ export const authorize =
         level: "error",
         description: `tried to access ${req.url} without a user`,
       });
-      throw new AppError(ErrorCode.UNAUTHORIZED, "You must be logged in");
+      throw new AppError(HttpCode.UNAUTHORIZED, "You must be logged in");
     }
 
     const perms = user.role_permissions ?? [];
@@ -27,7 +27,7 @@ export const authorize =
         description: `user ${user.email} (${user.id}) forbidden access to permission ${permissions.join("|")}`,
       });
       throw new AppError(
-        ErrorCode.FORBIDDEN,
+        HttpCode.FORBIDDEN,
         "You dont have sufficient permissions",
       );
     }

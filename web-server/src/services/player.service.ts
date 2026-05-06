@@ -1,6 +1,6 @@
 import { getDb } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
-import { ErrorCode } from "@magic-nugger-app/shared";
+import { HttpCode } from "@magic-nugger-app/shared";
 import type {
   ResponsePlayer,
   RequestUpdatePlayer,
@@ -17,7 +17,7 @@ export const playerService = {
       `,
       [id],
     );
-    if (!rows[0]) throw new AppError(ErrorCode.NOT_FOUND, "Player not found");
+    if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Player not found");
     return rows[0];
   },
 
@@ -38,7 +38,7 @@ export const playerService = {
         body.avatar_url ?? null,
       ],
     );
-    if (!rows[0]) throw new AppError(ErrorCode.NOT_FOUND, "Player not found");
+    if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Player not found");
     return rows[0];
   },
 

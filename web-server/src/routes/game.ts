@@ -5,6 +5,7 @@ import { getClientIp, getUserAgent } from "@/utils/connectivity.js";
 import {
   RequestCreateGameSessionSchema,
   RequestAnswerSchema,
+  HttpCode,
 } from "@magic-nugger-app/shared";
 import { gameService } from "@/services/game.service.js";
 import { leaderboardService } from "@/services/leaderboard.service.js";
@@ -50,8 +51,8 @@ gameRouter.post(
       userId: user.id,
       metadata: { session_id: session.id, level_id: req.body.level_id },
     });
-    res.status(201).json({
-      code: 201,
+    res.status(HttpCode.CREATED).json({
+      code: HttpCode.CREATED,
       error: null,
       data: session,
     } satisfies ApiResponse<GameSession>);
@@ -68,7 +69,7 @@ gameRouter.post(
       timeTakenMs: req.body.time_taken_ms,
     });
     res.json({
-      code: 200,
+      code: HttpCode.OK,
       error: null,
       data: answer,
     } satisfies ApiResponse<ResponseAnswer>);
@@ -97,7 +98,11 @@ gameRouter.post("/:id/end", async (req, res) => {
     userId: user.id,
     metadata: { session_id: req.params.id, reason: "session_completed" },
   });
-  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: null,
+  } satisfies ApiResponse<null>);
 });
 
 gameRouter.post("/:id/fail", async (req, res) => {
@@ -122,7 +127,11 @@ gameRouter.post("/:id/fail", async (req, res) => {
     userId: user.id,
     metadata: { session_id: req.params.id, reason: "session_failed" },
   });
-  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: null,
+  } satisfies ApiResponse<null>);
 });
 
 gameRouter.post("/:id/abandon", async (req, res) => {
@@ -132,5 +141,9 @@ gameRouter.post("/:id/abandon", async (req, res) => {
     level: "info",
     metadata: { session_id: req.params.id },
   });
-  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: null,
+  } satisfies ApiResponse<null>);
 });

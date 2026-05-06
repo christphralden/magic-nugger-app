@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "@/errors/app-error.js";
 import { PgErrorCode } from "@/constants/db.js";
-import { ErrorCode, type ApiResponse } from "@magic-nugger-app/shared";
+import { HttpCode, type ApiResponse } from "@magic-nugger-app/shared";
 import { isPgError } from "@/utils/errors";
 import { loggingService } from "@/services/logging.service";
 
@@ -31,33 +31,33 @@ export const errorHandler = (
     const hint = isLocalEnvironment ? ` (dev) Hint: ${error.message}` : "";
     switch (error.code) {
       case PgErrorCode.UNIQUE_VIOLATION:
-        return res.status(ErrorCode.CONFLICT).json({
-          code: ErrorCode.CONFLICT,
+        return res.status(HttpCode.CONFLICT).json({
+          code: HttpCode.CONFLICT,
           error: `Resource already exists.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.FOREIGN_KEY_VIOLATION:
-        return res.status(ErrorCode.NOT_FOUND).json({
-          code: ErrorCode.NOT_FOUND,
+        return res.status(HttpCode.NOT_FOUND).json({
+          code: HttpCode.NOT_FOUND,
           error: `Invalid reference, resource not found.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.INVALID_TEXT_REPRESENTATION:
-        return res.status(ErrorCode.BAD_REQUEST).json({
-          code: ErrorCode.BAD_REQUEST,
+        return res.status(HttpCode.BAD_REQUEST).json({
+          code: HttpCode.BAD_REQUEST,
           error: `Invalid parameter format.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.NOT_NULL_VIOLATION:
       case PgErrorCode.CHECK_VIOLATION:
-        return res.status(ErrorCode.BAD_REQUEST).json({
-          code: ErrorCode.BAD_REQUEST,
+        return res.status(HttpCode.BAD_REQUEST).json({
+          code: HttpCode.BAD_REQUEST,
           error: `Invalid input.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.INVALID_PERMISSION:
-        return res.status(ErrorCode.FORBIDDEN).json({
-          code: ErrorCode.FORBIDDEN,
+        return res.status(HttpCode.FORBIDDEN).json({
+          code: HttpCode.FORBIDDEN,
           error: "Insufficient permissions",
           data: null,
         });

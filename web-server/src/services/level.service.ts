@@ -1,6 +1,6 @@
 import { getDb } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
-import { ErrorCode, LevelSchema } from "@magic-nugger-app/shared";
+import { HttpCode, LevelSchema } from "@magic-nugger-app/shared";
 import type {
   Level,
   RequestCreateLevel,
@@ -41,7 +41,7 @@ export const levelService = {
       `,
       [id],
     );
-    if (!rows[0]) throw new AppError(ErrorCode.NOT_FOUND, "Level not found");
+    if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
     return rows[0];
   },
 
@@ -127,7 +127,7 @@ export const levelService = {
         body.max_score ?? null,
       ],
     );
-    if (!rows[0]) throw new AppError(ErrorCode.NOT_FOUND, "Level not found");
+    if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
     return rows[0];
   },
 
@@ -157,7 +157,7 @@ export const levelService = {
       `,
       [id, body.is_active],
     );
-    if (!rows[0]) throw new AppError(ErrorCode.NOT_FOUND, "Level not found");
+    if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
     return rows[0];
   },
 };

@@ -11,3 +11,4 @@ export * from "./types/session.types";
 export * from "./types/elo.types";
 export * from "./types/pagination.types";
 export * from "./types/json.types";
+export * from "./types/leaderboard.types";
