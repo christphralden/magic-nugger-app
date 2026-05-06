@@ -1,6 +1,6 @@
 type CacheEntry<T> = {
   data: T;
-  expiresAt: number;
+  expires_at: number;
 };
 
 export class LruCache<T> {
@@ -16,7 +16,7 @@ export class LruCache<T> {
   get(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
+    if (Date.now() > entry.expires_at) {
       this.cache.delete(key);
       return null;
     }
@@ -30,7 +30,7 @@ export class LruCache<T> {
       const firstKey = this.cache.keys().next().value;
       if (firstKey) this.cache.delete(firstKey);
     }
-    this.cache.set(key, { data, expiresAt: Date.now() + this.ttlMs });
+    this.cache.set(key, { data, expires_at: Date.now() + this.ttlMs });
   }
 
   delete(key: string): void {
