@@ -4,6 +4,7 @@ export const LogLevelSchema = z.enum(["info", "warning", "error", "fatal"]);
 export type LogLevel = z.infer<typeof LogLevelSchema>;
 
 export const LogEventSchema = z.enum([
+  "dev:ping",
   "auth:register",
   "auth:login",
   "auth:logout",
