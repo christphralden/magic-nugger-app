@@ -9,76 +9,79 @@
 - `GET /me`
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant C as Client
-    participant R as AuthRouter
-    participant V as Validate
-    participant P as Passport
-    participant S as Session
-    participant DB as Database
-    participant L as LoggingService
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> AuthRoute"
+    participant PASS as "<<service>> PassportStrategy"
+    participant DB as "<<dataAccess>> Database"
+    participant LOG as "<<service>> LoggingService"
 
-    rect rgb(240, 248, 255)
-        Note over C,L: POST /register
-        C->>R: POST /register {username, email, password, display_name}
-        R->>V: validate(RequestCreatePlayerSchema)
-        V-->>C: 400 Bad Request (if invalid)
-        R->>R: bcrypt.hash(password, 12)
-        R->>DB: INSERT INTO players
-        DB-->>R: Player row
-        R-->>C: 201 ResponsePlayer
+    Note over C,LOG: POST /register
+    C->>R: 1. register(username, email, password, display_name)
+    R->>R: 1.1. validate(RequestCreatePlayerSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
     end
+    R->>R: 1.2. bcrypt.hash(password)
+    R->>DB: 1.3. query(Player)
+    DB-->>R: Player
+    R-->>C: 201 ResponsePlayer
 
-    rect rgb(240, 255, 240)
-        Note over C,L: POST /login
-        C->>R: POST /login {username, password}
-        R->>V: validate(RequestLoginSchema)
-        V-->>C: 400 Bad Request (if invalid)
-        R->>P: passport.authenticate("local")
-        P->>DB: SELECT player WHERE username=$1
-        DB-->>P: Player row or null
-        P->>P: bcrypt.compare(password, hash)
-        P-->>C: 401 Unauthorized (if credentials invalid)
-        R->>S: req.logIn(user)
-        R->>L: log(auth:login, userId, email)
-        R-->>C: 200 ResponsePlayer
+    Note over C,LOG: POST /login
+    C->>R: 2. login(username, password)
+    R->>R: 2.1. validate(RequestLoginSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
     end
+    R->>PASS: 2.2. authenticate(local, username, password)
+    PASS->>DB: 2.2.1. query(Player)
+    DB-->>PASS: Player?
+    PASS->>PASS: 2.2.2. bcrypt.compare(password, hash)
+    alt invalid credentials
+        PASS-->>R: 401 Unauthorized
+        R-->>C: 401 Unauthorized
+    end
+    PASS-->>R: Player
+    R->>R: 2.3. logIn(user)
+    R->>LOG: 2.4. log(auth:login)
+    R-->>C: 200 ResponsePlayer
 
-    rect rgb(255, 250, 240)
-        Note over C,L: GET /oauth/google
-        C->>R: GET /oauth/google
-        R->>P: passport.authenticate("google", {scope: [profile, email]})
-        P-->>C: 302 Redirect → Google OAuth
-    end
+    Note over C,LOG: GET /oauth/google
+    C->>R: 3. oauthGoogle()
+    R->>PASS: 3.1. authenticate(google, scopes)
+    PASS-->>C: 302 Redirect → Google OAuth
 
-    rect rgb(255, 240, 255)
-        Note over C,L: GET /oauth/google/callback
-        C->>R: GET /oauth/google/callback?code=...
-        R->>P: passport.authenticate("google")
-        P->>DB: Upsert player by oauth_provider + oauth_id
-        DB-->>P: Player row
-        P-->>C: 302 Redirect → / (if fail)
-        R->>S: req.logIn(user)
-        R->>L: log(auth:oauth_login, userId, email)
-        R-->>C: 302 Redirect → /levels
+    Note over C,LOG: GET /oauth/google/callback
+    C->>R: 4. oauthGoogleCallback(code)
+    R->>PASS: 4.1. authenticate(google)
+    PASS->>DB: 4.1.1. query(Player)
+    DB-->>PASS: Player
+    alt authentication failed
+        PASS-->>R: failure
+        R-->>C: 302 Redirect → /
     end
+    PASS-->>R: Player
+    R->>R: 4.2. logIn(user)
+    R->>LOG: 4.3. log(auth:oauth_login)
+    R-->>C: 302 Redirect → /levels
 
-    rect rgb(240, 255, 255)
-        Note over C,L: POST /logout
-        C->>R: POST /logout
-        R->>R: authenticate middleware
-        R-->>C: 401 Unauthorized (if not logged in)
-        R->>S: req.logout()
-        R->>L: log(auth:logout, userId)
-        R-->>C: 200 null
+    Note over C,LOG: POST /logout
+    C->>R: 5. logout()
+    R->>R: 5.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>R: 5.2. logout()
+    R->>LOG: 5.3. log(auth:logout)
+    R-->>C: 200 null
 
-    rect rgb(255, 255, 240)
-        Note over C,L: GET /me
-        C->>R: GET /me
-        R->>R: authenticate middleware
-        R-->>C: 401 Unauthorized (if not logged in)
-        R->>R: toResponsePlayer(req.user)
-        R-->>C: 200 ResponsePlayer
+    Note over C,LOG: GET /me
+    C->>R: 6. me()
+    R->>R: 6.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>R: 6.2. toResponsePlayer(user)
+    R-->>C: 200 ResponsePlayer
 ```

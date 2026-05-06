@@ -1,40 +1,37 @@
 # Internal Route — Sequence Diagrams
 
-All endpoints require `internal` middleware (not exposed to public clients).
-
 ## Endpoints
 - `POST /memory` — server memory usage
 - `POST /cache/leaderboard` — leaderboard cache state
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant IC as Internal Client
-    participant R as InternalRouter
-    participant MW as Middleware
-    participant P as process
-    participant CACHE as LeaderboardCache
+    participant IC as "<<view>> InternalClient"
+    participant R as "<<controller>> InternalRoute"
+    participant RT as "<<service>> Runtime"
+    participant CACHE as "<<cache>> LeaderboardCache"
 
-    rect rgb(240, 248, 255)
-        Note over IC,CACHE: POST /memory — Memory Stats
-        IC->>R: POST /memory
-        R->>MW: internal middleware
-        MW-->>IC: 401 Unauthorized (if not internal)
-        R->>P: process.memoryUsage()
-        P-->>R: {rss, heapTotal, heapUsed, external, arrayBuffers} in bytes
-        R->>R: format each field to "x.xx MB"
-        R-->>IC: 200 {rss, heapTotal, heapUsed, external, arrayBuffers}
+    Note over IC,CACHE: POST /memory — Memory Stats
+    IC->>R: 1. getMemoryStats()
+    R->>R: 1.1. authorize(internal)
+    alt unauthorized
+        R-->>IC: 401 Unauthorized
     end
+    R->>RT: 1.2. memoryUsage()
+    RT-->>R: {rss, heapTotal, heapUsed, external, arrayBuffers}
+    R->>R: 1.3. formatMemory(bytes)
+    R-->>IC: 200 MemoryStats
 
-    rect rgb(240, 255, 240)
-        Note over IC,CACHE: POST /cache/leaderboard — Cache State
-        IC->>R: POST /cache/leaderboard
-        R->>MW: internal middleware
-        MW-->>IC: 401 Unauthorized (if not internal)
-        R->>CACHE: serialize()
-        CACHE-->>R: cache state snapshot
-        R->>R: console.log(cache state)
-        R-->>IC: 200 {cache: state snapshot}
+    Note over IC,CACHE: POST /cache/leaderboard — Cache State
+    IC->>R: 2. getCacheState()
+    R->>R: 2.1. authorize(internal)
+    alt unauthorized
+        R-->>IC: 401 Unauthorized
     end
+    R->>CACHE: 2.2. serialize()
+    CACHE-->>R: CacheSnapshot
+    R-->>IC: 200 CacheSnapshot
 ```
 
 ## Notes

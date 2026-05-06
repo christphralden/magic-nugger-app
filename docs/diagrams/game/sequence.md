@@ -10,152 +10,196 @@ All endpoints require `authenticate`. No additional permission required.
 - `POST /:id/abandon` — abandon session
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant C as Client
-    participant R as GameRouter
-    participant MW as Middleware
-    participant GS as GameService
-    participant GSS as GameSessionService
-    participant LS as LevelService
-    participant PS as PlayerService
-    participant ES as EloService
-    participant LBS as LeaderboardService
-    participant LOG as LoggingService
-    participant DB as Database
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> GameRoute"
+    participant GS as "<<service>> GameService"
+    participant GSS as "<<service>> GameSessionService"
+    participant LS as "<<service>> LevelService"
+    participant PS as "<<service>> PlayerService"
+    participant ES as "<<service>> EloService"
+    participant LBS as "<<service>> LeaderboardService"
+    participant LOG as "<<service>> LoggingService"
+    participant DB as "<<dataAccess>> Database"
 
-    rect rgb(240, 248, 255)
-        Note over C,DB: POST / — Start or Resume Game Session
-        C->>R: POST / {level_id}
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>MW: validate(RequestCreateGameSessionSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>GS: start({userId, levelId, currentElo, ip, userAgent})
-        GS->>GSS: getActiveByPlayerId({userId})
-        DB-->>GSS: existing GameSession or null
+    Note over C,DB: POST / — Start or Resume Game Session
+    C->>R: 1. startGame(levelId)
+    R->>R: 1.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
+    end
+    R->>R: 1.2. validate(RequestCreateGameSessionSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>GS: 1.3. start(userId, levelId, currentElo, ip, ua)
+    GS->>GSS: 1.3.1. getActiveByPlayerId(userId)
+    GSS->>DB: 1.3.1.1. query(GameSession)
+    DB-->>GSS: GameSession?
+    GSS-->>GS: GameSession?
+    alt session exists within RESUME_WINDOW_MS
+        GS-->>R: {session, created: false}
+        R->>LOG: 1.3.2. log(session:resumed)
+        R-->>C: 200 GameSession
+    else session exists but expired
+        GS->>GSS: 1.3.2. abandon(sessionId)
+        GSS->>DB: 1.3.2.1. query(GameSession)
+        DB-->>GSS: ok
+        GS->>GSS: 1.3.3. reconcileAbandonedElo(session, currentElo)
+        GSS->>DB: 1.3.3.1. query(GameSession, EloHistory)
+        DB-->>GSS: ok
+    end
+    GS->>LS: 1.3.4. getById(levelId)
+    LS->>DB: 1.3.4.1. query(Level)
+    DB-->>LS: Level
+    LS-->>GS: Level
+    GS->>GSS: 1.3.5. create(userId, levelId, currentElo, maxAnswers, ip, ua)
+    GSS->>DB: 1.3.5.1. query(GameSession)
+    DB-->>GSS: GameSession
+    GSS-->>GS: GameSession
+    GS-->>R: {session, created: true}
+    R->>LBS: 1.4. invalidateGlobal()
+    R->>LBS: 1.5. invalidateByLevel(levelId)
+    R->>LOG: 1.6. log(session:started)
+    R-->>C: 201 GameSession
 
-        alt Session exists within RESUME_WINDOW_MS
-            GS-->>R: {session: existing, created: false}
-            R->>LOG: log(session:resumed)
-            R-->>C: 200 GameSession
-        else Session exists but expired
-            GS->>GSS: abandon({sessionId: old})
-            GSS->>DB: UPDATE game_sessions SET status=abandoned, ended_at=now()
-            GS->>GSS: reconcileAbandonedElo({session: old, currentElo})
-            GSS->>DB: UPDATE game_sessions SET elo_after + INSERT elo_history(reason=session_abandoned)
+    Note over C,DB: POST /:id/answer — Submit Answer
+    loop until max_answers reached or session ended
+        C->>R: 2. submitAnswer(sessionId, is_correct, time_taken_ms?)
+        R->>R: 2.1. authenticate()
+        alt unauthenticated
+            R-->>C: 401 Unauthorized
+        end
+        R->>R: 2.2. validate(RequestAnswerSchema)
+        alt invalid payload
+            R-->>C: 400 BadRequest
+        end
+        R->>GS: 2.3. answer(sessionId, isCorrect, timeTakenMs)
+        GS->>GSS: 2.3.1. getActiveById(sessionId)
+        GSS->>DB: 2.3.1.1. query(GameSession)
+        DB-->>GSS: GameSession?
+        GSS-->>GS: GameSession?
+        alt not found or not in_progress
+            GS-->>R: 404 NotFound
+            R-->>C: 404 NotFound
+        end
+        alt max_answers reached
+            GS-->>R: 409 Conflict
+            R-->>C: 409 Conflict
+        end
+        GS->>LS: 2.3.2. getById(session.level_id)
+        LS->>DB: 2.3.2.1. query(Level)
+        DB-->>LS: Level
+        LS-->>GS: Level
+        GS->>GS: 2.3.3. computeDelta(isCorrect, elo_gain_correct, elo_loss_incorrect)
+        GS->>GS: 2.3.4. computeStats(score, streak, maxStreak, eloDelta)
+        par update session stats
+            GS->>GSS: 2.3.5. updateStats(sessionId, score, correctCount, incorrectCount, currentStreak, maxStreak, eloDelta)
+            GSS->>DB: 2.3.5.1. query(GameSession)
+            DB-->>GSS: ok
+        and insert answer record
+            GS->>GSS: 2.3.6. insertAnswer(sessionId, isCorrect, delta, timeTakenMs)
+            GSS->>DB: 2.3.6.1. query(SessionAnswer)
             DB-->>GSS: ok
         end
-
-        GS->>LS: getById(levelId)
-        LS->>DB: SELECT * FROM levels WHERE id=$1 AND is_active=true
-        DB-->>LS: Level
-        GS->>GSS: create({userId, levelId, currentElo, maxAnswers, ip, userAgent})
-        GSS->>DB: INSERT INTO game_sessions
-        DB-->>GSS: GameSession
-        GS-->>R: {session: new, created: true}
-        R->>LBS: invalidateGlobal() + invalidateByLevel(levelId)
-        R->>LOG: log(session:started)
-        R-->>C: 201 GameSession
-    end
-
-    rect rgb(240, 255, 240)
-        Note over C,DB: POST /:id/answer — Submit Answer
-        C->>R: POST /:id/answer {is_correct, time_taken_ms?}
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>MW: validate(RequestAnswerSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>GS: answer({sessionId, isCorrect, timeTakenMs})
-        GS->>GSS: getActiveById({sessionId})
-        GSS->>DB: SELECT * FROM game_sessions WHERE id=$1 AND status=in_progress
-        DB-->>GSS: GameSession or null
-        GS-->>R: 404 (if null)
-        GS->>GS: check session.answers_count < max_answers
-        GS-->>R: 409 Conflict (if max reached)
-        GS->>LS: getById(session.level_id)
-        DB-->>LS: Level (elo_gain_correct, elo_loss_incorrect)
-        GS->>GS: delta = isCorrect ? +elo_gain_correct : -elo_loss_incorrect
-        GS->>GS: compute newScore, newStreak, newMaxStreak, newEloDelta
-        par
-            GS->>GSS: updateStats({sessionId, score, correctCount, incorrectCount, currentStreak, maxStreak, eloDelta})
-            GSS->>DB: UPDATE game_sessions SET stats
-        and
-            GS->>GSS: insertAnswer({sessionId, isCorrect, delta, timeTakenMs})
-            GSS->>DB: INSERT INTO session_answers
-        end
-        GS-->>R: ResponseAnswer {is_correct, elo_delta, current_streak, current_score}
+        GS-->>R: ResponseAnswer
         R-->>C: 200 ResponseAnswer
     end
 
-    rect rgb(255, 250, 240)
-        Note over C,DB: POST /:id/end — Complete Session
-        C->>R: POST /:id/end
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>GS: end({sessionId, userId, currentElo, status: "completed"})
-        GS->>GSS: getActiveById({sessionId})
-        DB-->>GSS: GameSession or null
-        GS-->>R: 404 (if null)
-        GS->>LS: getNextActive({afterId: session.level_id})
-        DB-->>LS: nextLevelId or null
-        GS->>GS: finalElo = GREATEST(0, currentElo + session.elo_delta)
-        par
-            GS->>GSS: finalize({sessionId, status: "completed", finalElo})
-            GSS->>DB: UPDATE game_sessions SET status=completed, elo_after=finalElo, ended_at=now()
-        and
-            GS->>PS: updateAfterSession({userId, eloDelta, status, nextLevelId, totalAnswered, totalCorrect, totalIncorrect, maxStreak})
-            PS->>DB: UPDATE players SET current_elo, highest_level_unlocked, stats, last_active_at
-        and
-            GS->>ES: append({userId, sessionId, eloBefore, eloAfter, delta, reason: "session_completed"})
-            ES->>DB: INSERT INTO elo_history
-        end
-        GS-->>R: {levelId}
-        R->>LBS: invalidateGlobal() + invalidateByLevel(levelId)
-        R->>LOG: log(session:ended) + log(elo:updated)
-        R-->>C: 200 null
+    Note over C,DB: POST /:id/end — Complete Session
+    C->>R: 3. endSession(sessionId)
+    R->>R: 3.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
-
-    rect rgb(255, 240, 255)
-        Note over C,DB: POST /:id/fail — Fail Session
-        C->>R: POST /:id/fail
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>GS: end({sessionId, userId, currentElo, status: "failed"})
-        GS->>GSS: getActiveById({sessionId})
-        DB-->>GSS: GameSession or null
-        GS-->>R: 404 (if null)
-        GS->>LS: getNextActive({afterId: session.level_id})
-        DB-->>LS: nextLevelId (not applied on fail)
-        GS->>GS: finalElo = currentElo (no delta on fail)
-        par
-            GS->>GSS: finalize({sessionId, status: "failed", finalElo: currentElo})
-            GSS->>DB: UPDATE game_sessions SET status=failed, elo_after=currentElo, ended_at=now()
-        and
-            GS->>PS: updateAfterSession({userId, eloDelta, status: "failed", ...})
-            PS->>DB: UPDATE players SET stats (elo unchanged)
-        and
-            GS->>ES: append({userId, sessionId, delta=0, reason: "session_failed"})
-            ES->>DB: INSERT INTO elo_history
-        end
-        GS-->>R: {levelId}
-        R->>LBS: invalidateGlobal() + invalidateByLevel(levelId)
-        R->>LOG: log(session:failed) + log(elo:updated)
-        R-->>C: 200 null
+    R->>GS: 3.2. end(sessionId, userId, currentElo, status: completed)
+    GS->>GSS: 3.2.1. getActiveById(sessionId)
+    GSS->>DB: 3.2.1.1. query(GameSession)
+    DB-->>GSS: GameSession?
+    GSS-->>GS: GameSession?
+    alt not found
+        GS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
     end
-
-    rect rgb(240, 255, 255)
-        Note over C,DB: POST /:id/abandon — Abandon Session
-        C->>R: POST /:id/abandon
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>GS: abandon({sessionId})
-        GS->>GSS: abandon({sessionId})
-        GSS->>DB: UPDATE game_sessions SET status=abandoned, ended_at=now() WHERE id=$1
+    GS->>LS: 3.2.2. getNextActive(afterId: session.level_id)
+    LS->>DB: 3.2.2.1. query(Level)
+    DB-->>LS: Level?
+    LS-->>GS: nextLevelId?
+    GS->>GS: 3.2.3. computeFinalElo(currentElo, session.elo_delta)
+    Note right of GS: finalElo = MAX(0, currentElo + elo_delta)
+    par finalize session
+        GS->>GSS: 3.2.4. finalize(sessionId, completed, finalElo)
+        GSS->>DB: 3.2.4.1. query(GameSession)
         DB-->>GSS: ok
-        GS-->>R: void
-        R->>LOG: log(session:abandoned)
-        R-->>C: 200 null
+    and update player
+        GS->>PS: 3.2.5. updateAfterSession(userId, eloDelta, completed, nextLevelId, stats)
+        PS->>DB: 3.2.5.1. query(Player)
+        DB-->>PS: ok
+    and append elo history
+        GS->>ES: 3.2.6. append(userId, sessionId, eloBefore, eloAfter, delta, session_completed)
+        ES->>DB: 3.2.6.1. query(EloHistory)
+        DB-->>ES: ok
     end
+    GS-->>R: {levelId}
+    R->>LBS: 3.3. invalidateGlobal()
+    R->>LBS: 3.4. invalidateByLevel(levelId)
+    R->>LOG: 3.5. log(session:ended)
+    R->>LOG: 3.6. log(elo:updated)
+    R-->>C: 200 null
+
+    Note over C,DB: POST /:id/fail — Fail Session
+    C->>R: 4. failSession(sessionId)
+    R->>R: 4.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
+    end
+    R->>GS: 4.2. end(sessionId, userId, currentElo, status: failed)
+    GS->>GSS: 4.2.1. getActiveById(sessionId)
+    GSS->>DB: 4.2.1.1. query(GameSession)
+    DB-->>GSS: GameSession?
+    GSS-->>GS: GameSession?
+    alt not found
+        GS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    GS->>LS: 4.2.2. getNextActive(afterId: session.level_id)
+    LS->>DB: 4.2.2.1. query(Level)
+    DB-->>LS: Level?
+    Note right of GS: finalElo = currentElo (no delta on fail)
+    par finalize session
+        GS->>GSS: 4.2.3. finalize(sessionId, failed, currentElo)
+        GSS->>DB: 4.2.3.1. query(GameSession)
+        DB-->>GSS: ok
+    and update player stats
+        GS->>PS: 4.2.4. updateAfterSession(userId, eloDelta: 0, failed, stats)
+        PS->>DB: 4.2.4.1. query(Player)
+        DB-->>PS: ok
+    and append elo history
+        GS->>ES: 4.2.5. append(userId, sessionId, delta: 0, session_failed)
+        ES->>DB: 4.2.5.1. query(EloHistory)
+        DB-->>ES: ok
+    end
+    GS-->>R: {levelId}
+    R->>LBS: 4.3. invalidateGlobal()
+    R->>LBS: 4.4. invalidateByLevel(levelId)
+    R->>LOG: 4.5. log(session:failed)
+    R->>LOG: 4.6. log(elo:updated)
+    R-->>C: 200 null
+
+    Note over C,DB: POST /:id/abandon — Abandon Session
+    C->>R: 5. abandonSession(sessionId)
+    R->>R: 5.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
+    end
+    R->>GS: 5.2. abandon(sessionId)
+    GS->>GSS: 5.2.1. abandon(sessionId)
+    GSS->>DB: 5.2.1.1. query(GameSession)
+    DB-->>GSS: ok
+    GS-->>R: void
+    R->>LOG: 5.3. log(session:abandoned)
+    R-->>C: 200 null
 ```
 
 ## Game Session State Machine

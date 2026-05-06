@@ -11,93 +11,111 @@ All endpoints require `authenticate`. Some require `authorize(permission)`.
 - `DELETE /:id` — soft delete level
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant C as Client
-    participant R as LevelsRouter
-    participant MW as Middleware
-    participant LS as LevelService
-    participant DB as Database
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> LevelsRoute"
+    participant LS as "<<service>> LevelService"
+    participant DB as "<<dataAccess>> Database"
 
-    rect rgb(240, 248, 255)
-        Note over C,DB: GET / — All Active Levels
-        C->>R: GET /
-        R->>MW: authenticate
-        MW-->>C: 401 Unauthorized (if not logged in)
-        R->>LS: getAll()
-        LS->>DB: SELECT * FROM levels WHERE is_active=true ORDER BY order_index
-        DB-->>LS: Level[] (validated per row with LevelSchema)
-        LS-->>R: Level[]
-        R-->>C: 200 Level[] or 204 No Content
+    Note over C,DB: GET / — All Active Levels
+    C->>R: 1. getLevels()
+    R->>R: 1.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>LS: 1.2. getAll()
+    LS->>DB: 1.2.1. query(Level[])
+    DB-->>LS: Level[]
+    LS-->>R: Level[]
+    R-->>C: 200 Level[] / 204 NoContent
 
-    rect rgb(240, 255, 240)
-        Note over C,DB: GET /:id — Single Level
-        C->>R: GET /:id
-        R->>MW: authenticate
-        MW-->>C: 401 Unauthorized (if not logged in)
-        R->>LS: getById(id)
-        LS->>DB: SELECT * FROM levels WHERE id=$1 AND is_active=true
-        DB-->>LS: Level or null
-        LS-->>R: 404 AppError (if null)
-        LS-->>R: Level
-        R-->>C: 200 Level
+    Note over C,DB: GET /:id — Single Level
+    C->>R: 2. getLevel(levelId)
+    R->>R: 2.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>LS: 2.2. getById(levelId)
+    LS->>DB: 2.2.1. query(Level)
+    DB-->>LS: Level?
+    alt not found
+        LS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    LS-->>R: Level
+    R-->>C: 200 Level
 
-    rect rgb(255, 250, 240)
-        Note over C,DB: POST / — Create Level
-        C->>R: POST / {name, order_index, elo_min, elo_gain_correct, elo_loss_incorrect, enemy_wave_config, question_gen_config, max_score, ...}
-        R->>MW: authenticate + authorize(level:create)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestCreateLevelSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>LS: create(body)
-        LS->>DB: INSERT INTO levels (JSON configs serialized)
-        DB-->>LS: Level row
-        LS-->>R: Level
-        R-->>C: 201 Level
+    Note over C,DB: POST / — Create Level
+    C->>R: 3. createLevel(name, order_index, elo_min, elo_gain_correct, elo_loss_incorrect, configs, max_score)
+    R->>R: 3.1. authenticate()
+    R->>R: 3.2. authorize(level:create)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 3.3. validate(RequestCreateLevelSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>LS: 3.4. create(body)
+    LS->>DB: 3.4.1. query(Level)
+    DB-->>LS: Level
+    LS-->>R: Level
+    R-->>C: 201 Level
 
-    rect rgb(255, 240, 255)
-        Note over C,DB: PUT /:id — Update Level
-        C->>R: PUT /:id {name?, elo_min?, elo_gain_correct?, ...}
-        R->>MW: authenticate + authorize(level:update)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestUpdateLevelSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>LS: update(id, body)
-        LS->>DB: UPDATE levels SET COALESCE(fields), updated_at=now() WHERE id=$1
-        DB-->>LS: Updated Level or null
-        LS-->>R: 404 AppError (if null)
-        LS-->>R: Level
-        R-->>C: 200 Level
+    Note over C,DB: PUT /:id — Update Level
+    C->>R: 4. updateLevel(levelId, fields?)
+    R->>R: 4.1. authenticate()
+    R->>R: 4.2. authorize(level:update)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 4.3. validate(RequestUpdateLevelSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>LS: 4.4. update(levelId, body)
+    LS->>DB: 4.4.1. query(Level)
+    DB-->>LS: Level?
+    alt not found
+        LS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    LS-->>R: Level
+    R-->>C: 200 Level
 
-    rect rgb(240, 255, 255)
-        Note over C,DB: PUT /active/:id — Activate or Deactivate Level
-        C->>R: PUT /active/:id {is_active}
-        R->>MW: authenticate + authorize(level:activate)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestUpdateActiveLevelSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>LS: activate(id, {is_active})
-        LS->>DB: UPDATE levels SET is_active=$2, updated_at=now() WHERE id=$1
-        DB-->>LS: Updated Level or null
-        LS-->>R: 404 AppError (if null)
-        LS-->>R: Level
-        R-->>C: 200 Level
+    Note over C,DB: PUT /active/:id — Activate or Deactivate Level
+    C->>R: 5. setLevelActive(levelId, is_active)
+    R->>R: 5.1. authenticate()
+    R->>R: 5.2. authorize(level:activate)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 5.3. validate(RequestUpdateActiveLevelSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>LS: 5.4. activate(levelId, is_active)
+    LS->>DB: 5.4.1. query(Level)
+    DB-->>LS: Level?
+    alt not found
+        LS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    LS-->>R: Level
+    R-->>C: 200 Level
 
-    rect rgb(255, 255, 240)
-        Note over C,DB: DELETE /:id — Soft Delete Level
-        C->>R: DELETE /:id
-        R->>MW: authenticate + authorize(level:delete)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>LS: delete(id)
-        LS->>DB: UPDATE levels SET is_active=false, updated_at=now() WHERE id=$1
-        DB-->>LS: ok
-        LS-->>R: void
-        R-->>C: 204 No Content
+    Note over C,DB: DELETE /:id — Soft Delete Level
+    C->>R: 6. deleteLevel(levelId)
+    R->>R: 6.1. authenticate()
+    R->>R: 6.2. authorize(level:delete)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>LS: 6.3. delete(levelId)
+    LS->>DB: 6.3.1. query(Level)
+    DB-->>LS: ok
+    R-->>C: 204 NoContent
 ```
 
 ## Notes

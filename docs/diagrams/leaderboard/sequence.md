@@ -9,98 +9,101 @@ All endpoints require `authenticate`. Cache clear requires `authorize("admin:ful
 - `DELETE /cache/clear` — clear all cache (admin)
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant C as Client
-    participant R as LeaderboardRouter
-    participant MW as Middleware
-    participant LBS as LeaderboardService
-    participant CACHE as LeaderboardCache
-    participant DB as Database
-    participant L as LoggingService
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> LeaderboardRoute"
+    participant LBS as "<<service>> LeaderboardService"
+    participant CACHE as "<<cache>> LeaderboardCache"
+    participant DB as "<<dataAccess>> Database"
+    participant LOG as "<<service>> LoggingService"
 
-    rect rgb(240, 248, 255)
-        Note over C,L: GET /global — Global Leaderboard
-        C->>R: GET /global?cursor=&limit=
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>R: parsePagination(query)
-        R->>LBS: getGlobal(pagination)
-        LBS->>CACHE: get(cacheKey)
-        alt Cache hit
-            CACHE-->>LBS: cached data
-            LBS->>L: log(cache:hit)
-            LBS-->>R: PaginatedData
-        else Cache miss
-            CACHE-->>LBS: null
-            LBS->>L: log(cache:miss)
-            LBS->>DB: SELECT players + LEFT JOIN game_sessions(completed) WHERE current_elo < cursor GROUP BY player ORDER BY current_elo DESC LIMIT n
-            DB-->>LBS: GlobalLeaderboardRow[]
-            LBS->>CACHE: set(cacheKey, data)
-            LBS-->>R: PaginatedData
-        end
-        R-->>C: 200 PaginatedData<GlobalLeaderboardRow>
+    Note over C,LOG: GET /global — Global Leaderboard
+    C->>R: 1. getGlobalLeaderboard(cursor?, limit?)
+    R->>R: 1.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>R: 1.2. parsePagination(query)
+    R->>LBS: 1.3. getGlobal(pagination)
+    LBS->>CACHE: 1.3.1. get(cacheKey)
+    alt cache hit
+        CACHE-->>LBS: PaginatedData
+        LBS->>LOG: 1.3.2. log(cache:hit)
+        LBS-->>R: PaginatedData
+    else cache miss
+        CACHE-->>LBS: null
+        LBS->>LOG: 1.3.2. log(cache:miss)
+        LBS->>DB: 1.3.3. query(GlobalLeaderboardRow[])
+        DB-->>LBS: GlobalLeaderboardRow[]
+        LBS->>CACHE: 1.3.4. set(cacheKey, data)
+        LBS-->>R: PaginatedData
+    end
+    R-->>C: 200 PaginatedData<GlobalLeaderboardRow>
 
-    rect rgb(240, 255, 240)
-        Note over C,L: GET /levels/:id — Level Leaderboard
-        C->>R: GET /levels/:id?cursor=&limit=&period=
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>R: parsePagination(query) + parsePeriod(query)
-        R->>LBS: getByLevel(levelId, pagination, period)
-        LBS->>CACHE: get(cacheKey with levelId+period)
-        alt Cache hit
-            CACHE-->>LBS: cached data
-            LBS->>L: log(cache:hit)
-            LBS-->>R: PaginatedData
-        else Cache miss
-            CACHE-->>LBS: null
-            LBS->>L: log(cache:miss)
-            LBS->>LBS: periodToStartDate(period)
-            LBS->>DB: SELECT player_id, MAX(score) best_score, MAX(max_streak) FROM game_sessions JOIN players WHERE level_id=$1 AND status=completed AND ended_at >= start_date GROUP BY player HAVING best_score < cursor ORDER BY best_score DESC LIMIT n
-            DB-->>LBS: LevelLeaderboardRow[]
-            LBS->>CACHE: set(cacheKey, data)
-            LBS-->>R: PaginatedData
-        end
-        R-->>C: 200 PaginatedData<LevelLeaderboardRow>
+    Note over C,LOG: GET /levels/:id — Level Leaderboard
+    C->>R: 2. getLevelLeaderboard(levelId, cursor?, limit?, period?)
+    R->>R: 2.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>R: 2.2. parsePagination(query)
+    R->>R: 2.3. parsePeriod(query)
+    R->>LBS: 2.4. getByLevel(levelId, pagination, period)
+    LBS->>CACHE: 2.4.1. get(cacheKey)
+    alt cache hit
+        CACHE-->>LBS: PaginatedData
+        LBS->>LOG: 2.4.2. log(cache:hit)
+        LBS-->>R: PaginatedData
+    else cache miss
+        CACHE-->>LBS: null
+        LBS->>LOG: 2.4.2. log(cache:miss)
+        LBS->>LBS: 2.4.3. periodToStartDate(period)
+        LBS->>DB: 2.4.4. query(LevelLeaderboardRow[])
+        DB-->>LBS: LevelLeaderboardRow[]
+        LBS->>CACHE: 2.4.5. set(cacheKey, data)
+        LBS-->>R: PaginatedData
+    end
+    R-->>C: 200 PaginatedData<LevelLeaderboardRow>
 
-    rect rgb(255, 250, 240)
-        Note over C,L: GET /classrooms/:id — Classroom Leaderboard
-        C->>R: GET /classrooms/:id?cursor=&limit=&period=
-        R->>MW: authenticate
-        MW-->>C: 401 (if not logged in)
-        R->>R: parsePagination(query) + parsePeriod(query)
-        R->>LBS: getByClassroom(classroomId, pagination, period)
-        LBS->>CACHE: get(cacheKey with classroomId+period)
-        alt Cache hit
-            CACHE-->>LBS: cached data
-            LBS->>L: log(cache:hit)
-            LBS-->>R: PaginatedData
-        else Cache miss
-            CACHE-->>LBS: null
-            LBS->>L: log(cache:miss)
-            LBS->>LBS: periodToStartDate(period)
-            LBS->>DB: SELECT cm.player_id, username, display_name, classroom_elo, MAX(gs.max_streak) FROM classroom_members cm JOIN players JOIN game_sessions(completed, period) WHERE cm.classroom_id=$1 AND classroom_elo < cursor GROUP BY player ORDER BY classroom_elo DESC LIMIT n
-            DB-->>LBS: ClassroomLeaderboardRow[]
-            LBS->>CACHE: set(cacheKey, data)
-            LBS-->>R: PaginatedData
-        end
-        R-->>C: 200 PaginatedData<ClassroomLeaderboardRow>
+    Note over C,LOG: GET /classrooms/:id — Classroom Leaderboard
+    C->>R: 3. getClassroomLeaderboard(classroomId, cursor?, limit?, period?)
+    R->>R: 3.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>R: 3.2. parsePagination(query)
+    R->>R: 3.3. parsePeriod(query)
+    R->>LBS: 3.4. getByClassroom(classroomId, pagination, period)
+    LBS->>CACHE: 3.4.1. get(cacheKey)
+    alt cache hit
+        CACHE-->>LBS: PaginatedData
+        LBS->>LOG: 3.4.2. log(cache:hit)
+        LBS-->>R: PaginatedData
+    else cache miss
+        CACHE-->>LBS: null
+        LBS->>LOG: 3.4.2. log(cache:miss)
+        LBS->>LBS: 3.4.3. periodToStartDate(period)
+        LBS->>DB: 3.4.4. query(ClassroomLeaderboardRow[])
+        DB-->>LBS: ClassroomLeaderboardRow[]
+        LBS->>CACHE: 3.4.5. set(cacheKey, data)
+        LBS-->>R: PaginatedData
+    end
+    R-->>C: 200 PaginatedData<ClassroomLeaderboardRow>
 
-    rect rgb(255, 240, 255)
-        Note over C,L: DELETE /cache/clear — Clear Cache (Admin)
-        C->>R: DELETE /cache/clear
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>LBS: invalidateAll()
-        LBS->>CACHE: clear all entries
-        LBS->>L: log(cache:pruned)
-        R->>CACHE: serialize()
-        CACHE-->>R: cache state snapshot
-        R-->>C: 200 cache state
+    Note over C,LOG: DELETE /cache/clear — Clear Cache (Admin)
+    C->>R: 4. clearCache()
+    R->>R: 4.1. authenticate()
+    R->>R: 4.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>LBS: 4.3. invalidateAll()
+    LBS->>CACHE: 4.3.1. clear()
+    LBS->>LOG: 4.3.2. log(cache:pruned)
+    R->>CACHE: 4.4. serialize()
+    CACHE-->>R: CacheSnapshot
+    R-->>C: 200 CacheSnapshot
 ```
 
 ## Cache Key Structure

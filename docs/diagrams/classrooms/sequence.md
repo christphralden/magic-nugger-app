@@ -12,106 +12,133 @@ All endpoints require `authenticate`. Specific endpoints additionally require `a
 - `DELETE /:id/leave` — leave classroom
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant C as Client
-    participant R as ClassroomsRouter
-    participant MW as Middleware
-    participant CS as ClassroomService
-    participant DB as Database
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> ClassroomsRoute"
+    participant CS as "<<service>> ClassroomService"
+    participant DB as "<<dataAccess>> Database"
 
-    rect rgb(240, 248, 255)
-        Note over C,DB: POST / — Create Classroom
-        C->>R: POST / {name, description, visibility, starting_elo, elo_cap}
-        R->>MW: authenticate + authorize(classroom:create)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestCreateClassroomSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>CS: create(teacherId, body)
-        CS->>CS: generate invite_code = UUID.slice(0,8).toUpperCase()
-        CS->>DB: INSERT INTO classrooms (name, description, teacher_id, visibility, starting_elo, elo_cap, invite_code)
-        DB-->>CS: Classroom row
-        CS-->>R: Classroom
-        R-->>C: 201 Classroom
+    Note over C,DB: POST / — Create Classroom
+    C->>R: 1. createClassroom(name, description, visibility, starting_elo, elo_cap)
+    R->>R: 1.1. authenticate()
+    R->>R: 1.2. authorize(classroom:create)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 1.3. validate(RequestCreateClassroomSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>CS: 1.4. create(teacherId, body)
+    CS->>CS: 1.4.1. generateInviteCode()
+    CS->>DB: 1.4.2. query(Classroom)
+    DB-->>CS: Classroom
+    CS-->>R: Classroom
+    R-->>C: 201 Classroom
 
-    rect rgb(240, 255, 240)
-        Note over C,DB: GET / — List Classrooms
-        C->>R: GET /
-        R->>MW: authenticate
-        MW-->>C: 401 (if unauthorized)
-        R-->>C: 200 [] (TODO: filter by role)
+    Note over C,DB: GET / — List Classrooms
+    C->>R: 2. listClassrooms()
+    R->>R: 2.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R-->>C: 200 []
 
-    rect rgb(255, 250, 240)
-        Note over C,DB: GET /:id — Get Classroom
-        C->>R: GET /:id
-        R->>MW: authenticate
-        MW-->>C: 401 (if unauthorized)
-        R->>CS: getById(id)
-        CS->>DB: SELECT * FROM classrooms WHERE id=$1 AND is_active=true
-        DB-->>CS: Classroom or null
-        CS-->>R: 404 AppError (if null)
-        CS-->>R: Classroom
-        R-->>C: 200 Classroom
+    Note over C,DB: GET /:id — Get Classroom
+    C->>R: 3. getClassroom(classroomId)
+    R->>R: 3.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
     end
+    R->>CS: 3.2. getById(classroomId)
+    CS->>DB: 3.2.1. query(Classroom)
+    DB-->>CS: Classroom?
+    alt not found
+        CS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    CS-->>R: Classroom
+    R-->>C: 200 Classroom
 
-    rect rgb(255, 240, 255)
-        Note over C,DB: PATCH /:id — Update Classroom
-        C->>R: PATCH /:id {name?, description?, visibility?, starting_elo?, elo_cap?}
-        R->>MW: authenticate + authorize(classroom:update)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestUpdateClassroomSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>DB: SELECT teacher_id FROM classrooms WHERE id=$1
-        DB-->>R: {teacher_id}
-        R-->>C: 403 Forbidden (if teacher_id != user.id)
-        R->>CS: update(id, body)
-        CS->>DB: UPDATE classrooms SET COALESCE(fields) WHERE id=$1 AND is_active=true
-        DB-->>CS: Updated Classroom or null
-        CS-->>R: 404 AppError (if null)
-        CS-->>R: Classroom
-        R-->>C: 200 Classroom
+    Note over C,DB: PATCH /:id — Update Classroom
+    C->>R: 4. updateClassroom(classroomId, name?, description?, visibility?, starting_elo?, elo_cap?)
+    R->>R: 4.1. authenticate()
+    R->>R: 4.2. authorize(classroom:update)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 4.3. validate(RequestUpdateClassroomSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>DB: 4.4. query(Classroom)
+    DB-->>R: {teacher_id}?
+    alt teacher_id != user.id
+        R-->>C: 403 Forbidden
+    end
+    R->>CS: 4.5. update(classroomId, body)
+    CS->>DB: 4.5.1. query(Classroom)
+    DB-->>CS: Classroom?
+    alt not found
+        CS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    CS-->>R: Classroom
+    R-->>C: 200 Classroom
 
-    rect rgb(240, 255, 255)
-        Note over C,DB: DELETE /:id — Delete Classroom (soft)
-        C->>R: DELETE /:id
-        R->>MW: authenticate + authorize(classroom:delete)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>DB: SELECT teacher_id FROM classrooms WHERE id=$1
-        DB-->>R: {teacher_id}
-        R-->>C: 403 Forbidden (if teacher_id != user.id)
-        R->>CS: delete(id)
-        CS->>DB: UPDATE classrooms SET is_active=false, updated_at=now() WHERE id=$1
-        DB-->>CS: rowCount
-        CS-->>R: 404 AppError (if rowCount=0)
-        R-->>C: 200 null
+    Note over C,DB: DELETE /:id — Delete Classroom
+    C->>R: 5. deleteClassroom(classroomId)
+    R->>R: 5.1. authenticate()
+    R->>R: 5.2. authorize(classroom:delete)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>DB: 5.3. query(Classroom)
+    DB-->>R: {teacher_id}?
+    alt teacher_id != user.id
+        R-->>C: 403 Forbidden
+    end
+    R->>CS: 5.4. delete(classroomId)
+    CS->>DB: 5.4.1. query(Classroom)
+    DB-->>CS: rowCount
+    alt not found
+        CS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    R-->>C: 200 null
 
-    rect rgb(255, 255, 240)
-        Note over C,DB: POST /join — Join Classroom
-        C->>R: POST /join {invite_code}
-        R->>MW: authenticate + authorize(classroom:join)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestJoinClassroomSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>CS: join(playerId, invite_code)
-        CS->>DB: SELECT id, starting_elo FROM classrooms WHERE invite_code=$1 AND is_active=true
-        DB-->>CS: {id, starting_elo} or null
-        CS-->>R: 404 AppError "Invalid invite code" (if null)
-        CS->>DB: INSERT INTO classroom_members (classroom_id, player_id, classroom_elo=starting_elo) ON CONFLICT DO NOTHING
-        DB-->>CS: ok
-        R-->>C: 200 null
+    Note over C,DB: POST /join — Join Classroom
+    C->>R: 6. joinClassroom(invite_code)
+    R->>R: 6.1. authenticate()
+    R->>R: 6.2. authorize(classroom:join)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 6.3. validate(RequestJoinClassroomSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>CS: 6.4. join(playerId, invite_code)
+    CS->>DB: 6.4.1. query(Classroom)
+    DB-->>CS: {id, starting_elo}?
+    alt invalid invite code
+        CS-->>R: 404 NotFound
+        R-->>C: 404 NotFound
+    end
+    CS->>DB: 6.4.2. query(ClassroomMember)
+    DB-->>CS: ok
+    R-->>C: 200 null
 
-    rect rgb(248, 240, 255)
-        Note over C,DB: DELETE /:id/leave — Leave Classroom
-        C->>R: DELETE /:id/leave
-        R->>MW: authenticate + authorize(classroom:leave)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>CS: leave(playerId, classroomId)
-        CS->>DB: DELETE FROM classroom_members WHERE classroom_id=$1 AND player_id=$2
-        DB-->>CS: ok (idempotent)
-        R-->>C: 200 null
+    Note over C,DB: DELETE /:id/leave — Leave Classroom
+    C->>R: 7. leaveClassroom(classroomId)
+    R->>R: 7.1. authenticate()
+    R->>R: 7.2. authorize(classroom:leave)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>CS: 7.3. leave(playerId, classroomId)
+    CS->>DB: 7.3.1. query(ClassroomMember)
+    DB-->>CS: ok
+    R-->>C: 200 null
 ```

@@ -11,87 +11,102 @@ All endpoints require: `authenticate` + `authorize("admin:full")`
 - `GET /stats`
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 sequenceDiagram
-    participant C as Client
-    participant R as AdminRouter
-    participant MW as Middleware
-    participant DB as Database
-    participant LS as LeaderboardService
-    participant L as LoggingService
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> AdminRoute"
+    participant LBS as "<<service>> LeaderboardService"
+    participant DB as "<<dataAccess>> Database"
+    participant LOG as "<<service>> LoggingService"
 
-    rect rgb(240, 248, 255)
-        Note over C,L: GET /players
-        C->>R: GET /players?cursor=&limit=
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>R: parsePagination(query)
-        R->>DB: SELECT players WHERE created_at < cursor ORDER BY created_at DESC LIMIT n
-        DB-->>R: Player[]
-        R->>L: log(admin:player_viewed, userId)
-        R-->>C: 200 PaginatedData<Player>
+    Note over C,LOG: GET /players
+    C->>R: 1. listPlayers(cursor?, limit?)
+    R->>R: 1.1. authenticate()
+    R->>R: 1.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 1.3. parsePagination(query)
+    R->>DB: 1.4. query(Player[])
+    DB-->>R: Player[]
+    R->>LOG: 1.5. log(admin:player_viewed)
+    R-->>C: 200 PaginatedData<Player>
 
-    rect rgb(240, 255, 240)
-        Note over C,L: PATCH /players/:id/role
-        C->>R: PATCH /players/:id/role {role}
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate({role: string})
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>DB: UPDATE players SET role_id = (SELECT id FROM roles WHERE name=$role)
-        DB-->>R: {id} or 0 rows
-        R-->>C: 404 Not Found (if 0 rows)
-        R->>L: log(admin:role_changed, {target_player_id, new_role})
-        R-->>C: 200 OK
+    Note over C,LOG: PATCH /players/:id/role
+    C->>R: 2. setPlayerRole(playerId, role)
+    R->>R: 2.1. authenticate()
+    R->>R: 2.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 2.3. validate(role)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>DB: 2.4. query(Player)
+    DB-->>R: Player?
+    alt not found
+        R-->>C: 404 NotFound
+    end
+    R->>LOG: 2.5. log(admin:role_changed)
+    R-->>C: 200 null
 
-    rect rgb(255, 250, 240)
-        Note over C,L: PATCH /players/:id/elo
-        C->>R: PATCH /players/:id/elo {elo, reason}
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>MW: validate(RequestAdjustEloSchema)
-        MW-->>C: 400 Bad Request (if invalid)
-        R->>DB: SELECT current_elo FROM players WHERE id=$id
-        DB-->>R: {current_elo} or null
-        R-->>C: 404 Not Found (if null)
-        R->>DB: tx: UPDATE players.current_elo + INSERT elo_history(reason=admin_adjustment)
-        DB-->>R: ok
-        R->>LS: invalidateGlobal()
-        R->>L: log(admin:elo_adjusted) + log(elo:admin_adjusted)
-        R-->>C: 200 OK
+    Note over C,LOG: PATCH /players/:id/elo
+    C->>R: 3. adjustPlayerElo(playerId, elo, reason)
+    R->>R: 3.1. authenticate()
+    R->>R: 3.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 3.3. validate(RequestAdjustEloSchema)
+    alt invalid payload
+        R-->>C: 400 BadRequest
+    end
+    R->>DB: 3.4. query(Player)
+    DB-->>R: {current_elo}?
+    alt not found
+        R-->>C: 404 NotFound
+    end
+    R->>DB: 3.5. tx: query(Player, EloHistory)
+    DB-->>R: ok
+    R->>LBS: 3.6. invalidateGlobal()
+    R->>LOG: 3.7. log(admin:elo_adjusted)
+    R->>LOG: 3.8. log(elo:admin_adjusted)
+    R-->>C: 200 null
 
-    rect rgb(255, 240, 255)
-        Note over C,L: GET /game-sessions/active
-        C->>R: GET /game-sessions/active
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>DB: SELECT * FROM game_sessions WHERE status='in_progress' ORDER BY started_at DESC LIMIT 100
-        DB-->>R: GameSession[]
-        R->>L: log(admin:sessions_viewed, {filter: active})
-        R-->>C: 200 GameSession[]
+    Note over C,LOG: GET /game-sessions/active
+    C->>R: 4. getActiveSessions()
+    R->>R: 4.1. authenticate()
+    R->>R: 4.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>DB: 4.3. query(GameSession[])
+    DB-->>R: GameSession[]
+    R->>LOG: 4.4. log(admin:sessions_viewed)
+    R-->>C: 200 GameSession[]
 
-    rect rgb(240, 255, 255)
-        Note over C,L: GET /game-sessions
-        C->>R: GET /game-sessions?player_id=&level_id=&status=&cursor=&limit=
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>R: parsePagination + build dynamic WHERE conditions
-        R->>DB: SELECT game_sessions with filters ORDER BY started_at DESC LIMIT n
-        DB-->>R: GameSession[]
-        R->>L: log(admin:sessions_viewed, filter)
-        R-->>C: 200 PaginatedData<GameSession>
+    Note over C,LOG: GET /game-sessions
+    C->>R: 5. listSessions(player_id?, level_id?, status?, cursor?, limit?)
+    R->>R: 5.1. authenticate()
+    R->>R: 5.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>R: 5.3. parsePagination(query)
+    R->>DB: 5.4. query(GameSession[])
+    DB-->>R: GameSession[]
+    R->>LOG: 5.5. log(admin:sessions_viewed)
+    R-->>C: 200 PaginatedData<GameSession>
 
-    rect rgb(255, 255, 240)
-        Note over C,L: GET /stats
-        C->>R: GET /stats
-        R->>MW: authenticate + authorize(admin:full)
-        MW-->>C: 401/403 (if unauthorized)
-        R->>DB: SELECT COUNT total_players, total_sessions, completed_sessions
-        DB-->>R: stats row
-        R-->>C: 200 {total_players, total_sessions, completed_sessions}
+    Note over C,LOG: GET /stats
+    C->>R: 6. getStats()
+    R->>R: 6.1. authenticate()
+    R->>R: 6.2. authorize(admin:full)
+    alt unauthorized
+        R-->>C: 401/403
     end
+    R->>DB: 6.3. query(Stats)
+    DB-->>R: Stats
+    R-->>C: 200 Stats
 ```
