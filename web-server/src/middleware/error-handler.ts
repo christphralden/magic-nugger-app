@@ -3,6 +3,7 @@ import { AppError } from "@/errors/app-error.js";
 import { PgErrorCode } from "@/constants/db.js";
 import { ErrorCode, type ApiResponse } from "@magic-nugger-app/shared";
 import { isPgError } from "@/utils/errors";
+import { loggingService } from "@/services/logging.service";
 
 export const errorHandler = (
   error: unknown,
@@ -10,8 +11,12 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
+  loggingService.log({
+    event: "error:unhandled",
+    level: "fatal",
+    description: (error as any).message || "",
+  });
   console.log("[web-server][error] caught unhandled error", error);
-
   const isLocalEnvironment = process.env.ENVIRONMENT === "local";
 
   if (error instanceof AppError) {

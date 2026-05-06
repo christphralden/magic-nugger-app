@@ -16,6 +16,7 @@ export const loggingService = {
     description?: string | null;
     metadata?: Record<string, unknown> | null;
   }): void {
+    // fire and forget
     try {
       getDb().query(
         `INSERT INTO audit.log_events (user_id, event, level, description, metadata)

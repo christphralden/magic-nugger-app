@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { authenticate } from "@/middleware/authenticate";
+import { authenticate, currentUser } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { validate } from "@/middleware/validate";
 import { parsePagination } from "@/utils/pagination";
 import { RequestAdjustEloSchema, ErrorCode } from "@magic-nugger-app/shared";
 import { leaderboardService } from "@/services/leaderboard.service";
+import { loggingService } from "@/services/logging.service";
 import type {
   ApiResponse,
   Player,
@@ -19,6 +20,7 @@ export const adminRouter = Router();
 adminRouter.use(authenticate, authorize("admin:full"));
 
 adminRouter.get("/players", async (req, res) => {
+  const admin = currentUser(req);
   const { cursor, limit } = parsePagination(req.query);
   const { rows } = await getDb().query<Player>(
     `SELECT id, username, display_name, email, role_id, current_elo, created_at
@@ -32,6 +34,11 @@ adminRouter.get("/players", async (req, res) => {
     rows.length === limit
       ? new Date(rows[rows.length - 1].created_at).getTime()
       : null;
+  loggingService.log({
+    event: "admin:player_viewed",
+    level: "info",
+    userId: admin.id,
+  });
   res.json({
     code: 200,
     error: null,
@@ -43,6 +50,7 @@ adminRouter.patch(
   "/players/:id/role",
   validate(z.object({ role: z.string() })),
   async (req, res) => {
+    const admin = currentUser(req);
     const { rows } = await getDb().query(
       `UPDATE players SET role_id = (SELECT id FROM roles WHERE name = $2), updated_at = now() WHERE id = $1 RETURNING id`,
       [req.params.id, req.body.role],
@@ -54,6 +62,12 @@ adminRouter.patch(
         data: null,
       } satisfies ApiResponse<null>);
     }
+    loggingService.log({
+      event: "admin:role_changed",
+      level: "info",
+      userId: admin.id,
+      metadata: { target_player_id: req.params.id, new_role: req.body.role },
+    });
     res.json({
       code: 200,
       error: null,
@@ -66,6 +80,7 @@ adminRouter.patch(
   "/players/:id/elo",
   validate(RequestAdjustEloSchema),
   async (req, res) => {
+    const admin = currentUser(req);
     const { elo } = req.body;
     const { rows: playerRows } = await getDb().query<{ current_elo: number }>(
       `SELECT current_elo FROM players WHERE id = $1`,
@@ -99,6 +114,18 @@ adminRouter.patch(
     });
 
     leaderboardService.invalidateGlobal();
+    loggingService.log({
+      event: "admin:elo_adjusted",
+      level: "info",
+      userId: admin.id,
+      metadata: { target_player_id: req.params.id, before, after, delta },
+    });
+    loggingService.log({
+      event: "elo:admin_adjusted",
+      level: "info",
+      userId: req.params.id,
+      metadata: { adjusted_by: admin.id, before, after, delta },
+    });
     res.json({
       code: 200,
       error: null,
@@ -107,14 +134,20 @@ adminRouter.patch(
   },
 );
 
-adminRouter.get("/game-sessions/active", async (_req, res) => {
-  // no pagination needed since bounded to active sessions
+adminRouter.get("/game-sessions/active", async (req, res) => {
+  const admin = currentUser(req);
   const { rows } = await getDb().query<GameSession>(
     `SELECT * FROM game_sessions
      WHERE status = 'in_progress'
      ORDER BY started_at DESC
      LIMIT 100`,
   );
+  loggingService.log({
+    event: "admin:sessions_viewed",
+    level: "info",
+    userId: admin.id,
+    metadata: { filter: "active" },
+  });
   res.json({
     code: 200,
     error: null,
@@ -123,6 +156,7 @@ adminRouter.get("/game-sessions/active", async (_req, res) => {
 });
 
 adminRouter.get("/game-sessions", async (req, res) => {
+  const admin = currentUser(req);
   const { player_id, level_id, status } = req.query;
   const { cursor, limit } = parsePagination(req.query);
   const conditions: string[] = [];
@@ -156,6 +190,12 @@ adminRouter.get("/game-sessions", async (req, res) => {
     rows.length === limit
       ? new Date(rows[rows.length - 1].started_at).getTime()
       : null;
+  loggingService.log({
+    event: "admin:sessions_viewed",
+    level: "info",
+    userId: admin.id,
+    metadata: { filter: { player_id, level_id, status } },
+  });
   res.json({
     code: 200,
     error: null,

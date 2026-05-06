@@ -8,6 +8,7 @@ import {
 } from "@magic-nugger-app/shared";
 import { gameService } from "@/services/game.service.js";
 import { leaderboardService } from "@/services/leaderboard.service.js";
+import { loggingService } from "@/services/logging.service.js";
 import type {
   ApiResponse,
   GameSession,
@@ -31,12 +32,24 @@ gameRouter.post(
       userAgent: getUserAgent(req),
     });
     if (!created) {
+      loggingService.log({
+        event: "session:resumed",
+        level: "info",
+        userId: user.id,
+        metadata: { session_id: session.id },
+      });
       return res.json({
         code: 200,
         error: null,
         data: session,
       } satisfies ApiResponse<GameSession>);
     }
+    loggingService.log({
+      event: "session:started",
+      level: "info",
+      userId: user.id,
+      metadata: { session_id: session.id, level_id: req.body.level_id },
+    });
     res.status(201).json({
       code: 201,
       error: null,
@@ -72,6 +85,18 @@ gameRouter.post("/:id/end", async (req, res) => {
   });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
+  loggingService.log({
+    event: "session:ended",
+    level: "info",
+    userId: user.id,
+    metadata: { session_id: req.params.id },
+  });
+  loggingService.log({
+    event: "elo:updated",
+    level: "info",
+    userId: user.id,
+    metadata: { session_id: req.params.id, reason: "session_completed" },
+  });
   res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
 });
 
@@ -85,10 +110,27 @@ gameRouter.post("/:id/fail", async (req, res) => {
   });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
+  loggingService.log({
+    event: "session:failed",
+    level: "info",
+    userId: user.id,
+    metadata: { session_id: req.params.id },
+  });
+  loggingService.log({
+    event: "elo:updated",
+    level: "info",
+    userId: user.id,
+    metadata: { session_id: req.params.id, reason: "session_failed" },
+  });
   res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
 });
 
 gameRouter.post("/:id/abandon", async (req, res) => {
   await gameService.abandon({ sessionId: req.params.id });
+  loggingService.log({
+    event: "session:abandoned",
+    level: "info",
+    metadata: { session_id: req.params.id },
+  });
   res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
 });

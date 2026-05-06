@@ -11,6 +11,7 @@ import {
 } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
 import { getDb } from "@/db/transaction-context";
+import { loggingService } from "@/services/logging.service";
 
 export const authRouter = Router();
 
@@ -55,6 +56,12 @@ authRouter.post("/login", validate(RequestLoginSchema), (req, res, next) => {
       if (loginErr) return next(loginErr);
       const player = toResponsePlayer(user);
       if (!player) return next(new Error("user mapping failed"));
+      loggingService.log({
+        event: "auth:login",
+        level: "info",
+        userId: user.id,
+        description: user.email,
+      });
       res.json({
         code: 200,
         error: null,
@@ -69,18 +76,32 @@ authRouter.get(
   passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
-authRouter.get(
-  "/oauth/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "/",
-    successRedirect: "/levels",
-  }),
-);
+authRouter.get("/oauth/google/callback", (req, res, next) => {
+  passport.authenticate("google", (err: unknown, user: Express.User) => {
+    if (err || !user) return res.redirect("/");
+    req.logIn(user, (loginErr) => {
+      if (loginErr) return next(loginErr);
+      loggingService.log({
+        event: "auth:oauth_login",
+        level: "info",
+        userId: user.id,
+        description: user.email,
+      });
+      return res.redirect("/levels");
+    });
+  })(req, res, next);
+});
 
 authRouter.use(authenticate);
 
 authRouter.post("/logout", (req, res) => {
+  const userId = req.user?.id ?? null;
   req.logout(() => {
+    loggingService.log({
+      event: "auth:logout",
+      level: "info",
+      userId,
+    });
     res.json({
       code: 200,
       error: null,
