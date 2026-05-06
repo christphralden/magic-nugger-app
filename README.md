@@ -18,8 +18,8 @@ cp .env.local.example .env.local
 # 2. Install dependencies
 npm install
 
-# 3. Start Postgres
-docker compose --env-file=.env.local -f docker-compose.dev.yml up -d magic-nugger-postgres
+# 3. Start Postgres + cron
+docker compose --env-file=.env.local -f docker-compose.dev.yml up -d magic-nugger-postgres magic-nugger-cron
 
 # 4. Run migrations
 npm run db:migrate
@@ -200,6 +200,15 @@ erDiagram
         varchar     http_method
     }
 
+    audit.log_events {
+        uuid        id         PK
+        uuid        user_id    FK
+        varchar     event
+        varchar     level
+        jsonb       metadata
+        timestamptz created_at
+    }
+
     roles            ||--|{ role_permissions    : "role_id"
     permissions      ||--|{ role_permissions    : "permission_id"
     roles            ||--o{ players             : "role_id"
@@ -212,11 +221,13 @@ erDiagram
     players          ||--o{ elo_history         : "player_id"
     game_sessions    |o--o{ elo_history         : "session_id"
     players          |o--o{ audit.audit_events  : "user_id"
+    players          |o--o{ audit.log_events    : "user_id"
 
 ```
 
 - `session` managed sessions added 2026-05-06.
-- `audit_events` (monthly partitioned, `audit` schema) added 2026-05-06.
+- `audit_events` (weekly partitioned, `audit` schema) added 2026-05-06.
+- `log_events` (weekly partitioned, `audit` schema) added 2026-05-07. Used by cron jobs and future structured logging.
 
 ---
 
@@ -234,6 +245,26 @@ magic-nugger-app/
 └── .github/workflows/
 
 ```
+
+---
+
+## Database Utilities
+
+```bash
+# Apply all pending migrations
+npm run db:migrate
+
+# Rollback the most recent migration
+npm run db:rollback
+
+# Manual backup → db/backups/backup_YYYYMMDD_HHMMSS.sql (requires dev postgres running)
+npm run db:backup
+
+# Restore from a dump file
+npm run db:restore -- db/backups/backup_20260507_020000.sql
+```
+
+Automated weekly backups run via the `magic-nugger-cron` container (Sundays at 02:00). See [`docs/007-cron-jobs.md`](docs/007-cron-jobs.md) for cron job details.
 
 ---
 
@@ -279,6 +310,7 @@ Copy `.env.local.example` to `.env.local` for local dev. See `.env.production.ex
 | `DB_POOL_CONNECTION_TIMEOUT_MS` | DB pool connection timeout                            |
 | `DB_QUERY_TIMEOUT_MS`           | DB query timeout                                      |
 | `DB_SSL_MODE`                   | DB SSL mode (`prefer`, `require`, or `disable`)       |
+| `GAME_SESSION_RESUME_WINDOW_MS` | Sessions older than this are abandoned by cron (ms, default `1800000`) |
 | `VITE_WEB_SERVER_URL`           | Web server URL for the frontend                       |
 | `VITE_API_URL`                  | API path prefix                                       |
 

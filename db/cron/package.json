@@ -1,0 +1,7 @@
+{
+  "name": "magic-nugger-cron",
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.11.5"
+  }
+}

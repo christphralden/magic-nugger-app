@@ -50,6 +50,9 @@ inputs:
     required: true
   internal_secret:
     required: true
+  game_session_resume_window_ms:
+    required: false
+    default: "1800000"
 
 runs:
   using: composite
@@ -77,11 +80,12 @@ runs:
         DB_SSL_MODE: ${{ inputs.db_ssl_mode }}
         PARTMAN_PASSWORD: ${{ inputs.partman_password }}
         internal_secret: ${{ inputs.internal_secret }}
+        GAME_SESSION_RESUME_WINDOW_MS: ${{ inputs.game_session_resume_window_ms }}
       with:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
-        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_HOST,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN,PORT,RPM_LIMIT,DB_POOL_MAX,DB_POOL_IDLE_TIMEOUT_MS,DB_POOL_CONNECTION_TIMEOUT_MS,DB_QUERY_TIMEOUT_MS,DB_SSL_MODE
+        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_HOST,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN,PORT,RPM_LIMIT,DB_POOL_MAX,DB_POOL_IDLE_TIMEOUT_MS,DB_POOL_CONNECTION_TIMEOUT_MS,DB_QUERY_TIMEOUT_MS,DB_SSL_MODE,GAME_SESSION_RESUME_WINDOW_MS
         script: |
           {
             printf 'POSTGRES_USER=%s\n'                   "$POSTGRES_USER"
@@ -106,5 +110,6 @@ runs:
             printf 'DB_POOL_CONNECTION_TIMEOUT_MS=%s\n'   "$DB_POOL_CONNECTION_TIMEOUT_MS"
             printf 'DB_QUERY_TIMEOUT_MS=%s\n'             "$DB_QUERY_TIMEOUT_MS"
             printf 'DB_SSL_MODE=%s\n'                     "$DB_SSL_MODE"
+            printf 'GAME_SESSION_RESUME_WINDOW_MS=%s\n'   "$GAME_SESSION_RESUME_WINDOW_MS"
           } > /magic-nugger/.env.production
           chmod 600 /magic-nugger/.env.production
