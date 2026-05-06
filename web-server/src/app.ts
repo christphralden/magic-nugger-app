@@ -14,7 +14,8 @@ import { levelsRouter } from "@/routes/levels";
 import { gameRouter } from "@/routes/game";
 // import { leaderboardRouter } from "@/routes/leaderboard";
 // import { classroomsRouter } from "@/routes/classrooms";
-// import { adminRouter } from "@/routes/admin";
+import { adminRouter } from "@/routes/admin";
+import { logsRouter } from "@/routes/logs";
 import { getClientIp } from "@/utils/connectivity";
 import { audit } from "@/middleware/audit";
 import { internalRouter } from "./routes/internal";
@@ -95,8 +96,8 @@ app.use("/api/v1/levels", levelsRouter);
 app.use("/api/v1/game", gameRouter);
 // app.use("/api/v1/leaderboard", leaderboardRouter);
 // app.use("/api/v1/classrooms", classroomsRouter);
-// app.use("/api/v1/admin", adminRouter);
-//
+app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/logs", logsRouter);
 app.use(errorHandler);
 
 export { app };

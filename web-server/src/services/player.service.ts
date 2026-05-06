@@ -65,8 +65,8 @@ export const playerService = {
       `UPDATE players SET
         current_elo = GREATEST(0, current_elo + $2),
         highest_level_unlocked = CASE
-          WHEN $3 = 'completed' AND $4 IS NOT NULL
-          THEN GREATEST(highest_level_unlocked, $4)
+          WHEN $3 = 'completed' AND $4::int IS NOT NULL
+          THEN GREATEST(highest_level_unlocked, $4::int)
           ELSE highest_level_unlocked
           END,
         total_questions_answered = total_questions_answered + $5,

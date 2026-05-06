@@ -1,4 +1,6 @@
 export * from "./constants/error-codes";
+export * from "./constants/log-events";
+export * from "./types/log.types";
 export * from "./utils/try-catch";
 export * from "./utils/zod";
 export * from "./types/api.types";
