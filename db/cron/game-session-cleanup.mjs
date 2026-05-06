@@ -5,6 +5,7 @@ const olderThanMs = parseInt(
   process.env.GAME_SESSION_RESUME_WINDOW_MS ?? "1800000",
   10,
 );
+const source = process.stdout.isTTY ? "manual" : "cron";
 const host = process.env.POSTGRES_HOST ?? "localhost";
 const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
 
@@ -15,7 +16,7 @@ async function main() {
   try {
     await client.query("BEGIN");
 
-    const { rowCount } = await client.query(
+    const { rows } = await client.query(
       `WITH abandoned AS (
          UPDATE game_sessions
          SET status = 'abandoned',
@@ -35,28 +36,32 @@ async function main() {
          INSERT INTO elo_history (player_id, session_id, elo_before, elo_after, delta, reason)
          SELECT player_id, id, elo_before, elo_after, delta, 'session_abandoned'
          FROM abandoned
+       ),
+       player_update AS (
+         UPDATE players p
+         SET current_elo = GREATEST(0, p.current_elo + a.delta),
+             updated_at = now()
+         FROM abandoned a
+         WHERE p.id = a.player_id AND a.delta != 0
        )
-       UPDATE players p
-       SET current_elo = GREATEST(0, p.current_elo + a.delta),
-           updated_at = now()
-       FROM abandoned a
-       WHERE p.id = a.player_id AND a.delta != 0`,
+       SELECT id FROM abandoned`,
       [olderThanMs],
     );
 
     await client.query("COMMIT");
 
-    const count = rowCount ?? 0;
+    const sessionIds = rows.map((r) => r.id);
+    const count = sessionIds.length;
     await client.query(
       "INSERT INTO audit.log_events (event, level, metadata) VALUES ($1, $2, $3)",
       [
-        "cron:session-cleanup",
+        "cron:game-session-cleanup",
         "info",
-        JSON.stringify({ count, duration_ms: Date.now() - start }),
+        JSON.stringify({ source, count, session_ids: sessionIds, duration_ms: Date.now() - start }),
       ],
     );
     if (count > 0) {
-      console.log(`[session-cleanup] abandoned ${count} orphaned session(s)`);
+      console.log(`[game-session-cleanup] abandoned ${count} orphaned session(s)`);
     }
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
@@ -64,9 +69,9 @@ async function main() {
       .query(
         "INSERT INTO audit.log_events (event, level, metadata) VALUES ($1, $2, $3)",
         [
-          "cron:session-cleanup",
+          "cron:game-session-cleanup",
           "error",
-          JSON.stringify({ error: err.message }),
+          JSON.stringify({ source, error: err.message }),
         ],
       )
       .catch(() => {});
@@ -77,6 +82,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("[session-cleanup] error:", err.message);
+  console.error("[game-session-cleanup] error:", err.message);
   process.exit(1);
 });
