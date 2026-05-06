@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { MagicNuggerHeader } from "@/components/brand/magic-nugger-header";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { PlayIcon } from "@/components/icons/play-icon";
@@ -11,7 +12,6 @@ import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Cloud } from "@/components/decor/cloud";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Coin } from "@/components/decor/coin";
-import { GOLD, CORAL } from "@/constants/colors";
 import { cn } from "@/lib/utils";
 
 function LoginGoogleButton() {
@@ -36,7 +36,7 @@ function LoginUsernameField() {
           <FormControl>
             <Input
               placeholder="merlin_the_brave"
-              className="bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-[#9A8AAB] placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]"
+              className="bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-placeholder placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]"
               {...field}
             />
           </FormControl>
@@ -63,7 +63,7 @@ function LoginPasswordField() {
               <Input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 pr-12 text-[17px] text-ink font-semibold h-auto placeholder:text-[#9A8AAB] placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]"
+                className="bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 pr-12 text-[17px] text-ink font-semibold h-auto placeholder:text-placeholder placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]"
                 {...field}
               />
               <button
@@ -158,26 +158,30 @@ function LoginSignupLink() {
 function LoginCard() {
   const { loading } = useLoginContext();
   return (
-    <div className="min-h-screen bg-cream font-body relative flex items-center justify-center px-6 py-10 overflow-hidden">
-      <div className="absolute top-10 left-[8%] animate-float-slow">
-        <Cloud size={120} />
-      </div>
-      <div className="absolute top-20 right-[10%] animate-float">
-        <Sparkle size={28} color={GOLD} />
-      </div>
-      <div className="absolute bottom-[60px] left-[12%] animate-float-fast">
-        <Sparkle size={24} color={CORAL} />
-      </div>
-      <div className="absolute bottom-20 right-[6%] animate-float-slow">
-        <Coin size={48} />
-      </div>
+    <div className="min-h-screen bg-cream font-body flex flex-col overflow-hidden">
+      <MagicNuggerHeader />
 
-      <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
-        <h1 className="font-display font-bold text-ink text-[40px] leading-[0.95] mb-2">Welcome back!</h1>
-        <p className="text-[16px] text-ink-soft font-semibold mb-7">Your towers missed you</p>
-        <LoginGoogleButton />
-        <LoginForm />
-        <LoginSignupLink />
+      <div className="flex-1 relative flex items-center justify-center px-6 py-10">
+        <div className="absolute top-6 left-[8%] animate-float-slow">
+          <Cloud size={120} />
+        </div>
+        <div className="absolute top-14 right-[10%] animate-float">
+          <Sparkle size={28} className="text-gold" />
+        </div>
+        <div className="absolute bottom-[60px] left-[12%] animate-float-fast">
+          <Sparkle size={24} className="text-coral" />
+        </div>
+        <div className="absolute bottom-16 right-[6%] animate-float-slow">
+          <Coin size={48} />
+        </div>
+
+        <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
+          <h1 className="font-display font-bold text-ink text-[40px] leading-[0.95] mb-2">Welcome back!</h1>
+          <p className="text-[16px] text-ink-soft font-semibold mb-7">Your towers missed you</p>
+          <LoginGoogleButton />
+          <LoginForm />
+          <LoginSignupLink />
+        </div>
       </div>
 
       {loading && <LoadingOverlay text="Casting your spell..." />}

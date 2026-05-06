@@ -12,9 +12,9 @@ const cartoonButtonVariants = cva(
         ghost: "border-transparent shadow-none bg-transparent text-ink hover:bg-black/[0.06] active:translate-y-0",
       },
       size: {
-        default: "px-7 py-4 text-lg rounded-cartoon-lg",
-        lg: "px-[38px] py-[22px] text-[22px] rounded-cartoon-xl",
-        xl: "px-11 py-[26px] text-[26px] rounded-cartoon-xl",
+        default: "px-btn-x-md py-btn-y-md text-lg rounded-cartoon-lg",
+        lg: "px-btn-x-lg py-btn-y-lg text-[22px] rounded-cartoon-xl",
+        xl: "px-btn-x-xl py-btn-y-xl text-[26px] rounded-cartoon-xl",
       },
     },
     defaultVariants: {

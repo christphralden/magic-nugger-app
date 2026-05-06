@@ -5,6 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { CartoonSelect } from "@/components/ui/cartoon-select";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { MagicNuggerHeader } from "@/components/brand/magic-nugger-header";
 import { AvatarPickButton } from "@/components/avatar/avatar-pick-button";
 import { AvatarFox } from "@/components/avatar/avatar-fox";
 import { AvatarDragon } from "@/components/avatar/avatar-dragon";
@@ -18,7 +19,6 @@ import { Sparkle } from "@/components/decor/sparkle";
 import { Cloud } from "@/components/decor/cloud";
 import { Coin } from "@/components/decor/coin";
 import { AVATARS, type AvatarId } from "@/constants/avatars";
-import { GOLD, TEAL } from "@/constants/colors";
 import { GRADES } from "@/constants/grades";
 
 const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
@@ -30,7 +30,7 @@ const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
 };
 
 const INPUT_CLASS =
-  "bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-[#9A8AAB] placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]";
+  "bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-placeholder placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]";
 
 const LABEL_CLASS = "font-display font-semibold text-ink text-[15px] tracking-wide";
 
@@ -51,7 +51,7 @@ function StepDots({ currentStep, totalSteps }: StepDotsProps) {
             className="h-3 border-[3px] border-ink rounded-full transition-all duration-200"
             style={{
               width: active ? 36 : 14,
-              background: step <= currentStep ? GOLD : "#FFE9B0",
+              background: step <= currentStep ? "#FFB627" : "#FFE9B0",
             }}
           />
         );
@@ -229,7 +229,7 @@ function AvatarStep() {
       </div>
 
       <div className="bg-cream-2 border-[3px] border-ink rounded-cartoon-md p-[14px] mb-5 flex items-center gap-3 text-left">
-        <Sparkle size={26} color={GOLD} />
+        <Sparkle size={26} className="text-gold" />
         <div>
           <div className="font-display font-bold text-[15px] text-ink">Your first quest is free!</div>
           <div className="text-[12px] text-ink-soft font-semibold">Defend the village. Solve 5 equations.</div>
@@ -241,7 +241,7 @@ function AvatarStep() {
           Back
         </CartoonButton>
         <CartoonButton type="submit" variant="primary" className="flex-1">
-          <Sparkle size={20} color="white" /> Begin Adventure <ArrowRightIcon size={20} />
+          <Sparkle size={20} className="text-white" /> Begin Adventure <ArrowRightIcon size={20} />
         </CartoonButton>
       </div>
     </form>
@@ -265,25 +265,29 @@ function RegisterHeader() {
 function RegisterCard() {
   const { step, loading } = useRegisterContext();
   return (
-    <div className="min-h-screen bg-cream font-body relative flex items-center justify-center px-6 py-10 overflow-hidden">
-      <div className="absolute top-10 left-[8%] animate-float-slow">
-        <Cloud size={120} />
-      </div>
-      <div className="absolute top-20 right-[10%] animate-float">
-        <Sparkle size={28} color={GOLD} />
-      </div>
-      <div className="absolute bottom-[60px] left-[12%] animate-float-fast">
-        <Sparkle size={24} color={TEAL} />
-      </div>
-      <div className="absolute bottom-20 right-[6%] animate-float-slow">
-        <Coin size={48} />
-      </div>
+    <div className="min-h-screen bg-cream font-body flex flex-col overflow-hidden">
+      <MagicNuggerHeader />
 
-      <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
-        <RegisterHeader />
-        <StepDots currentStep={step} totalSteps={2} />
-        {step === 1 && <InfoStep />}
-        {step === 2 && <AvatarStep />}
+      <div className="flex-1 relative flex items-center justify-center px-6 py-10">
+        <div className="absolute top-6 left-[8%] animate-float-slow">
+          <Cloud size={120} />
+        </div>
+        <div className="absolute top-14 right-[10%] animate-float">
+          <Sparkle size={28} className="text-gold" />
+        </div>
+        <div className="absolute bottom-[60px] left-[12%] animate-float-fast">
+          <Sparkle size={24} className="text-teal" />
+        </div>
+        <div className="absolute bottom-16 right-[6%] animate-float-slow">
+          <Coin size={48} />
+        </div>
+
+        <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
+          <RegisterHeader />
+          <StepDots currentStep={step} totalSteps={2} />
+          {step === 1 && <InfoStep />}
+          {step === 2 && <AvatarStep />}
+        </div>
       </div>
 
       {loading && <LoadingOverlay text="Summoning your wizard..." />}

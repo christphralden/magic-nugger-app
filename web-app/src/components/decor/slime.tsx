@@ -1,15 +1,15 @@
 interface SlimeProps {
   size?: number;
-  color?: string;
+  className?: string;
 }
 
-export function Slime({ size = 70, color = "#7CC576" }: SlimeProps) {
+export function Slime({ size = 70, className = "text-green" }: SlimeProps) {
   return (
-    <svg viewBox="0 0 80 80" width={size} height={size}>
+    <svg viewBox="0 0 80 80" width={size} height={size} className={className}>
       <ellipse cx="40" cy="72" rx="28" ry="4" fill="rgba(42,27,61,0.18)" />
       <path
         d="M14 50 Q14 22 40 22 Q66 22 66 50 Q66 66 40 66 Q14 66 14 50 Z"
-        fill={color}
+        fill="currentColor"
         stroke="#2A1B3D"
         strokeWidth="3.5"
       />
