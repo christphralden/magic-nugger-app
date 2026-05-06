@@ -33,13 +33,13 @@ gameRouter.post(
     if (!created) {
       return res.json({
         code: 200,
-        error: "",
+        error: null,
         data: session,
       } satisfies ApiResponse<GameSession>);
     }
     res.status(201).json({
       code: 201,
-      error: "",
+      error: null,
       data: session,
     } satisfies ApiResponse<GameSession>);
   },
@@ -56,7 +56,7 @@ gameRouter.post(
     });
     res.json({
       code: 200,
-      error: "",
+      error: null,
       data: answer,
     } satisfies ApiResponse<ResponseAnswer>);
   },
@@ -72,7 +72,7 @@ gameRouter.post("/:id/end", async (req, res) => {
   });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
-  res.json({ code: 200, error: "", data: null } satisfies ApiResponse<null>);
+  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
 });
 
 gameRouter.post("/:id/fail", async (req, res) => {
@@ -85,10 +85,10 @@ gameRouter.post("/:id/fail", async (req, res) => {
   });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
-  res.json({ code: 200, error: "", data: null } satisfies ApiResponse<null>);
+  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
 });
 
 gameRouter.post("/:id/abandon", async (req, res) => {
   await gameService.abandon({ sessionId: req.params.id });
-  res.json({ code: 200, error: "", data: null } satisfies ApiResponse<null>);
+  res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
 });
