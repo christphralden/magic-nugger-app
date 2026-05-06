@@ -1,10 +1,18 @@
 import { z } from "zod";
 
+export const GameSessionStatusSchema = z.enum([
+  "in_progress",
+  "completed",
+  "failed",
+  "abandoned",
+]);
+export type GameSessionStatus = z.infer<typeof GameSessionStatusSchema>;
+
 export const GameSessionSchema = z.object({
   id: z.string().uuid(),
   player_id: z.string().uuid(),
   level_id: z.number().int(),
-  status: z.enum(["in_progress", "completed", "failed", "abandoned"]),
+  status: GameSessionStatusSchema,
   score: z.number().int().min(0),
   max_answers: z.number().int().min(0),
   elo_before: z.number().int(),
@@ -60,6 +68,7 @@ export const ResponseGameSessionCompleteSchema = z.object({
   elo_delta: z.number().int(),
   new_levels_unlocked: z.array(z.number().int()),
 });
+
 export type ResponseGameSessionComplete = z.infer<
   typeof ResponseGameSessionCompleteSchema
 >;
