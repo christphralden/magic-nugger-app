@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { z } from "zod";
-import { db } from "@/db/client";
 import { authenticate } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { validate } from "@/middleware/validate";
@@ -13,6 +12,7 @@ import type {
   GameSession,
   PaginatedData,
 } from "@magic-nugger-app/shared";
+import { getDb, tx } from "@/db/transaction-context";
 
 export const adminRouter = Router();
 
@@ -20,7 +20,7 @@ adminRouter.use(authenticate, authorize("admin:full"));
 
 adminRouter.get("/players", async (req, res) => {
   const { cursor, limit } = parsePagination(req.query);
-  const { rows } = await db.query<Player>(
+  const { rows } = await getDb().query<Player>(
     `SELECT id, username, display_name, email, role_id, current_elo, created_at
      FROM players
      WHERE ($1::bigint IS NULL OR EXTRACT(EPOCH FROM created_at)*1000 < $1)
@@ -43,7 +43,7 @@ adminRouter.patch(
   "/players/:id/role",
   validate(z.object({ role: z.string() })),
   async (req, res) => {
-    const { rows } = await db.query(
+    const { rows } = await getDb().query(
       `UPDATE players SET role_id = (SELECT id FROM roles WHERE name = $2), updated_at = now() WHERE id = $1 RETURNING id`,
       [req.params.id, req.body.role],
     );
@@ -67,7 +67,7 @@ adminRouter.patch(
   validate(RequestAdjustEloSchema),
   async (req, res) => {
     const { elo } = req.body;
-    const { rows: playerRows } = await db.query<{ current_elo: number }>(
+    const { rows: playerRows } = await getDb().query<{ current_elo: number }>(
       `SELECT current_elo FROM players WHERE id = $1`,
       [req.params.id],
     );
@@ -83,16 +83,20 @@ adminRouter.patch(
     const after = elo;
     const delta = after - before;
 
-    await db.query(
-      `UPDATE players SET current_elo = $2, updated_at = now() WHERE id = $1`,
-      [req.params.id, after],
-    );
+    tx(async () => {
+      Promise.all([
+        await getDb().query(
+          `UPDATE players SET current_elo = $2, updated_at = now() WHERE id = $1`,
+          [req.params.id, after],
+        ),
 
-    await db.query(
-      `INSERT INTO elo_history (player_id, elo_before, elo_after, delta, reason)
+        await getDb().query(
+          `INSERT INTO elo_history (player_id, elo_before, elo_after, delta, reason)
        VALUES ($1, $2, $3, $4, $5)`,
-      [req.params.id, before, after, delta, "admin_adjustment"],
-    );
+          [req.params.id, before, after, delta, "admin_adjustment"],
+        ),
+      ]);
+    });
 
     leaderboardService.invalidateGlobal();
     res.json({
@@ -105,7 +109,7 @@ adminRouter.patch(
 
 adminRouter.get("/game-sessions/active", async (_req, res) => {
   // no pagination needed since bounded to active sessions
-  const { rows } = await db.query<GameSession>(
+  const { rows } = await getDb().query<GameSession>(
     `SELECT * FROM game_sessions
      WHERE status = 'in_progress'
      ORDER BY started_at DESC
@@ -144,7 +148,7 @@ adminRouter.get("/game-sessions", async (req, res) => {
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   values.push(limit);
-  const { rows } = await db.query<GameSession>(
+  const { rows } = await getDb().query<GameSession>(
     `SELECT * FROM game_sessions ${where} ORDER BY started_at DESC LIMIT $${idx}`,
     values,
   );
@@ -160,7 +164,7 @@ adminRouter.get("/game-sessions", async (req, res) => {
 });
 
 adminRouter.get("/stats", async (_req, res) => {
-  const { rows } = await db.query<{
+  const { rows } = await getDb().query<{
     total_players: number;
     total_sessions: number;
     completed_sessions: number;

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
 import bcrypt from "bcrypt";
-import { db } from "@/db/client";
 import { validate } from "@/middleware/validate";
 import { authenticate } from "@/middleware/authenticate";
 import { toResponsePlayer } from "@/dto/player.dto";
@@ -11,6 +10,7 @@ import {
   ErrorCode,
 } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
+import { getDb } from "@/db/transaction-context";
 
 export const authRouter = Router();
 
@@ -21,7 +21,7 @@ authRouter.post(
     const { username, email, password, display_name } = req.body;
     const hash = await bcrypt.hash(password, 12);
 
-    const { rows } = await db.query<ResponsePlayer>(
+    const { rows } = await getDb().query<ResponsePlayer>(
       `INSERT INTO players 
         (
           username, 

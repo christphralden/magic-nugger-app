@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { db } from "@/db/client.js";
 import { getClientIp, getUserAgent } from "@/utils/connectivity.js";
 import { formatError } from "@/utils/errors";
+import { getDb } from "@/db/transaction-context";
 
 const SENSITIVE_KEYS = new Set([
   "password",
@@ -38,7 +38,7 @@ export const audit = (req: Request, res: Response, next: NextFunction) => {
     const method = req.method;
 
     try {
-      db.query(
+      getDb().query(
         `INSERT INTO audit.audit_events (user_id, url, status_code, ip_address, user_agent, metadata, http_method)
          VALUES ($1, $2, $3, $4::inet, $5, $6, $7)`,
         [

@@ -15,6 +15,7 @@ logsRouter.post("/", validate(RequestLogEventSchema), async (req, res) => {
     event: req.body.event,
     level: req.body.level,
     userId: user.id,
+    description: req.body.description ?? null,
     metadata: req.body.metadata ?? null,
   });
   res.json({ code: 200, error: null, data: null } satisfies ApiResponse<null>);
