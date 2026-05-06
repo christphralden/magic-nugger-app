@@ -58,7 +58,8 @@ This variable is shared with the web server — changing it in one place affects
 #### Run manually
 
 ```bash
-docker exec magic-nugger-cron-dev node /app/game-session-cleanup.mjs
+# use -t to allocate a TTY so that when logged emits source:"manual instead of cron"
+docker exec -t magic-nugger-cron-dev node /app/game-session-cleanup.mjs
 ```
 
 ---
