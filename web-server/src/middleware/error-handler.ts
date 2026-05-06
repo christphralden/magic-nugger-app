@@ -12,6 +12,8 @@ export const errorHandler = (
 ) => {
   console.log("[web-server][error] caught unhandled error", error);
 
+  const isLocalEnvironment = process.env.ENVIRONMENT === "local";
+
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
       code: error.statusCode,
@@ -21,30 +23,31 @@ export const errorHandler = (
   }
 
   if (isPgError(error)) {
+    const hint = isLocalEnvironment ? ` (dev) Hint: ${error.message}` : "";
     switch (error.code) {
       case PgErrorCode.UNIQUE_VIOLATION:
         return res.status(ErrorCode.CONFLICT).json({
           code: ErrorCode.CONFLICT,
-          error: `Resource already exists. Hint: ${error.message}`,
+          error: `Resource already exists.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.FOREIGN_KEY_VIOLATION:
-        return res.status(ErrorCode.BAD_REQUEST).json({
-          code: ErrorCode.BAD_REQUEST,
-          error: `Invalid reference. Hint: ${error.message}`,
+        return res.status(ErrorCode.NOT_FOUND).json({
+          code: ErrorCode.NOT_FOUND,
+          error: `Invalid reference, resource not found.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.INVALID_TEXT_REPRESENTATION:
         return res.status(ErrorCode.BAD_REQUEST).json({
           code: ErrorCode.BAD_REQUEST,
-          error: `Invalid parameter format. Hint: ${error.message}`,
+          error: `Invalid parameter format.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.NOT_NULL_VIOLATION:
       case PgErrorCode.CHECK_VIOLATION:
         return res.status(ErrorCode.BAD_REQUEST).json({
           code: ErrorCode.BAD_REQUEST,
-          error: `Invalid input. Hint: ${error.message}`,
+          error: `Invalid input.` + hint,
           data: null,
         } satisfies ApiResponse<null>);
       case PgErrorCode.INVALID_PERMISSION:

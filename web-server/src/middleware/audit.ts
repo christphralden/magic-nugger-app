@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { db } from "@/db/client.js";
-import { getClientIp } from "@/utils/connectivity.js";
-import { tryCatch } from "@magic-nugger-app/shared";
+import { getClientIp, getUserAgent } from "@/utils/connectivity.js";
 import { formatError } from "@/utils/errors";
 
 const SENSITIVE_KEYS = new Set([
@@ -18,16 +17,19 @@ const SENSITIVE_KEYS = new Set([
 function sanitizeBody(body: unknown): unknown {
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
   return Object.fromEntries(
-    Object.entries(body as Record<string, unknown>).filter(
-      ([k]) => !SENSITIVE_KEYS.has(k.toLowerCase()),
-    ),
+    Object.entries(body as Record<string, unknown>).map(([k, v]) => {
+      if (SENSITIVE_KEYS.has(k)) {
+        return [k, "<REDACTED>"];
+      }
+      return [k, v];
+    }),
   );
 }
 
 export const audit = (req: Request, res: Response, next: NextFunction) => {
   const userId = req.user?.id ?? null;
   const ipAddress = getClientIp(req);
-  const userAgent = req.headers["user-agent"] ?? null;
+  const userAgent = getUserAgent(req);
   const url = req.path.replace(/^\/api/, "");
 
   res.on("finish", () => {
