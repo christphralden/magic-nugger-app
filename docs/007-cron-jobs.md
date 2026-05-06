@@ -21,11 +21,11 @@ Every job run — success or failure — inserts a row into `audit.log_events` w
 
 ## Jobs
 
-### Session Cleanup
+### Game Session Cleanup
 
 | Property | Value                                                    |
 | -------- | -------------------------------------------------------- |
-| Script   | `db/cron/session-cleanup.mjs`                            |
+| Script   | `db/cron/game-session-cleanup.mjs`                       |
 | Schedule | `0 * * * *` — every hour, on the hour                    |
 | Purpose  | Mark orphaned `in_progress` game sessions as `abandoned` |
 
@@ -42,10 +42,10 @@ WHERE status = 'in_progress'
 
 #### Log events written
 
-| Outcome | `event`                | `level` | `metadata`               |
-| ------- | ---------------------- | ------- | ------------------------ |
-| Success | `cron:session-cleanup` | `info`  | `{ count, duration_ms }` |
-| Error   | `cron:session-cleanup` | `error` | `{ error }`              |
+| Outcome | `event`                     | `level` | `metadata`                                    |
+| ------- | --------------------------- | ------- | --------------------------------------------- |
+| Success | `cron:game-session-cleanup` | `info`  | `{ count, session_ids, source, duration_ms }` |
+| Error   | `cron:game-session-cleanup` | `error` | `{ error }`                                   |
 
 #### Env vars
 
@@ -58,7 +58,7 @@ This variable is shared with the web server — changing it in one place affects
 #### Run manually
 
 ```bash
-docker exec magic-nugger-cron-dev node /app/session-cleanup.mjs
+docker exec magic-nugger-cron-dev node /app/game-session-cleanup.mjs
 ```
 
 ---
@@ -144,13 +144,13 @@ docker compose --env-file=.env.local -f docker-compose.dev.yml up -d
 ```
 db/
 ├── cron/
-│   ├── Dockerfile          # node:20-alpine + postgresql-client
-│   ├── package.json        # pg dependency
-│   ├── crontab             # schedule definitions
-│   ├── session-cleanup.mjs # abandons orphaned sessions
-│   ├── log-event.mjs       # CLI helper: insert one audit.log_events row
-│   └── backup.sh           # pg_dump → /backups
-├── backups/                # host-mounted dump output (gitignored)
-├── backup.sh               # host-side manual backup (npm run db:backup)
-└── restore.sh              # host-side manual restore (npm run db:restore)
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── crontab                     # schedule definitions
+│   ├── game-session-cleanup.mjs    # abandons orphaned sessions
+│   ├── log-event.mjs               # CLI helper: insert one audit.log_events row
+│   └── backup.sh                   # pg_dump → /backups
+├── backups/
+├── backup.sh
+└── restore.sh
 ```
