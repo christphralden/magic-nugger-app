@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { JSONBSchema } from "./json.types";
 
 export const LevelSchema = z.object({
   id: z.number().int(),
@@ -9,8 +10,8 @@ export const LevelSchema = z.object({
   elo_gain_correct: z.number().int().min(0),
   elo_loss_incorrect: z.number().int().min(0),
   time_limit_seconds: z.number().int().nullable(),
-  enemy_wave_config: z.record(z.unknown()),
-  question_gen_config: z.record(z.unknown()),
+  enemy_wave_config: JSONBSchema(z.unknown()),
+  question_gen_config: JSONBSchema(z.unknown()),
   max_score: z.number().int().min(0),
   is_active: z.boolean(),
   created_at: z.string().datetime(),
@@ -36,8 +37,14 @@ export const RequestCreateLevelSchema = z.object({
   elo_gain_correct: z.number().int().min(0).default(15),
   elo_loss_incorrect: z.number().int().min(0).default(5),
   time_limit_seconds: z.number().int().optional(),
-  enemy_wave_config: z.record(z.unknown()).default({}),
-  question_gen_config: z.record(z.unknown()).default({}),
+  enemy_wave_config: JSONBSchema(z.unknown()).default({
+    schema: 1,
+    data: null,
+  }),
+  question_gen_config: JSONBSchema(z.unknown()).default({
+    schema: 1,
+    data: null,
+  }),
   max_score: z.number().int().min(0).default(1000),
 });
 export type RequestCreateLevel = z.infer<typeof RequestCreateLevelSchema>;
