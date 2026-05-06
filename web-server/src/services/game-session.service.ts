@@ -76,14 +76,45 @@ export const gameSessionService = {
 
   async abandon({ sessionId }: { sessionId: string }): Promise<void> {
     await getDb().query(
-      `UPDATE game_sessions 
-      SET 
-        status = 'abandoned', 
-        ended_at = now() 
+      `UPDATE game_sessions
+      SET
+        status = 'abandoned',
+        ended_at = now()
       WHERE id = $1
       `,
       [sessionId],
     );
+  },
+
+  async reconcileAbandonedElo({
+    session,
+    currentElo,
+  }: {
+    session: GameSession;
+    currentElo: number;
+  }): Promise<void> {
+    const delta = session.elo_delta ?? 0;
+    const eloAfter = Math.max(0, currentElo + delta);
+
+    const { rowCount } = await getDb().query(
+      `UPDATE game_sessions SET elo_after = $2 WHERE id = $1 AND elo_after IS NULL`,
+      [session.id, eloAfter],
+    );
+
+    if (!rowCount) return;
+
+    await getDb().query(
+      `INSERT INTO elo_history (player_id, session_id, elo_before, elo_after, delta, reason)
+       VALUES ($1, $2, $3, $4, $5, 'session_abandoned')`,
+      [session.player_id, session.id, session.elo_before, eloAfter, delta],
+    );
+
+    if (delta !== 0) {
+      await getDb().query(
+        `UPDATE players SET current_elo = GREATEST(0, current_elo + $2), updated_at = now() WHERE id = $1`,
+        [session.player_id, delta],
+      );
+    }
   },
 
   async finalize({

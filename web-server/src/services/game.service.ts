@@ -32,13 +32,15 @@ export const gameService = {
         userId,
       });
       if (existing) {
-        // not validated against level.time_limit_seconds because it can be longer than one level
         const ageMs = Date.now() - new Date(existing.started_at).getTime();
-        // maybe change this to something more concrete rather than started_at
         if (ageMs <= GameSessionConfig.RESUME_WINDOW_MS) {
           return { session: existing, created: false };
         }
         await gameSessionService.abandon({ sessionId: existing.id });
+        await gameSessionService.reconcileAbandonedElo({
+          session: existing,
+          currentElo,
+        });
       }
 
       const level = await levelService.getById(String(levelId));
@@ -100,9 +102,8 @@ export const gameService = {
       const newMaxStreak = Math.max(session.max_streak, newStreak);
       const newEloDelta = (session.elo_delta ?? 0) + delta;
 
-      // batch updates
-      Promise.all([
-        await gameSessionService.updateStats({
+      await Promise.all([
+        gameSessionService.updateStats({
           sessionId,
           score: newScore,
           correctCount: newCorrect,
@@ -111,8 +112,7 @@ export const gameService = {
           maxStreak: newMaxStreak,
           eloDelta: newEloDelta,
         }),
-
-        await gameSessionService.insertAnswer({
+        gameSessionService.insertAnswer({
           sessionId,
           isCorrect,
           delta,
@@ -150,16 +150,20 @@ export const gameService = {
         afterId: session.level_id,
       });
 
-      const finalElo = Math.max(0, currentElo + (session.elo_delta ?? 0));
+      const eloDelta = status === "failed" ? 0 : (session.elo_delta ?? 0);
+      const finalElo =
+        status === "failed"
+          ? currentElo
+          : Math.max(0, currentElo + eloDelta);
 
       const reason: EloHistoryReason =
         status === "completed" ? "session_completed" : "session_failed";
 
-      Promise.all([
-        await gameSessionService.finalize({ sessionId, status, finalElo }),
-        await playerService.updateAfterSession({
+      await Promise.all([
+        gameSessionService.finalize({ sessionId, status, finalElo }),
+        playerService.updateAfterSession({
           userId,
-          eloDelta: session.elo_delta ?? 0,
+          eloDelta,
           status,
           nextLevelId,
           totalAnswered: session.correct_count + session.incorrect_count,
@@ -167,12 +171,12 @@ export const gameService = {
           totalIncorrect: session.incorrect_count,
           maxStreak: session.max_streak,
         }),
-        await eloService.append({
+        eloService.append({
           userId,
           sessionId,
           eloBefore: session.elo_before,
           eloAfter: finalElo,
-          delta: session.elo_delta ?? 0,
+          delta: eloDelta,
           reason,
         }),
       ]);

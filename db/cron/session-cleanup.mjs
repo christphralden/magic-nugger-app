@@ -13,13 +13,39 @@ async function main() {
   await client.connect();
   const start = Date.now();
   try {
+    await client.query("BEGIN");
+
     const { rowCount } = await client.query(
-      `UPDATE game_sessions
-       SET status = 'abandoned', ended_at = now()
-       WHERE status = 'in_progress'
-         AND started_at < now() - ($1 || ' milliseconds')::interval`,
+      `WITH abandoned AS (
+         UPDATE game_sessions
+         SET status = 'abandoned',
+             ended_at = now(),
+             elo_after = GREATEST(0, elo_before + COALESCE(elo_delta, 0))
+         WHERE status = 'in_progress'
+           AND started_at < now() - ($1 || ' milliseconds')::interval
+           AND elo_after IS NULL
+         RETURNING
+           id,
+           player_id,
+           elo_before,
+           COALESCE(elo_delta, 0) AS delta,
+           GREATEST(0, elo_before + COALESCE(elo_delta, 0)) AS elo_after
+       ),
+       history AS (
+         INSERT INTO elo_history (player_id, session_id, elo_before, elo_after, delta, reason)
+         SELECT player_id, id, elo_before, elo_after, delta, 'session_abandoned'
+         FROM abandoned
+       )
+       UPDATE players p
+       SET current_elo = GREATEST(0, p.current_elo + a.delta),
+           updated_at = now()
+       FROM abandoned a
+       WHERE p.id = a.player_id AND a.delta != 0`,
       [olderThanMs],
     );
+
+    await client.query("COMMIT");
+
     const count = rowCount ?? 0;
     await client.query(
       "INSERT INTO audit.log_events (event, level, metadata) VALUES ($1, $2, $3)",
@@ -33,6 +59,7 @@ async function main() {
       console.log(`[session-cleanup] abandoned ${count} orphaned session(s)`);
     }
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     await client
       .query(
         "INSERT INTO audit.log_events (event, level, metadata) VALUES ($1, $2, $3)",

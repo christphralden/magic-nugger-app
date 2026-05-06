@@ -99,7 +99,7 @@ adminRouter.patch(
     const delta = after - before;
 
     tx(async () => {
-      Promise.all([
+      await Promise.all([
         await getDb().query(
           `UPDATE players SET current_elo = $2, updated_at = now() WHERE id = $1`,
           [req.params.id, after],

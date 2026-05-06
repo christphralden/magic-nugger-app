@@ -3,6 +3,7 @@ import { z } from "zod";
 export const EloHistoryReasonSchema = z.enum([
   "session_completed",
   "session_failed",
+  "session_abandoned",
   "admin_adjustment",
   "decay",
 ]);
