@@ -4,6 +4,26 @@
 
 :root {
   --rot: 0deg;
+  --background: 44 100% 91%;
+  --foreground: 267 37% 17%;
+  --card: 0 0% 100%;
+  --card-foreground: 267 37% 17%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 267 37% 17%;
+  --primary: 0 100% 71%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 44 100% 84%;
+  --secondary-foreground: 267 37% 17%;
+  --muted: 44 100% 84%;
+  --muted-foreground: 264 22% 29%;
+  --accent: 44 100% 84%;
+  --accent-foreground: 267 37% 17%;
+  --destructive: 0 100% 71%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 267 37% 17%;
+  --input: 267 37% 17%;
+  --ring: 40 100% 56%;
+  --radius: 0.75rem;
 }
 
 html,

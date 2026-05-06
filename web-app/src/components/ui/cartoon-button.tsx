@@ -1,50 +1,38 @@
-import { ButtonHTMLAttributes, ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+import { Button, type ButtonProps } from "@/components/ui/button";
 
-type CartoonButtonVariant = "primary" | "secondary" | "ghost";
-type CartoonButtonSize = "default" | "lg" | "xl";
+const cartoonButtonVariants = cva(
+  "font-display font-bold tracking-wide inline-flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-[120ms] ease-out active:translate-y-1 select-none whitespace-nowrap border-[3px] border-ink shadow-cartoon active:shadow-[0_2px_0_0_#2A1B3D]",
+  {
+    variants: {
+      variant: {
+        primary: "bg-coral text-white hover:brightness-105",
+        secondary: "bg-white text-ink hover:bg-cream",
+        ghost: "border-transparent shadow-none bg-transparent text-ink hover:bg-black/[0.06] active:translate-y-0",
+      },
+      size: {
+        default: "px-7 py-4 text-lg rounded-cartoon-lg",
+        lg: "px-[38px] py-[22px] text-[22px] rounded-cartoon-xl",
+        xl: "px-11 py-[26px] text-[26px] rounded-cartoon-xl",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "default",
+    },
+  }
+);
 
-interface CartoonButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: CartoonButtonVariant;
-  size?: CartoonButtonSize;
-  children?: ReactNode;
-}
+interface CartoonButtonProps
+  extends Omit<ButtonProps, "variant" | "size">,
+    VariantProps<typeof cartoonButtonVariants> {}
 
-const VARIANT_CLASSES: Record<CartoonButtonVariant, string> = {
-  primary:
-    "bg-coral text-white border-[3px] border-ink shadow-cartoon hover:brightness-105 active:shadow-[0_2px_0_0_#2A1B3D]",
-  secondary:
-    "bg-white text-ink border-[3px] border-ink shadow-cartoon hover:bg-cream active:shadow-[0_2px_0_0_#2A1B3D]",
-  ghost: "bg-transparent text-ink border-transparent shadow-none hover:bg-black/[0.06] active:translate-y-0 px-4 py-2.5 text-base",
-};
-
-const SIZE_CLASSES: Record<CartoonButtonSize, string> = {
-  default: "px-7 py-4 text-lg rounded-cartoon-lg",
-  lg: "px-[38px] py-[22px] text-[22px] rounded-cartoon-xl",
-  xl: "px-11 py-[26px] text-[26px] rounded-cartoon-xl",
-};
-
-export function CartoonButton({
-  variant = "primary",
-  size = "default",
-  className = "",
-  children,
-  ...rest
-}: CartoonButtonProps) {
+export function CartoonButton({ variant, size, className, ...props }: CartoonButtonProps) {
   return (
-    <button
-      {...rest}
-      className={[
-        "inline-flex items-center justify-center gap-2.5 font-display font-bold tracking-wide",
-        "transition-all duration-[120ms] ease-out active:translate-y-1",
-        "cursor-pointer select-none whitespace-nowrap",
-        VARIANT_CLASSES[variant],
-        SIZE_CLASSES[size],
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {children}
-    </button>
+    <Button
+      className={cn(cartoonButtonVariants({ variant, size }), className)}
+      {...props}
+    />
   );
 }

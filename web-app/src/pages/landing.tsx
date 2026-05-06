@@ -54,6 +54,8 @@ function TopNav() {
 function HeroSection({ scrollY }: { scrollY: number }) {
   const navigate = useNavigate();
   const py = (rate: number) => `translateY(${scrollY * rate}px)`;
+  const handleNavigateRegister = () => navigate("/register");
+  const handleNavigateLogin = () => navigate("/login");
 
   return (
     <section className="relative px-10 py-[60px_40px_80px] overflow-hidden" style={{ padding: "60px 40px 80px" }}>
@@ -165,10 +167,10 @@ function HeroSection({ scrollY }: { scrollY: number }) {
           </p>
 
           <div className="flex gap-4 flex-wrap">
-            <CartoonButton size="xl" variant="primary" className="animate-wiggle" onClick={() => navigate("/register")}>
+            <CartoonButton size="xl" variant="primary" className="animate-wiggle" onClick={handleNavigateRegister}>
               <PlayIcon size={26} /> Begin Adventure
             </CartoonButton>
-            <CartoonButton size="lg" variant="secondary" onClick={() => navigate("/login")}>
+            <CartoonButton size="lg" variant="secondary" onClick={handleNavigateLogin}>
               I have an account
             </CartoonButton>
           </div>
@@ -258,6 +260,7 @@ function MarqueeSection({ scrollY }: { scrollY: number }) {
 
 function CtaSection() {
   const navigate = useNavigate();
+  const handleNavigateRegister = () => navigate("/register");
 
   return (
     <section
@@ -280,7 +283,7 @@ function CtaSection() {
       <p className="text-[20px] text-ink-soft font-semibold mb-7">
         The first quest is free. No credit card. Just brain power.
       </p>
-      <CartoonButton size="xl" variant="primary" onClick={() => navigate("/register")}>
+      <CartoonButton size="xl" variant="primary" onClick={handleNavigateRegister}>
         <Sparkle size={22} color="white" /> Begin Adventure <ArrowRightIcon size={22} />
       </CartoonButton>
     </section>

@@ -1,7 +1,8 @@
-import { useState, FormEvent, ComponentType } from "react";
-import { useNavigate } from "react-router-dom";
+import { type ComponentType } from "react";
+import { RegisterProvider, useRegisterContext } from "@/contexts/register.context";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
-import { CartoonInput } from "@/components/ui/cartoon-input";
 import { CartoonSelect } from "@/components/ui/cartoon-select";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { AvatarPickButton } from "@/components/avatar/avatar-pick-button";
@@ -16,17 +17,9 @@ import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Cloud } from "@/components/decor/cloud";
 import { Coin } from "@/components/decor/coin";
-import { AVATARS, AvatarId } from "@/constants/avatars";
+import { AVATARS, type AvatarId } from "@/constants/avatars";
 import { GOLD, TEAL } from "@/constants/colors";
-
-const GRADES = [
-  { value: "1st grade", label: "1st grade" },
-  { value: "2nd grade", label: "2nd grade" },
-  { value: "3rd grade", label: "3rd grade" },
-  { value: "4th grade", label: "4th grade" },
-  { value: "5th grade", label: "5th grade" },
-  { value: "6th grade", label: "6th grade" },
-];
+import { GRADES } from "@/constants/grades";
 
 const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
   fox: AvatarFox,
@@ -36,7 +29,10 @@ const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
   robot: AvatarRobot,
 };
 
-const LOADING_DURATION_MS = 2400;
+const INPUT_CLASS =
+  "bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-[#9A8AAB] placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]";
+
+const LABEL_CLASS = "font-display font-semibold text-ink text-[15px] tracking-wide";
 
 interface StepDotsProps {
   currentStep: number;
@@ -64,116 +60,131 @@ function StepDots({ currentStep, totalSteps }: StepDotsProps) {
   );
 }
 
-interface InfoStepProps {
-  name: string;
-  age: string;
-  grade: string;
-  parentEmail: string;
-  password: string;
-  showPassword: boolean;
-  onName: (v: string) => void;
-  onAge: (v: string) => void;
-  onGrade: (v: string) => void;
-  onParentEmail: (v: string) => void;
-  onPassword: (v: string) => void;
-  onTogglePassword: () => void;
-  onNext: (e: FormEvent<HTMLFormElement>) => void;
-  onGoLogin: () => void;
-}
+function InfoStep() {
+  const { form, showPassword, handleInfoNext, handleTogglePassword, handleNavigateLogin } =
+    useRegisterContext();
 
-function InfoStep({
-  name,
-  age,
-  grade,
-  parentEmail,
-  password,
-  showPassword,
-  onName,
-  onAge,
-  onGrade,
-  onParentEmail,
-  onPassword,
-  onTogglePassword,
-  onNext,
-  onGoLogin,
-}: InfoStepProps) {
   return (
     <>
       <CartoonButton variant="secondary" className="w-full mb-5" type="button">
         <GoogleIcon /> Sign up with Google
       </CartoonButton>
 
-      <form onSubmit={onNext} className="text-left">
-        <div className="mb-4">
-          <CartoonInput
-            label="Wizard name"
-            placeholder="merlin_the_brave"
-            value={name}
-            onChange={(e) => onName(e.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleInfoNext)} className="text-left">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="mb-4">
+                <FormLabel className={LABEL_CLASS}>Wizard name</FormLabel>
+                <FormControl>
+                  <Input placeholder="merlin_the_brave" className={INPUT_CLASS} {...field} />
+                </FormControl>
+                <FormMessage className="text-coral text-[13px] font-semibold" />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: "1fr 1.4fr", alignItems: "end" }}>
-          <CartoonInput
-            label="Age"
-            type="number"
-            min="6"
-            max="14"
-            placeholder="9"
-            value={age}
-            onChange={(e) => onAge(e.target.value)}
-            required
-          />
-          <CartoonSelect
-            label="Grade"
-            options={GRADES}
-            value={grade}
-            onChange={(e) => onGrade(e.target.value)}
-          />
-        </div>
+          <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: "1fr 1.4fr", alignItems: "end" }}>
+            <FormField
+              control={form.control}
+              name="age"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={LABEL_CLASS}>Age</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="6"
+                      max="14"
+                      placeholder="9"
+                      className={INPUT_CLASS}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-coral text-[13px] font-semibold" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="grade"
+              render={({ field }) => (
+                <FormItem>
+                  <CartoonSelect
+                    label="Grade"
+                    options={GRADES}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  />
+                  <FormMessage className="text-coral text-[13px] font-semibold" />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div className="mb-4">
-          <CartoonInput
-            label="Parent's email"
-            type="email"
-            placeholder="grownup@home.com"
-            value={parentEmail}
-            onChange={(e) => onParentEmail(e.target.value)}
-            required
+          <FormField
+            control={form.control}
+            name="parentEmail"
+            render={({ field }) => (
+              <FormItem className="mb-4">
+                <FormLabel className={LABEL_CLASS}>Parent&apos;s email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="grownup@home.com"
+                    className={INPUT_CLASS}
+                    {...field}
+                  />
+                </FormControl>
+                <p className="text-[12px] text-ink-soft font-semibold mt-1.5 mx-0.5">
+                  We&apos;ll ask them to confirm — for safety.
+                </p>
+                <FormMessage className="text-coral text-[13px] font-semibold" />
+              </FormItem>
+            )}
           />
-          <p className="text-[12px] text-ink-soft font-semibold mt-1.5 mx-0.5">
-            We'll ask them to confirm — for safety.
-          </p>
-        </div>
 
-        <div className="mb-[22px]">
-          <CartoonInput
-            label="Secret password"
-            type={showPassword ? "text" : "password"}
-            placeholder="at least 6 magic letters"
-            value={password}
-            onChange={(e) => onPassword(e.target.value)}
-            required
-            minLength={6}
-            rightSlot={
-              <button type="button" onClick={onTogglePassword} className="p-1.5">
-                <EyeIcon size={22} hidden={!showPassword} />
-              </button>
-            }
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem className="mb-[22px]">
+                <FormLabel className={LABEL_CLASS}>Secret password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="at least 6 magic letters"
+                      className={`${INPUT_CLASS} pr-12`}
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTogglePassword}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5"
+                    >
+                      <EyeIcon size={22} hidden={!showPassword} />
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage className="text-coral text-[13px] font-semibold" />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <CartoonButton type="submit" variant="primary" className="w-full">
-          Next: pick your wizard <ArrowRightIcon size={20} />
-        </CartoonButton>
-      </form>
+          <CartoonButton type="submit" variant="primary" className="w-full">
+            Next: pick your wizard <ArrowRightIcon size={20} />
+          </CartoonButton>
+        </form>
+      </Form>
 
       <p className="mt-[22px] text-[15px] text-ink-soft font-semibold">
         Already a wizard?{" "}
         <button
           className="text-coral font-extrabold underline decoration-[3px] underline-offset-4 text-[15px]"
-          onClick={onGoLogin}
+          onClick={handleNavigateLogin}
         >
           Sign in
         </button>
@@ -182,19 +193,15 @@ function InfoStep({
   );
 }
 
-interface AvatarStepProps {
-  selectedAvatar: AvatarId;
-  onSelectAvatar: (id: AvatarId) => void;
-  onBack: () => void;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
-}
+function AvatarStep() {
+  const { selectedAvatar, handleSelectAvatar, handleBack, handleAvatarSubmit } =
+    useRegisterContext();
 
-function AvatarStep({ selectedAvatar, onSelectAvatar, onBack, onSubmit }: AvatarStepProps) {
   const selected = AVATARS.find((a) => a.id === selectedAvatar)!;
   const SelectedComp = AVATAR_COMPONENTS[selected.id];
 
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={handleAvatarSubmit}>
       <div className="flex justify-center mb-5">
         <div
           key={selectedAvatar}
@@ -213,7 +220,7 @@ function AvatarStep({ selectedAvatar, onSelectAvatar, onBack, onSubmit }: Avatar
               key={a.id}
               bg={a.bg}
               selected={selectedAvatar === a.id}
-              onClick={() => onSelectAvatar(a.id)}
+              onClick={() => handleSelectAvatar(a.id)}
             >
               <AvatarComp size={50} />
             </AvatarPickButton>
@@ -230,7 +237,7 @@ function AvatarStep({ selectedAvatar, onSelectAvatar, onBack, onSubmit }: Avatar
       </div>
 
       <div className="flex gap-3">
-        <CartoonButton type="button" variant="secondary" onClick={onBack} className="flex-shrink-0">
+        <CartoonButton type="button" variant="secondary" onClick={handleBack} className="flex-shrink-0">
           Back
         </CartoonButton>
         <CartoonButton type="submit" variant="primary" className="flex-1">
@@ -241,32 +248,22 @@ function AvatarStep({ selectedAvatar, onSelectAvatar, onBack, onSubmit }: Avatar
   );
 }
 
-export function RegisterPage() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState<1 | 2>(1);
-  const [name, setName] = useState("");
-  const [age, setAge] = useState("");
-  const [grade, setGrade] = useState("3rd grade");
-  const [parentEmail, setParentEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [avatar, setAvatar] = useState<AvatarId>("fox");
-  const [loading, setLoading] = useState(false);
+function RegisterHeader() {
+  const { step } = useRegisterContext();
+  return (
+    <>
+      <h1 className="font-display font-bold text-ink text-[38px] leading-[0.95] mb-2">
+        {step === 1 ? "Start your quest" : "Pick your wizard"}
+      </h1>
+      <p className="text-[15px] text-ink-soft font-semibold mb-6">
+        {step === 1 ? "A few quick questions and you're in." : "Your hero awaits — choose wisely!"}
+      </p>
+    </>
+  );
+}
 
-  const handleInfoNext = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setStep(2);
-  };
-
-  const handleAvatarSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/levels");
-    }, LOADING_DURATION_MS);
-  };
-
+function RegisterCard() {
+  const { step, loading } = useRegisterContext();
   return (
     <div className="min-h-screen bg-cream font-body relative flex items-center justify-center px-6 py-10 overflow-hidden">
       <div className="absolute top-10 left-[8%] animate-float-slow">
@@ -283,45 +280,21 @@ export function RegisterPage() {
       </div>
 
       <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
-        <h1 className="font-display font-bold text-ink text-[38px] leading-[0.95] mb-2">
-          {step === 1 ? "Start your quest" : "Pick your wizard"}
-        </h1>
-        <p className="text-[15px] text-ink-soft font-semibold mb-6">
-          {step === 1 ? "A few quick questions and you're in." : "Your hero awaits — choose wisely!"}
-        </p>
-
+        <RegisterHeader />
         <StepDots currentStep={step} totalSteps={2} />
-
-        {step === 1 && (
-          <InfoStep
-            name={name}
-            age={age}
-            grade={grade}
-            parentEmail={parentEmail}
-            password={password}
-            showPassword={showPassword}
-            onName={setName}
-            onAge={setAge}
-            onGrade={setGrade}
-            onParentEmail={setParentEmail}
-            onPassword={setPassword}
-            onTogglePassword={() => setShowPassword((s) => !s)}
-            onNext={handleInfoNext}
-            onGoLogin={() => navigate("/login")}
-          />
-        )}
-
-        {step === 2 && (
-          <AvatarStep
-            selectedAvatar={avatar}
-            onSelectAvatar={setAvatar}
-            onBack={() => setStep(1)}
-            onSubmit={handleAvatarSubmit}
-          />
-        )}
+        {step === 1 && <InfoStep />}
+        {step === 2 && <AvatarStep />}
       </div>
 
       {loading && <LoadingOverlay text="Summoning your wizard..." />}
     </div>
+  );
+}
+
+export function RegisterPage() {
+  return (
+    <RegisterProvider>
+      <RegisterCard />
+    </RegisterProvider>
   );
 }
