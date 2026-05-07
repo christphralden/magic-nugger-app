@@ -43,7 +43,7 @@ shared/src/**/*.js.map
 shared/src/**/*.d.ts
 
 # DB backups
-db/backups/*.sql
+# db/backups/*.sql
 
 # Misc
 *.pem

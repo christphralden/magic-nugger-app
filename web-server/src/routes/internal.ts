@@ -25,7 +25,6 @@ internalRouter.post("/memory", async (_req, res) => {
 });
 
 internalRouter.post("/cache/leaderboard", async (_req, res) => {
-  console.log(leaderboardCache.serialize());
   res.json({
     code: HttpCode.OK,
     error: null,
