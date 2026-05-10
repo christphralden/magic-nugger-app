@@ -10,6 +10,7 @@ import CountUp from "@/components/count-up";
 import { FloatingText } from "@/components/floating-text";
 import { CloudPixel } from "@/components/decor/cloud-pixel";
 import { CartoonPill } from "@/components/ui/cartoon-pill";
+import { Highlighter } from "@/components/highlighter";
 
 const MARQUEE_ITEMS = [
   { text: "7 × 8 = 56", color: "text-white" },
@@ -33,7 +34,7 @@ function HeroSection({ scrollY }: { scrollY: number }) {
   const handleNavigateLogin = () => navigate("/login");
 
   return (
-    <section className="relative px-6 pt-12 pb-20 overflow-hidden min-h-[560px] flex items-center">
+    <section className="relative px-6 pt-8 pb-20 overflow-hidden min-h-[560px] flex items-center">
       <div
         className="absolute top-[40px] left-[8%] animate-float-slow"
         style={{ transform: py(0.2), opacity: 0.9 }}
@@ -108,30 +109,43 @@ function HeroSection({ scrollY }: { scrollY: number }) {
           </CartoonPill>
         </div>
 
-        <Typography className="select-none" variant={"heading"} as="h1">
-          <FloatingText text="Defend the kingdom" offset={0} />
-          <br />
-          <Typography
-            variant={"heading"}
-            as="h1"
-            className="text-coral inline-block relative"
-          >
-            <FloatingText text="with math!" offset={19} />
-            <svg
-              viewBox="0 0 200 14"
-              className="absolute left-0 w-full"
-              style={{ bottom: -14, height: 14 }}
+        <div className="flex flex-col gap-8">
+          <Typography className="select-none" variant={"heading"} as="h1">
+            <FloatingText text="Defend the kingdom" offset={0} />
+            <br />
+            <Typography
+              variant={"heading"}
+              as="h1"
+              className="text-coral inline-block relative"
             >
-              <path
-                d="M2 8 Q60 -2 120 6 T 198 4"
-                stroke="#FFB627"
-                strokeWidth="6"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
+              <FloatingText text="with math!" offset={19} />
+              <svg
+                viewBox="0 0 200 14"
+                className="absolute left-0 w-full"
+                style={{ bottom: -14, height: 14 }}
+              >
+                <path
+                  d="M2 8 Q60 -2 120 6 T 198 4"
+                  stroke="#FFB627"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
+            </Typography>
           </Typography>
-        </Typography>
+          <Typography as="p" variant={"subheading"}>
+            Build&nbsp;
+            <Highlighter action="underline" color="#FF6B6B">
+              confidence
+            </Highlighter>
+            &nbsp;through&nbsp;
+            <Highlighter action="highlight" color="#A0E7E5">
+              adventures
+            </Highlighter>
+            &nbsp;every day
+          </Typography>
+        </div>
 
         <div className="flex flex-row gap-6 flex-wrap justify-center items-center">
           <CartoonButton
@@ -246,14 +260,17 @@ function CtaSection() {
         Ready, math wizard?
       </h2>
       <p className="text-[20px] text-ink-soft font-semibold mb-7">
-        Your first quest is free. No credit card. Just brain power.
+        <Highlighter action="underline" color="#FF6B6B">
+          Free to play!
+        </Highlighter>{" "}
+        No credit card. Just brain power.
       </p>
       <CartoonButton
         size="xl"
         variant="primary"
         onClick={handleNavigateRegister}
       >
-        ✦ New Adventure&nbsp;
+        ✦ Start learning&nbsp;
       </CartoonButton>
     </section>
   );

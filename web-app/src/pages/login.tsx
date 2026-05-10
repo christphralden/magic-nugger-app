@@ -1,6 +1,6 @@
 import { LoginProvider, useLoginContext } from "@/contexts/login.context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CartoonInput } from "@/components/ui/cartoon-input";
 import {
   Form,
   FormControl,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { MagicNuggerHeader } from "@/components/brand/magic-nugger-header";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { PlayIcon } from "@/components/icons/play-icon";
@@ -20,10 +19,17 @@ import { Cloud } from "@/components/decor/cloud";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Coin } from "@/components/decor/coin";
 import { cn } from "@/lib/utils";
+import { Typography } from "@/components/ui/typography";
+import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
+
+const FORM_LABEL_CLASS =
+  "font-display font-semibold text-ink text-[15px] tracking-wide";
+
+const FORM_ERROR_CLASS = "text-coral text-[13px] font-semibold";
 
 function LoginGoogleButton() {
   return (
-    <CartoonButton variant="secondary" className="w-full mb-5" type="button">
+    <CartoonButton variant="secondary" className="w-full" type="button">
       <GoogleIcon /> Continue with Google
     </CartoonButton>
   );
@@ -36,18 +42,12 @@ function LoginUsernameField() {
       control={form.control}
       name="username"
       render={({ field }) => (
-        <FormItem className="mb-4">
-          <FormLabel className="font-display font-semibold text-ink text-[15px] tracking-wide">
-            Username or email
-          </FormLabel>
+        <FormItem>
+          <FormLabel className={FORM_LABEL_CLASS}>Username or email</FormLabel>
           <FormControl>
-            <Input
-              placeholder="merlin_the_brave"
-              className="bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-placeholder placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]"
-              {...field}
-            />
+            <CartoonInput placeholder="merlin_the_brave" {...field} />
           </FormControl>
-          <FormMessage className="text-coral text-[13px] font-semibold" />
+          <FormMessage className={FORM_ERROR_CLASS} />
         </FormItem>
       )}
     />
@@ -61,28 +61,25 @@ function LoginPasswordField() {
       control={form.control}
       name="password"
       render={({ field }) => (
-        <FormItem className="mb-3">
-          <FormLabel className="font-display font-semibold text-ink text-[15px] tracking-wide">
-            Secret password
-          </FormLabel>
+        <FormItem>
+          <FormLabel className={FORM_LABEL_CLASS}>Secret password</FormLabel>
           <FormControl>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 pr-12 text-[17px] text-ink font-semibold h-auto placeholder:text-placeholder placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]"
-                {...field}
-              />
-              <button
-                type="button"
-                onClick={handleTogglePassword}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5"
-              >
-                <EyeIcon size={22} hidden={!showPassword} />
-              </button>
-            </div>
+            <CartoonInput
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              rightSlot={
+                <Button
+                  variant={"ghost"}
+                  onClick={handleTogglePassword}
+                  className="p-1.5"
+                >
+                  <EyeIcon size={22} hidden={!showPassword} />
+                </Button>
+              }
+              {...field}
+            />
           </FormControl>
-          <FormMessage className="text-coral text-[13px] font-semibold" />
+          <FormMessage className={FORM_ERROR_CLASS} />
         </FormItem>
       )}
     />
@@ -93,10 +90,10 @@ function LoginFormFooter() {
   const { rememberMe, handleToggleRememberMe, handleForgotPassword } =
     useLoginContext();
   return (
-    <div className="flex justify-between items-center mb-6">
-      <button
-        type="button"
-        className="flex items-center gap-2.5 text-[14px] text-ink-soft cursor-pointer"
+    <div className="flex justify-between items-center">
+      <Button
+        variant={"ghost"}
+        className="flex items-center gap-2.5 text-[14px] text-ink-soft cursor-pointer px-0"
         onClick={handleToggleRememberMe}
       >
         <span
@@ -119,7 +116,7 @@ function LoginFormFooter() {
           )}
         </span>
         Keep me signed in
-      </button>
+      </Button>
       <Button
         type="button"
         variant="ghost"
@@ -136,7 +133,10 @@ function LoginForm() {
   const { form, handleSubmit } = useLoginContext();
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="text-left">
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="text-left flex flex-col gap-4"
+      >
         <LoginUsernameField />
         <LoginPasswordField />
         <LoginFormFooter />
@@ -151,7 +151,7 @@ function LoginForm() {
 function LoginSignupLink() {
   const { handleNavigateRegister } = useLoginContext();
   return (
-    <p className="mt-6 text-[15px] text-ink-soft font-semibold">
+    <Typography variant="label" className="text-ink-soft">
       New here?{" "}
       <button
         className="text-coral font-extrabold underline decoration-[3px] underline-offset-4 text-[15px]"
@@ -159,45 +159,45 @@ function LoginSignupLink() {
       >
         Create an account
       </button>
-    </p>
+    </Typography>
   );
 }
 
 function LoginCard() {
   const { loading } = useLoginContext();
   return (
-    <div className="min-h-screen bg-cream font-body flex flex-col overflow-hidden">
-      <MagicNuggerHeader />
+    <AuthPageLayout>
+      <div className="absolute top-6 left-[8%] animate-float-slow">
+        <Cloud size={120} />
+      </div>
+      <div className="absolute top-14 right-[10%] animate-float">
+        <Sparkle size={28} className="text-gold" />
+      </div>
+      <div className="absolute bottom-16 left-[12%] animate-float-fast">
+        <Sparkle size={24} className="text-coral" />
+      </div>
+      <div className="absolute bottom-16 right-[6%] animate-float-slow">
+        <Coin size={48} />
+      </div>
 
-      <div className="flex-1 relative flex items-center justify-center px-6 py-10">
-        <div className="absolute top-6 left-[8%] animate-float-slow">
-          <Cloud size={120} />
-        </div>
-        <div className="absolute top-14 right-[10%] animate-float">
-          <Sparkle size={28} className="text-gold" />
-        </div>
-        <div className="absolute bottom-[60px] left-[12%] animate-float-fast">
-          <Sparkle size={24} className="text-coral" />
-        </div>
-        <div className="absolute bottom-16 right-[6%] animate-float-slow">
-          <Coin size={48} />
-        </div>
-
-        <div className="animate-pop-in w-full max-w-[580px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
-          <h1 className="font-display font-bold text-ink text-[40px] leading-[0.95] mb-2">
-            Welcome back!
-          </h1>
-          <p className="text-[16px] text-ink-soft font-semibold mb-7">
-            Your towers missed you
-          </p>
+      <AuthCard>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <Typography as="h1" variant="display" className="text-[40px]">
+              Welcome back!
+            </Typography>
+            <Typography variant="body" className="text-[16px] text-ink-soft">
+              Your hero missed you
+            </Typography>
+          </div>
           <LoginGoogleButton />
           <LoginForm />
           <LoginSignupLink />
         </div>
-      </div>
+      </AuthCard>
 
       {loading && <LoadingOverlay text="Casting your spell..." />}
-    </div>
+    </AuthPageLayout>
   );
 }
 

@@ -5,7 +5,7 @@ import { type ElementType, type ComponentPropsWithoutRef } from "react";
 const typographyVariants = cva("", {
   variants: {
     variant: {
-      logo: "font-display font-bold text-2xl text-ink",
+      logo: "font-display font-bold text-3xl text-ink",
       display:
         "font-display font-bold leading-[0.95] tracking-[-0.015em] text-ink",
       heading:

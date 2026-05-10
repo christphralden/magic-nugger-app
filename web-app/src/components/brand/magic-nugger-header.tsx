@@ -1,11 +1,15 @@
 import { Typography } from "@/components/ui/typography";
+import { Link } from "react-router-dom";
 
 export function MagicNuggerHeader() {
   return (
-    <div className="w-full flex items-center justify-center pt-6 pb-4 bg-cream">
+    <Link
+      to={"/"}
+      className="w-full flex items-center justify-center pt-6 pb-4 bg-cream"
+    >
       <Typography as="h2" variant={"logo"}>
-        Magic Nugger
+        Calculon
       </Typography>
-    </div>
+    </Link>
   );
 }
