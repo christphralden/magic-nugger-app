@@ -9,6 +9,7 @@ import type {
   GlobalLeaderboardRow,
   LevelLeaderboardRow,
   ClassroomLeaderboardRow,
+  RoomLeaderboardRow,
 } from "@magic-nugger-app/shared";
 import { loggingService } from "./logging.service";
 
@@ -41,7 +42,7 @@ export const leaderboardService = {
 
     const { rows } = await getDb().query<GlobalLeaderboardRow>(
       `SELECT
-         p.id, p.username, p.display_name, p.avatar_url, p.current_elo,
+         p.id AS player_id, p.username, p.display_name, p.avatar_url, p.current_elo,
          COALESCE(MAX(gs.max_streak), 0) AS max_streak
        FROM players p
        LEFT JOIN game_sessions gs ON gs.player_id = p.id AND gs.status = 'completed'
@@ -93,7 +94,7 @@ export const leaderboardService = {
 
     const { rows } = await getDb().query<LevelLeaderboardRow>(
       `SELECT
-         gs.player_id, p.username, p.display_name,
+         gs.player_id, p.username, p.display_name, p.avatar_url,
          MAX(gs.score) AS best_score,
          MAX(gs.max_streak) AS max_streak
        FROM game_sessions gs
@@ -101,7 +102,7 @@ export const leaderboardService = {
        WHERE gs.level_id = $1
          AND gs.status = 'completed'
          AND ($3::timestamptz IS NULL OR gs.ended_at >= $3)
-       GROUP BY gs.player_id, p.username, p.display_name
+       GROUP BY gs.player_id, p.username, p.display_name, p.avatar_url
        HAVING ($2::int IS NULL OR MAX(gs.score) < $2)
        ORDER BY best_score DESC
        LIMIT $4`,
@@ -154,7 +155,7 @@ export const leaderboardService = {
 
     const { rows } = await getDb().query<ClassroomLeaderboardRow>(
       `SELECT
-         cm.player_id, p.username, p.display_name, cm.classroom_elo,
+         cm.player_id, p.username, p.display_name, p.avatar_url, cm.classroom_elo,
          COALESCE(MAX(gs.max_streak), 0) AS max_streak
        FROM classroom_members cm
        JOIN players p ON p.id = cm.player_id
@@ -163,7 +164,7 @@ export const leaderboardService = {
          AND ($3::timestamptz IS NULL OR gs.ended_at >= $3)
        WHERE cm.classroom_id = $1
          AND ($2::int IS NULL OR cm.classroom_elo < $2)
-       GROUP BY cm.player_id, p.username, p.display_name, cm.classroom_elo
+       GROUP BY cm.player_id, p.username, p.display_name, p.avatar_url, cm.classroom_elo
        ORDER BY cm.classroom_elo DESC
        LIMIT $4`,
       [
@@ -183,6 +184,34 @@ export const leaderboardService = {
     };
     leaderboardCache.set(key, result);
     return result;
+  },
+
+  async getByRoom(roomId: string): Promise<RoomLeaderboardRow[]> {
+    const { rows } = await getDb().query<RoomLeaderboardRow>(
+      `SELECT
+        rm.player_id,
+        p.username,
+        p.display_name,
+        p.avatar_url,
+        rm.game_session_id,
+        gs.score,
+        gs.elo_delta,
+        gs.correct_count,
+        gs.incorrect_count,
+        gs.max_streak,
+        gs.status          AS session_status,
+        gs.ended_at        AS finished_at
+       FROM room_members rm
+       JOIN players p ON p.id = rm.player_id
+       LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
+       WHERE rm.room_id = $1
+       ORDER BY
+         CASE WHEN gs.status IN ('completed', 'failed') THEN 0 ELSE 1 END,
+         gs.score DESC NULLS LAST,
+         rm.joined_at ASC`,
+      [roomId],
+    );
+    return rows;
   },
 
   invalidateGlobal(): void {

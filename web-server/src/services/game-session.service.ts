@@ -8,14 +8,14 @@ export const gameSessionService = {
     userId: string;
   }): Promise<GameSession | null> {
     const { rows } = await getDb().query<GameSession>(
-      `SELECT 
-        id, player_id, level_id, status, score,
-        max_answers, elo_before, elo_after, elo_delta, correct_count, 
+      `SELECT
+        id, player_id, level_id, room_id, status, score,
+        max_answers, elo_before, elo_after, elo_delta, correct_count,
         incorrect_count, max_streak, current_streak, started_at, ended_at,
-        client_ip, user_agent 
+        client_ip, user_agent
       FROM game_sessions
-      WHERE 
-        player_id = $1 
+      WHERE
+        player_id = $1
         AND status = 'in_progress'
       ORDER BY started_at DESC LIMIT 1`,
       [userId],
@@ -29,14 +29,14 @@ export const gameSessionService = {
     sessionId: string;
   }): Promise<GameSession | null> {
     const { rows } = await getDb().query<GameSession>(
-      `SELECT 
-        id, player_id, level_id, status, score,
-        max_answers, elo_before, elo_after, elo_delta, 
+      `SELECT
+        id, player_id, level_id, room_id, status, score,
+        max_answers, elo_before, elo_after, elo_delta,
         correct_count, incorrect_count, max_streak, current_streak,
-        started_at, ended_at, client_ip, user_agent  
-      FROM game_sessions 
-      WHERE 
-        id = $1 
+        started_at, ended_at, client_ip, user_agent
+      FROM game_sessions
+      WHERE
+        id = $1
         AND status = 'in_progress'
       `,
       [sessionId],
@@ -51,6 +51,7 @@ export const gameSessionService = {
     maxAnswers,
     ip,
     userAgent,
+    roomId,
   }: {
     userId: string;
     levelId: number;
@@ -58,18 +59,19 @@ export const gameSessionService = {
     maxAnswers: number;
     ip: string;
     userAgent: string | null;
+    roomId?: string;
   }): Promise<GameSession> {
     const { rows } = await getDb().query<GameSession>(
-      `INSERT INTO game_sessions 
-        (player_id, level_id, elo_before, max_answers, client_ip, user_agent)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING 
-        id, player_id, level_id, status, score,
-        max_answers, elo_before, elo_after, elo_delta, correct_count, 
+      `INSERT INTO game_sessions
+        (player_id, level_id, elo_before, max_answers, client_ip, user_agent, room_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING
+        id, player_id, level_id, room_id, status, score,
+        max_answers, elo_before, elo_after, elo_delta, correct_count,
         incorrect_count, max_streak, current_streak, started_at, ended_at,
         client_ip, user_agent
       `,
-      [userId, levelId, currentElo, maxAnswers, ip, userAgent],
+      [userId, levelId, currentElo, maxAnswers, ip, userAgent, roomId ?? null],
     );
     return rows[0];
   },

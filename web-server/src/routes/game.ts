@@ -31,6 +31,7 @@ gameRouter.post(
       currentElo: user.current_elo,
       ip: getClientIp(req),
       userAgent: getUserAgent(req),
+      roomId: req.body.room_id,
     });
     if (!created) {
       loggingService.log({

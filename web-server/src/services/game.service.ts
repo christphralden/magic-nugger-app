@@ -10,6 +10,7 @@ import { gameSessionService } from "@/services/game-session.service.js";
 import { levelService } from "@/services/level.service.js";
 import { playerService } from "@/services/player.service.js";
 import { eloService } from "@/services/elo.service.js";
+import { roomService } from "@/services/room.service.js";
 import { GameSessionConfig } from "@/constants/game-session.js";
 import z from "zod";
 
@@ -20,14 +21,23 @@ export const gameService = {
     currentElo,
     ip,
     userAgent,
+    roomId,
   }: {
     userId: string;
     levelId: number;
     currentElo: number;
     ip: string;
     userAgent: string | null;
+    roomId?: string;
   }): Promise<{ session: GameSession; created: boolean }> {
     return tx(async () => {
+      if (roomId) {
+        const room = await roomService.getById(roomId);
+        if (room.status !== "in_progress") {
+          throw new AppError(HttpCode.CONFLICT, "Room is not in progress");
+        }
+      }
+
       const existing = await gameSessionService.getActiveByPlayerId({
         userId,
       });
@@ -58,7 +68,17 @@ export const gameService = {
         maxAnswers,
         ip,
         userAgent,
+        roomId,
       });
+
+      if (roomId) {
+        await roomService.linkMemberSession({
+          roomId,
+          playerId: userId,
+          sessionId: session.id,
+        });
+      }
+
       return { session, created: true };
     });
   },
@@ -152,9 +172,7 @@ export const gameService = {
 
       const eloDelta = status === "failed" ? 0 : (session.elo_delta ?? 0);
       const finalElo =
-        status === "failed"
-          ? currentElo
-          : Math.max(0, currentElo + eloDelta);
+        status === "failed" ? currentElo : Math.max(0, currentElo + eloDelta);
 
       const reason: EloHistoryReason =
         status === "completed" ? "session_completed" : "session_failed";
@@ -180,6 +198,10 @@ export const gameService = {
           reason,
         }),
       ]);
+
+      if (session.room_id) {
+        roomService.checkAndCompleteRoom(session.room_id).catch(() => {});
+      }
 
       return { levelId: session.level_id };
     });
