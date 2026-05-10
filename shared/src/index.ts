@@ -1,4 +1,6 @@
 export * from "./constants/error-codes";
+export * from "./constants/log-events";
+export * from "./types/log.types";
 export * from "./utils/try-catch";
 export * from "./utils/zod";
 export * from "./types/api.types";
@@ -7,3 +9,6 @@ export * from "./types/level.types";
 export * from "./types/classroom.types";
 export * from "./types/session.types";
 export * from "./types/elo.types";
+export * from "./types/pagination.types";
+export * from "./types/json.types";
+export * from "./types/leaderboard.types";

@@ -2,9 +2,9 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bcrypt from "bcrypt";
-import { db } from "@/db/client.js";
 import type { PlayerDbRecord } from "@/types/player.types.js";
 import { AppUser } from "@magic-nugger-app/shared";
+import { getDb } from "@/db/transaction-context";
 
 function userSelect(): string {
   return `
@@ -29,7 +29,7 @@ passport.serializeUser((user: Express.User, done) => {
 
 passport.deserializeUser(async (id: string, done) => {
   try {
-    const { rows } = await db.query<AppUser>(
+    const { rows } = await getDb().query<AppUser>(
       `${userSelect()} WHERE p.id = $1`,
       [id],
     );
@@ -44,7 +44,7 @@ passport.use(
     { usernameField: "email" },
     async (email, password, done) => {
       try {
-        const { rows: hashRows } = await db.query<
+        const { rows: hashRows } = await getDb().query<
           Pick<PlayerDbRecord, "password_hash">
         >(`SELECT password_hash FROM players WHERE email = $1`, [email]);
         const hash = hashRows[0]?.password_hash;
@@ -53,7 +53,7 @@ passport.use(
         const valid = await bcrypt.compare(password, hash);
         if (!valid) return done(null, false);
 
-        const { rows } = await db.query<AppUser>(
+        const { rows } = await getDb().query<AppUser>(
           `${userSelect()} WHERE p.email = $1`,
           [email],
         );
@@ -75,7 +75,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
-          const { rows } = await db.query<AppUser>(
+          const { rows } = await getDb().query<AppUser>(
             `${userSelect()} WHERE p.oauth_provider = $1 AND p.oauth_id = $2`,
             ["google", profile.id],
           );
@@ -85,7 +85,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(null, false);
 
-          await db.query(
+          await getDb().query(
             `INSERT INTO players (username, email, display_name, avatar_url, oauth_provider, oauth_id)
              VALUES ($1, $2, $3, $4, $5, $6)`,
             [
@@ -98,7 +98,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             ],
           );
 
-          const { rows: inserted } = await db.query<AppUser>(
+          const { rows: inserted } = await getDb().query<AppUser>(
             `${userSelect()} WHERE p.email = $1`,
             [email],
           );

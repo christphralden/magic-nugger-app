@@ -22,6 +22,14 @@ services:
       NODE_ENV: development
       ENVIRONMENT: local
 
+  magic-nugger-cron:
+    extends:
+      file: docker-compose.yml
+      service: magic-nugger-cron
+    container_name: magic-nugger-cron-dev
+    environment:
+      POSTGRES_HOST: magic-nugger-postgres-dev
+
 volumes:
   postgres_data:
     name: magic-nugger-postgres-data-dev

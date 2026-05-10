@@ -108,6 +108,7 @@ Non-sensitive config passed via `vars.*`:
 | `DB_POOL_CONNECTION_TIMEOUT_MS` | `5000`                  |
 | `DB_QUERY_TIMEOUT_MS`           | `30000`                 |
 | `DB_SSL_MODE`                   | `prefer`                |
+| `GAME_SESSION_RESUME_WINDOW_MS` | `1800000`               |
 
 Also create a `production` environment under **GitHub → Settings → Environments** — this gates the deploy workflow and allows adding required reviewers.
 
@@ -192,11 +193,32 @@ docker exec -i magic-nugger-postgres psql -U postgres magic_nugger < backup.sql
 
 ## 10. Backup
 
-Daily Postgres dump to S3:
+### Development
+
+The `magic-nugger-cron` container runs a weekly `pg_dump` every Sunday at 02:00 and writes dumps to `db/backups/` on the host. Logs are written to `audit.log_events` with `event = 'cron:backup'`.
+
+For on-demand snapshots:
 
 ```bash
-# crontab -e
-0 3 * * * docker exec magic-nugger-postgres pg_dump -U postgres magic_nugger | aws s3 cp - s3://your-bucket/magic-nugger-$(date +\%Y\%m\%d).sql
+npm run db:backup                                         # → db/backups/backup_YYYYMMDD_HHMMSS.sql
+npm run db:restore -- db/backups/backup_20260507_020000.sql
+```
+
+See [`docs/007-cron-jobs.md`](docs/007-cron-jobs.md) for full cron job documentation.
+
+### Production
+
+The production stack (`docker-compose.yml`) does not include the cron container — set up a host-level crontab on the EC2 instance:
+
+```bash
+# crontab -e (as ubuntu)
+0 3 * * 0 docker exec magic-nugger-postgres pg_dump -U postgres magic_nugger > /backups/backup_$(date +\%Y\%m\%d).sql
+```
+
+Or pipe to S3:
+
+```bash
+0 3 * * 0 docker exec magic-nugger-postgres pg_dump -U postgres magic_nugger | aws s3 cp - s3://your-bucket/magic-nugger-$(date +\%Y\%m\%d).sql
 ```
 
 ---
@@ -237,7 +259,8 @@ Internet
 └────────┬────────┘
          │
          ▼
-┌─────────────────┐
-│ postgres cont.  │  PostgreSQL 16 + EBS volume
-└─────────────────┘
+┌─────────────────┐     ┌─────────────────┐
+│ postgres cont.  │◄────│  cron container │  session cleanup + backup
+│ PostgreSQL 16   │     │  (node:alpine)  │
+└─────────────────┘     └─────────────────┘
 ```

@@ -1,16 +1,17 @@
 import { Router } from "express";
 import passport from "passport";
 import bcrypt from "bcrypt";
-import { db } from "@/db/client.js";
-import { validate } from "@/middleware/validate.js";
-import { authenticate } from "@/middleware/authenticate.js";
-import { toResponsePlayer } from "@/dto/player.dto.js";
+import { validate } from "@/middleware/validate";
+import { authenticate } from "@/middleware/authenticate";
+import { toResponsePlayer } from "@/dto/player.dto";
 import {
   RequestCreatePlayerSchema,
   RequestLoginSchema,
-  ErrorCode,
+  HttpCode,
 } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
+import { getDb } from "@/db/transaction-context";
+import { loggingService } from "@/services/logging.service";
 
 export const authRouter = Router();
 
@@ -21,7 +22,7 @@ authRouter.post(
     const { username, email, password, display_name } = req.body;
     const hash = await bcrypt.hash(password, 12);
 
-    const { rows } = await db.query<ResponsePlayer>(
+    const { rows } = await getDb().query<ResponsePlayer>(
       `INSERT INTO players 
         (
           username, 
@@ -46,7 +47,7 @@ authRouter.post("/login", validate(RequestLoginSchema), (req, res, next) => {
   passport.authenticate("local", (err: unknown, user: Express.User) => {
     if (err || !user) {
       return res.status(401).json({
-        code: ErrorCode.UNAUTHORIZED,
+        code: HttpCode.UNAUTHORIZED,
         error: "Invalid credentials",
         data: null,
       } satisfies ApiResponse<null>);
@@ -55,6 +56,12 @@ authRouter.post("/login", validate(RequestLoginSchema), (req, res, next) => {
       if (loginErr) return next(loginErr);
       const player = toResponsePlayer(user);
       if (!player) return next(new Error("user mapping failed"));
+      loggingService.log({
+        event: "auth:login",
+        level: "info",
+        userId: user.id,
+        description: user.email,
+      });
       res.json({
         code: 200,
         error: null,
@@ -69,18 +76,32 @@ authRouter.get(
   passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
-authRouter.get(
-  "/oauth/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "/",
-    successRedirect: "/levels",
-  }),
-);
+authRouter.get("/oauth/google/callback", (req, res, next) => {
+  passport.authenticate("google", (err: unknown, user: Express.User) => {
+    if (err || !user) return res.redirect("/");
+    req.logIn(user, (loginErr) => {
+      if (loginErr) return next(loginErr);
+      loggingService.log({
+        event: "auth:oauth_login",
+        level: "info",
+        userId: user.id,
+        description: user.email,
+      });
+      return res.redirect("/levels");
+    });
+  })(req, res, next);
+});
 
 authRouter.use(authenticate);
 
 authRouter.post("/logout", (req, res) => {
+  const userId = req.user?.id ?? null;
   req.logout(() => {
+    loggingService.log({
+      event: "auth:logout",
+      level: "info",
+      userId,
+    });
     res.json({
       code: 200,
       error: null,

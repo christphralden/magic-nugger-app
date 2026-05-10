@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+export const EloHistoryReasonSchema = z.enum([
+  "session_completed",
+  "session_failed",
+  "session_abandoned",
+  "admin_adjustment",
+  "decay",
+]);
+
+export type EloHistoryReason = z.infer<typeof EloHistoryReasonSchema>;
+
 export const EloHistorySchema = z.object({
   id: z.number().int(),
   player_id: z.string().uuid(),
@@ -7,12 +17,7 @@ export const EloHistorySchema = z.object({
   elo_before: z.number().int(),
   elo_after: z.number().int(),
   delta: z.number().int(),
-  reason: z.enum([
-    "session_completed",
-    "session_failed",
-    "admin_adjustment",
-    "decay",
-  ]),
+  reason: EloHistoryReasonSchema,
   created_at: z.string().datetime(),
 });
 export type EloHistory = z.infer<typeof EloHistorySchema>;

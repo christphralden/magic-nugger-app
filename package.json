@@ -11,7 +11,9 @@
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "db:migrate": "node --env-file=.env.local db/runner.mjs up",
-    "db:rollback": "node --env-file=.env.local db/runner.mjs down"
+    "db:rollback": "node --env-file=.env.local db/runner.mjs down",
+    "db:backup": "bash db/backup.sh",
+    "db:restore": "bash db/restore.sh"
   },
   "devDependencies": {
     "pg": "^8.11.5"

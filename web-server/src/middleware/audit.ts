@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { db } from "@/db/client.js";
-import { getClientIp } from "@/utils/connectivity.js";
-import { tryCatch } from "@magic-nugger-app/shared";
+import { getClientIp, getUserAgent } from "@/utils/connectivity.js";
+import { formatError } from "@/utils/errors";
+import { getDb } from "@/db/transaction-context";
 
 const SENSITIVE_KEYS = new Set([
   "password",
@@ -17,25 +17,28 @@ const SENSITIVE_KEYS = new Set([
 function sanitizeBody(body: unknown): unknown {
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
   return Object.fromEntries(
-    Object.entries(body as Record<string, unknown>).filter(
-      ([k]) => !SENSITIVE_KEYS.has(k.toLowerCase()),
-    ),
+    Object.entries(body as Record<string, unknown>).map(([k, v]) => {
+      if (SENSITIVE_KEYS.has(k)) {
+        return [k, "<REDACTED>"];
+      }
+      return [k, v];
+    }),
   );
 }
 
 export const audit = (req: Request, res: Response, next: NextFunction) => {
   const userId = req.user?.id ?? null;
   const ipAddress = getClientIp(req);
-  const userAgent = req.headers["user-agent"] ?? null;
+  const userAgent = getUserAgent(req);
   const url = req.path.replace(/^\/api/, "");
 
-  res.on("finish", async () => {
+  res.on("finish", () => {
     const statusCode = res.statusCode;
     const metadata = statusCode >= 400 ? sanitizeBody(req.body) : null;
     const method = req.method;
 
-    const [err] = await tryCatch(
-      db.query(
+    try {
+      getDb().query(
         `INSERT INTO audit.audit_events (user_id, url, status_code, ip_address, user_agent, metadata, http_method)
          VALUES ($1, $2, $3, $4::inet, $5, $6, $7)`,
         [
@@ -47,10 +50,10 @@ export const audit = (req: Request, res: Response, next: NextFunction) => {
           metadata ? JSON.stringify(metadata) : null,
           method,
         ],
-      ),
-    );
-
-    if (err) console.error("[audit] failed to log:", err);
+      );
+    } catch (error) {
+      console.error("[audit] failed to log: ", formatError(error));
+    }
   });
   next();
 };

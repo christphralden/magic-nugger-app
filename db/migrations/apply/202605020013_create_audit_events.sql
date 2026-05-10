@@ -40,7 +40,7 @@ BEGIN
         PERFORM partman.create_parent(
           p_parent_table => 'audit.audit_events',
           p_control      => 'created_at',
-          p_interval     => '1 month',
+          p_interval     => '1 week',
           p_premake      => 3
         );
     END IF;

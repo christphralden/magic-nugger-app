@@ -82,6 +82,33 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  magic-nugger-cron:
+    build:
+      context: ./db/cron
+    container_name: magic-nugger-cron
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-magic_nugger}
+      POSTGRES_HOST: magic-nugger-postgres
+      GAME_SESSION_RESUME_WINDOW_MS: ${GAME_SESSION_RESUME_WINDOW_MS:-1800000}
+    depends_on:
+      magic-nugger-postgres:
+        condition: service_healthy
+    volumes:
+      - ./db/cron/crontab:/app/crontab:ro
+      - ./db/cron/game-session-cleanup.mjs:/app/game-session-cleanup.mjs:ro
+      - ./db/cron/log-event.mjs:/app/log-event.mjs:ro
+      - ./db/cron/backup.sh:/app/backup.sh:ro
+      - ./db/backups:/backups
+    command: sh -c "crontab /app/crontab && crond -f -d 8"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   postgres_data:
     name: magic-nugger-postgres-data

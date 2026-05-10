@@ -42,6 +42,9 @@ shared/src/**/*.js
 shared/src/**/*.js.map
 shared/src/**/*.d.ts
 
+# DB backups
+# db/backups/*.sql
+
 # Misc
 *.pem
 *.key

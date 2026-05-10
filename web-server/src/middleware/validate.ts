@@ -1,20 +1,31 @@
 import type { ZodSchema } from "zod";
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "@/errors/app-error.js";
-import { ErrorCode, jzod } from "@magic-nugger-app/shared";
+import { ApiResponse, HttpCode, jzod } from "@magic-nugger-app/shared";
+import { loggingService } from "@/services/logging.service";
 
 export const validate =
   <T>(schema: ZodSchema<T>) =>
-  (req: Request, _res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
+
+    // circuit breaks request
     if (!result.success) {
       const issue = result.error.issues[0];
-      const jsonSchema = jzod(schema);
-      throw new AppError(
-        ErrorCode.BAD_REQUEST,
-        JSON.stringify({ reason: issue, schema: jsonSchema }),
-      );
+      const message = JSON.stringify(issue);
+      loggingService.log({
+        event: "error:schema-validation",
+        level: "error",
+        description: message,
+      });
+      return res.status(HttpCode.BAD_REQUEST).json({
+        code: HttpCode.BAD_REQUEST,
+        data: {
+          schema: jzod(schema),
+        },
+        error: message,
+      } satisfies ApiResponse<{ schema: any }>);
     }
+
     req.body = result.data;
     next();
   };
