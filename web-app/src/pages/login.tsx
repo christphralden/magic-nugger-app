@@ -153,12 +153,13 @@ function LoginSignupLink() {
   return (
     <Typography variant="label" className="text-ink-soft">
       New here?{" "}
-      <button
-        className="text-coral font-extrabold underline decoration-[3px] underline-offset-4 text-[15px]"
+      <Button
+        variant={"link"}
+        className="text-coral font-extrabold underline decoration-[3px] underline-offset-4 text-[15px] px-0"
         onClick={handleNavigateRegister}
       >
         Create an account
-      </button>
+      </Button>
     </Typography>
   );
 }
