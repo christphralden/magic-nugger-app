@@ -6,8 +6,6 @@ export function GamePage() {
     Unity,
     provider,
     isLoaded,
-    addEventListener,
-    removeEventListener,
     handleCommunicationTest,
   } = useUnityBridge();
 

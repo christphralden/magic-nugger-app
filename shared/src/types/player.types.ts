@@ -15,6 +15,9 @@ export const PlayerSchema = z.object({
   total_correct: z.number().int().min(0),
   total_incorrect: z.number().int().min(0),
   longest_streak: z.number().int().min(0),
+  age: z.number().int().positive().nullable(),
+  grade: z.number().int().positive().nullable(),
+  guardian_email: z.string().email().nullable(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
   last_active_at: z.string().datetime().nullable(),
@@ -26,6 +29,9 @@ export const RequestCreatePlayerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6).max(128),
   display_name: z.string().max(64).optional(),
+  age: z.number().int().positive().optional(),
+  grade: z.number().int().positive().optional(),
+  guardian_email: z.string().email().optional(),
 });
 export type RequestCreatePlayer = z.infer<typeof RequestCreatePlayerSchema>;
 
@@ -39,6 +45,9 @@ export const RequestUpdatePlayerSchema = z.object({
   display_name: z.string().max(64).optional(),
   username: z.string().min(3).max(32).optional(),
   avatar_url: z.string().url().optional(),
+  age: z.number().int().positive().optional(),
+  grade: z.number().int().positive().optional(),
+  guardian_email: z.string().email().optional(),
 });
 export type RequestUpdatePlayer = z.infer<typeof RequestUpdatePlayerSchema>;
 
@@ -49,6 +58,9 @@ export const ResponsePlayerSchema = PlayerSchema.pick({
   current_elo: true,
   highest_level_unlocked: true,
   avatar_url: true,
+  age: true,
+  grade: true,
+  guardian_email: true,
 });
 export type ResponsePlayer = z.infer<typeof ResponsePlayerSchema>;
 

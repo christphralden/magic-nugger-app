@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { type ElementType, type ComponentPropsWithoutRef } from "react";
 
-const typographyVariants = cva("", {
+export const typographyVariants = cva("", {
   variants: {
     variant: {
       logo: "font-display font-bold text-3xl text-ink",
@@ -13,8 +13,9 @@ const typographyVariants = cva("", {
       subheading: "font-display font-semibold text-2xl leading-snug",
       body: "font-body font-semibold text-lg leading-relaxed",
       caption: "font-body font-medium text-sm",
-      label: "font-display font-semibold text-[15px] tracking-wide",
+      label: "font-display font-semibold text-base tracking-wide",
       strong: "font-display font-bold text-4xl text-ink leading-none",
+      error: "text-coral font-display font-semibold text-base tracking-wide",
     },
   },
   defaultVariants: {

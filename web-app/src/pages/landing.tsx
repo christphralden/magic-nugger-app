@@ -140,7 +140,12 @@ function HeroSection({ scrollY }: { scrollY: number }) {
               confidence
             </Highlighter>
             &nbsp;through&nbsp;
-            <Highlighter action="highlight" color="#A0E7E5">
+            <Highlighter
+              action="highlight"
+              color="#A0E7E5"
+              iterations={2}
+              duration={600}
+            >
               adventures
             </Highlighter>
             &nbsp;every day
@@ -260,7 +265,13 @@ function CtaSection() {
         Ready, math wizard?
       </h2>
       <p className="text-[20px] text-ink-soft font-semibold mb-7">
-        <Highlighter action="underline" color="#FF6B6B">
+        <Highlighter
+          action="underline"
+          color="#FF6B6B"
+          strokeWidth={3}
+          iterations={1}
+          duration={200}
+        >
           Free to play!
         </Highlighter>{" "}
         No credit card. Just brain power.

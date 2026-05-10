@@ -4,22 +4,37 @@ import {
   useState,
   type ReactNode,
   type FormEvent,
+  type BaseSyntheticEvent,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { type AvatarId } from "@/constants/avatars";
+import { RequestCreatePlayerSchema } from "@magic-nugger-app/shared";
 
-const registerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  age: z.string().regex(/^\d+$/, "Age must be a number"),
+const registerFormSchema = RequestCreatePlayerSchema.extend({
+  username: z
+    .string()
+    .min(1, "Hero name is required")
+    .min(3, "Must be at least 3 characters")
+    .max(32, "Name is too long"),
+  email: z.string().min(1, "Email is required").email("Enter a valid email"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Must be at least 6 characters")
+    .max(128, "Password is too long"),
+  age: z
+    .string()
+    .min(1, "Age is required")
+    .regex(/^\d+$/, "Age must be a number")
+    .refine((v) => Number(v) >= 1, "Invalid age"),
   grade: z.string().min(1, "Grade is required"),
-  parentEmail: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  display_name: z.string().max(64).optional(),
 });
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = z.infer<typeof registerFormSchema>;
 type RegisterStep = 1 | 2;
 
 const LOADING_DURATION_MS = 2400;
@@ -30,7 +45,7 @@ interface RegisterContextValue {
   selectedAvatar: AvatarId;
   showPassword: boolean;
   loading: boolean;
-  handleInfoNext: (values: RegisterFormValues) => void;
+  handleInfoNext: (e?: BaseSyntheticEvent) => Promise<void>;
   handleAvatarSubmit: (e: FormEvent<HTMLFormElement>) => void;
   handleSelectAvatar: (id: AvatarId) => void;
   handleBack: () => void;
@@ -42,7 +57,8 @@ const RegisterContext = createContext<RegisterContextValue | null>(null);
 
 export function useRegisterContext() {
   const ctx = useContext(RegisterContext);
-  if (!ctx) throw new Error("useRegisterContext must be used within RegisterProvider");
+  if (!ctx)
+    throw new Error("useRegisterContext must be used within RegisterProvider");
   return ctx;
 }
 
@@ -54,13 +70,19 @@ export function RegisterProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", age: "", grade: "3rd grade", parentEmail: "", password: "" },
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      age: "",
+      grade: "3rd grade",
+    },
   });
 
-  const handleInfoNext = (_values: RegisterFormValues) => {
+  const handleInfoNext = form.handleSubmit((_values) => {
     setStep(2);
-  };
+  });
 
   const handleAvatarSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

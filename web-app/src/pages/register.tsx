@@ -25,6 +25,8 @@ import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Sparkle } from "@/components/decor/sparkle";
+import { Alert } from "@/components/ui/alert";
+import { XCircle } from "lucide-react";
 import { Coin } from "@/components/decor/coin";
 import { AVATARS, type AvatarId } from "@/constants/avatars";
 import { GRADES } from "@/constants/grades";
@@ -40,11 +42,6 @@ const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
   bunny: AvatarBunny,
   robot: AvatarRobot,
 };
-
-const FORM_LABEL_CLASS =
-  "font-display font-semibold text-ink text-[15px] tracking-wide";
-
-const FORM_ERROR_CLASS = "text-coral text-[13px] font-semibold";
 
 interface StepDotsProps {
   currentStep: number;
@@ -87,30 +84,36 @@ function InfoStep() {
 
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleInfoNext)}
+          noValidate
+          onSubmit={handleInfoNext}
           className="text-left flex flex-col gap-4 mt-5"
         >
           <FormField
             control={form.control}
-            name="name"
+            name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className={FORM_LABEL_CLASS}>Wizard name</FormLabel>
+                <div className="flex gap-2 items-center">
+                  <FormLabel>Hero name</FormLabel>
+                  <FormMessage />
+                </div>
                 <FormControl>
                   <CartoonInput placeholder="merlin_the_brave" {...field} />
                 </FormControl>
-                <FormMessage className={FORM_ERROR_CLASS} />
               </FormItem>
             )}
           />
 
-          <div className="grid grid-cols-[1fr_1.4fr] gap-3 items-end">
+          <div className="grid grid-cols-[1fr_1fr] gap-3 items-end">
             <FormField
               control={form.control}
               name="age"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={FORM_LABEL_CLASS}>Age</FormLabel>
+                  <div className="flex gap-2 items-center">
+                    <FormLabel>Age</FormLabel>
+                    <FormMessage />
+                  </div>
                   <FormControl>
                     <CartoonInput
                       type="number"
@@ -120,7 +123,6 @@ function InfoStep() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className={FORM_ERROR_CLASS} />
                 </FormItem>
               )}
             />
@@ -129,13 +131,15 @@ function InfoStep() {
               name="grade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={FORM_LABEL_CLASS}>Grade</FormLabel>
+                  <div className="flex gap-2 items-center">
+                    <FormLabel>Grade</FormLabel>
+                    <FormMessage />
+                  </div>
                   <CartoonSelect
                     options={GRADES}
                     value={field.value}
                     onValueChange={field.onChange}
                   />
-                  <FormMessage className={FORM_ERROR_CLASS} />
                 </FormItem>
               )}
             />
@@ -143,26 +147,20 @@ function InfoStep() {
 
           <FormField
             control={form.control}
-            name="parentEmail"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className={FORM_LABEL_CLASS}>
-                  Parent&apos;s email
-                </FormLabel>
+                <div className="flex gap-2 items-center">
+                  <FormLabel>Email</FormLabel>
+                  <FormMessage />
+                </div>
                 <FormControl>
                   <CartoonInput
                     type="email"
-                    placeholder="grownup@home.com"
+                    placeholder="merlinthehero@email.com"
                     {...field}
                   />
                 </FormControl>
-                <Typography
-                  variant="caption"
-                  className="text-[12px] text-ink-soft font-semibold mt-1.5 mx-0.5"
-                >
-                  We&apos;ll ask them to confirm, for safety.
-                </Typography>
-                <FormMessage className={FORM_ERROR_CLASS} />
               </FormItem>
             )}
           />
@@ -172,15 +170,17 @@ function InfoStep() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className={FORM_LABEL_CLASS}>
-                  Secret password
-                </FormLabel>
+                <div className="flex gap-2 items-center">
+                  <FormLabel>Password</FormLabel>
+                  <FormMessage />
+                </div>
                 <FormControl>
                   <CartoonInput
                     type={showPassword ? "text" : "password"}
                     placeholder="at least 6 magic letters"
                     rightSlot={
                       <Button
+                        type="button"
                         variant={"ghost"}
                         onClick={handleTogglePassword}
                         className="p-1.5"
@@ -191,19 +191,22 @@ function InfoStep() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className={FORM_ERROR_CLASS} />
               </FormItem>
             )}
           />
 
-          <CartoonButton type="submit" variant="primary" className="w-full">
-            Next: pick your wizard <ArrowRightIcon size={20} />
+          <CartoonButton
+            type="submit"
+            variant="primary"
+            className="w-full items-center"
+          >
+            Next: pick your hero <ArrowRightIcon size={20} />
           </CartoonButton>
         </form>
       </Form>
 
       <Typography variant="label" className="mt-6 text-ink-soft">
-        Already a wizard?{" "}
+        Already a hero?{" "}
         <Button
           variant={"link"}
           className="text-coral font-extrabold underline decoration-[3px] underline-offset-4 text-[15px] px-0"
@@ -217,8 +220,13 @@ function InfoStep() {
 }
 
 function AvatarStep() {
-  const { selectedAvatar, handleSelectAvatar, handleBack, handleAvatarSubmit } =
-    useRegisterContext();
+  const {
+    form,
+    selectedAvatar,
+    handleSelectAvatar,
+    handleBack,
+    handleAvatarSubmit,
+  } = useRegisterContext();
 
   const selected = AVATARS.find((a) => a.id === selectedAvatar)!;
   const SelectedComp = AVATAR_COMPONENTS[selected.id];
@@ -251,21 +259,20 @@ function AvatarStep() {
         })}
       </div>
 
-      <div className="bg-cream-2 border-[3px] border-ink rounded-lg p-4 flex items-center gap-3 text-left">
-        <Sparkle size={26} className="text-gold" />
-        <div>
-          <Typography as="div" variant="label" className="font-bold">
-            Your first quest is free!
-          </Typography>
-          <Typography
-            as="div"
-            variant="caption"
-            className="text-[12px] text-ink-soft font-semibold"
-          >
-            Defend the village. Solve 5 equations.
-          </Typography>
-        </div>
-      </div>
+      <Alert
+        variant="info"
+        icon={<Sparkle size={26} className="text-gold flex-shrink-0" />}
+        title="Start your adventure"
+      />
+
+      {form.formState.errors.root && (
+        <Alert
+          variant="error"
+          icon={<XCircle size={22} className="text-coral flex-shrink-0" />}
+          title="Something went wrong"
+          description={form.formState.errors.root.message}
+        />
+      )}
 
       <div className="flex gap-3">
         <CartoonButton
@@ -278,7 +285,6 @@ function AvatarStep() {
         </CartoonButton>
         <CartoonButton type="submit" variant="primary" className="flex-1">
           <Sparkle size={20} className="text-white" /> Begin Adventure{" "}
-          <ArrowRightIcon size={20} />
         </CartoonButton>
       </div>
     </form>
@@ -290,7 +296,7 @@ function RegisterHeader() {
   return (
     <div className="flex flex-col gap-2">
       <Typography as="h1" variant="display" className="text-[38px]">
-        {step === 1 ? "Start your quest" : "Pick your wizard"}
+        {step === 1 ? "Start your quest" : "Pick your hero"}
       </Typography>
       <Typography variant="label" className="text-ink-soft">
         {step === 1
@@ -327,7 +333,7 @@ function RegisterCard() {
         </div>
       </AuthCard>
 
-      {loading && <LoadingOverlay text="Summoning your wizard..." />}
+      {loading && <LoadingOverlay text="Summoning your hero..." />}
     </AuthPageLayout>
   );
 }

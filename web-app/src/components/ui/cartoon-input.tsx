@@ -1,4 +1,4 @@
-import { type ReactNode, type InputHTMLAttributes } from "react";
+import React, { type ReactNode, type InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,15 +8,12 @@ interface CartoonInputProps extends InputHTMLAttributes<HTMLInputElement> {
   rightSlot?: ReactNode;
 }
 
-export function CartoonInput({
-  label,
-  rightSlot,
-  className,
-  ...rest
-}: CartoonInputProps) {
+export const CartoonInput = React.forwardRef<HTMLInputElement, CartoonInputProps>(
+  function CartoonInput({ label, rightSlot, className, ...rest }, ref) {
   const input = (
     <div className="relative">
       <Input
+        ref={ref}
         {...rest}
         className={cn(
           "bg-paper border-[3px] border-ink rounded-cartoon-md p-4 text-[17px] text-ink font-semibold h-auto",
@@ -45,4 +42,4 @@ export function CartoonInput({
       {input}
     </div>
   );
-}
+});

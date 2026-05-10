@@ -18,7 +18,7 @@ interface HighlighterProps {
   action?: AnnotationAction;
   color?: string;
   strokeWidth?: number;
-  animationDuration?: number;
+  duration?: number;
   iterations?: number;
   padding?: number;
   multiline?: boolean;
@@ -30,9 +30,9 @@ export function Highlighter({
   action = "highlight",
   color = "#FF6B6B",
   strokeWidth = 1.5,
-  animationDuration = 600,
-  iterations = 2,
-  padding = 2,
+  duration = 1000,
+  iterations = 3,
+  padding = 1,
   multiline = true,
   isView = false,
 }: HighlighterProps) {
@@ -56,7 +56,7 @@ export function Highlighter({
         type: action,
         color,
         strokeWidth,
-        animationDuration,
+        animationDuration: duration,
         iterations,
         padding,
         multiline,
@@ -86,7 +86,7 @@ export function Highlighter({
     action,
     color,
     strokeWidth,
-    animationDuration,
+    duration,
     iterations,
     padding,
     multiline,

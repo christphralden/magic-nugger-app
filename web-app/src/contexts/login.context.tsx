@@ -1,15 +1,16 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode, type BaseSyntheticEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { RequestLoginSchema } from "@magic-nugger-app/shared";
 
-const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+const loginFormSchema = RequestLoginSchema.extend({
+  email: z.string().min(1, "Email is required").email("Enter a valid email"),
   password: z.string().min(1, "Password is required"),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 const LOADING_DURATION_MS = 2200;
 
@@ -18,7 +19,7 @@ interface LoginContextValue {
   showPassword: boolean;
   rememberMe: boolean;
   loading: boolean;
-  handleSubmit: (values: LoginFormValues) => void;
+  handleSubmit: (e?: BaseSyntheticEvent) => Promise<void>;
   handleTogglePassword: () => void;
   handleToggleRememberMe: () => void;
   handleNavigateRegister: () => void;
@@ -41,17 +42,17 @@ export function LoginProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { username: "", password: "" },
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: { email: "", password: "" },
   });
 
-  const handleSubmit = (_values: LoginFormValues) => {
+  const handleSubmit = form.handleSubmit((_values) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       navigate("/game");
     }, LOADING_DURATION_MS);
-  };
+  });
 
   const handleTogglePassword = () => setShowPassword((s) => !s);
   const handleToggleRememberMe = () => setRememberMe((r) => !r);

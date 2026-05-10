@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { Alert } from "@/components/ui/alert";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { PlayIcon } from "@/components/icons/play-icon";
@@ -18,14 +19,10 @@ import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Cloud } from "@/components/decor/cloud";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Coin } from "@/components/decor/coin";
+import { XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
-
-const FORM_LABEL_CLASS =
-  "font-display font-semibold text-ink text-[15px] tracking-wide";
-
-const FORM_ERROR_CLASS = "text-coral text-[13px] font-semibold";
 
 function LoginGoogleButton() {
   return (
@@ -35,19 +32,25 @@ function LoginGoogleButton() {
   );
 }
 
-function LoginUsernameField() {
+function LoginEmailField() {
   const { form } = useLoginContext();
   return (
     <FormField
       control={form.control}
-      name="username"
+      name="email"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className={FORM_LABEL_CLASS}>Username or email</FormLabel>
+          <div className="flex gap-2 items-center">
+            <FormLabel>Email</FormLabel>
+            <FormMessage />
+          </div>
           <FormControl>
-            <CartoonInput placeholder="merlin_the_brave" {...field} />
+            <CartoonInput
+              type="email"
+              placeholder="merlin@realm.com"
+              {...field}
+            />
           </FormControl>
-          <FormMessage className={FORM_ERROR_CLASS} />
         </FormItem>
       )}
     />
@@ -62,13 +65,17 @@ function LoginPasswordField() {
       name="password"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className={FORM_LABEL_CLASS}>Secret password</FormLabel>
+          <div className="flex gap-2 items-center">
+            <FormLabel>Password</FormLabel>
+            <FormMessage />
+          </div>
           <FormControl>
             <CartoonInput
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               rightSlot={
                 <Button
+                  type="button"
                   variant={"ghost"}
                   onClick={handleTogglePassword}
                   className="p-1.5"
@@ -79,7 +86,6 @@ function LoginPasswordField() {
               {...field}
             />
           </FormControl>
-          <FormMessage className={FORM_ERROR_CLASS} />
         </FormItem>
       )}
     />
@@ -92,6 +98,7 @@ function LoginFormFooter() {
   return (
     <div className="flex justify-between items-center">
       <Button
+        type="button"
         variant={"ghost"}
         className="flex items-center gap-2.5 text-[14px] text-ink-soft cursor-pointer px-0"
         onClick={handleToggleRememberMe}
@@ -134,14 +141,23 @@ function LoginForm() {
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(handleSubmit)}
+        noValidate
+        onSubmit={handleSubmit}
         className="text-left flex flex-col gap-4"
       >
-        <LoginUsernameField />
+        <LoginEmailField />
         <LoginPasswordField />
         <LoginFormFooter />
+        {form.formState.errors.root && (
+          <Alert
+            variant="error"
+            icon={<XCircle size={22} className="text-coral flex-shrink-0" />}
+            title="Couldn't sign in"
+            description={form.formState.errors.root.message}
+          />
+        )}
         <CartoonButton type="submit" variant="primary" className="w-full">
-          <PlayIcon size={22} /> Enter the Realm <ArrowRightIcon size={20} />
+          <PlayIcon size={22} /> Enter the Realm
         </CartoonButton>
       </form>
     </Form>
