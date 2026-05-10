@@ -122,7 +122,7 @@ function LoginFormFooter() {
             </svg>
           )}
         </span>
-        Keep me signed in
+        <Typography variant={"label"}>Keep me signed in</Typography>
       </Button>
       <Button
         type="button"
@@ -130,7 +130,7 @@ function LoginFormFooter() {
         className="font-bold text-[14px] text-coral p-0 h-auto hover:bg-transparent"
         onClick={handleForgotPassword}
       >
-        Forgot password?
+        <Typography variant={"label"}>Forgot password?</Typography>
       </Button>
     </div>
   );
@@ -200,12 +200,10 @@ function LoginCard() {
       <AuthCard>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <Typography as="h1" variant="display" className="text-[40px]">
+            <Typography as="h1" variant="primary">
               Welcome back!
             </Typography>
-            <Typography variant="body" className="text-[16px] text-ink-soft">
-              Your hero missed you
-            </Typography>
+            <Typography variant="label">Your hero missed you</Typography>
           </div>
           <LoginGoogleButton />
           <LoginForm />

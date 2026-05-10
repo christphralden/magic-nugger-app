@@ -209,7 +209,7 @@ function InfoStep() {
         Already a hero?{" "}
         <Button
           variant={"link"}
-          className="text-coral font-extrabold underline decoration-[3px] underline-offset-4 text-[15px] px-0"
+          className="text-coral underline decoration-[3px] underline-offset-4 px-0"
           onClick={handleNavigateLogin}
         >
           <Typography variant="label">Sign in</Typography>
@@ -295,7 +295,7 @@ function RegisterHeader() {
   const { step } = useRegisterContext();
   return (
     <div className="flex flex-col gap-2">
-      <Typography as="h1" variant="display" className="text-[38px]">
+      <Typography as="h1" variant="primary">
         {step === 1 ? "Start your quest" : "Pick your hero"}
       </Typography>
       <Typography variant="label" className="text-ink-soft">

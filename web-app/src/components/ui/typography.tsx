@@ -11,11 +11,14 @@ export const typographyVariants = cva("", {
       heading:
         "font-display font-bold text-8xl tracking-[-0.015em] leading-[0.95em]",
       subheading: "font-display font-semibold text-2xl leading-snug",
-      body: "font-body font-semibold text-lg leading-relaxed",
-      caption: "font-body font-medium text-sm",
-      label: "font-display font-semibold text-base tracking-wide",
+      primary:
+        "font-display font-bold leading-[0.95] tracking-[-0.015em] text-ink text-4xl",
+      body: "font-body font-semibold md:text-base text-sm leading-relaxed",
+      caption: "font-body font-medium text-xl",
+      label: "font-display font-semibold md:text-base text-sm tracking-wide",
       strong: "font-display font-bold text-4xl text-ink leading-none",
-      error: "text-coral font-display font-semibold text-base tracking-wide",
+      error:
+        "text-coral font-display font-semibold md:text-base text-sm tracking-wide",
     },
   },
   defaultVariants: {
