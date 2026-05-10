@@ -9,5 +9,8 @@ export function toResponsePlayer(user: AppUser | null | undefined): ResponsePlay
     current_elo: user.current_elo,
     highest_level_unlocked: user.highest_level_unlocked,
     avatar_url: user.avatar_url,
+    age: user.age,
+    grade: user.grade,
+    guardian_email: user.guardian_email,
   };
 }
