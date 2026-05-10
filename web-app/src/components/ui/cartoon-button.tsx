@@ -3,32 +3,38 @@ import { cn } from "@/lib/utils";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 const cartoonButtonVariants = cva(
-  "font-display font-bold tracking-wide inline-flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-[120ms] ease-out active:translate-y-1 select-none whitespace-nowrap border-[3px] border-ink shadow-cartoon active:shadow-[0_2px_0_0_#2A1B3D]",
+  "hover:brightness-[80%] items-center font-display font-bold tracking-wide inline-flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-[120ms] ease-out active:translate-y-1 select-none whitespace-nowrap border-[3px] border-ink shadow-cartoon",
   {
     variants: {
       variant: {
-        primary: "bg-coral text-white hover:brightness-105",
-        secondary: "bg-white text-ink hover:bg-cream",
-        ghost: "border-transparent shadow-none bg-transparent text-ink hover:bg-black/[0.06] active:translate-y-0",
+        primary: "bg-coral hover:bg-coral text-white",
+        secondary: "bg-white hover:bg-white text-ink",
+        ghost:
+          "border-transparent shadow-none bg-transparent text-ink active:translate-y-0",
       },
       size: {
-        default: "px-btn-x-md py-btn-y-md text-lg rounded-cartoon-lg",
-        lg: "px-btn-x-lg py-btn-y-lg text-[22px] rounded-cartoon-xl",
-        xl: "px-btn-x-xl py-btn-y-xl text-[26px] rounded-cartoon-xl",
+        default: "px-8 py-6 text-lg rounded-full",
+        lg: "px-12 py-8 text-2xl rounded-full",
+        xl: "px-16 py-10 text-3xl rounded-full",
       },
     },
     defaultVariants: {
       variant: "primary",
       size: "default",
     },
-  }
+  },
 );
 
 interface CartoonButtonProps
   extends Omit<ButtonProps, "variant" | "size">,
     VariantProps<typeof cartoonButtonVariants> {}
 
-export function CartoonButton({ variant, size, className, ...props }: CartoonButtonProps) {
+export function CartoonButton({
+  variant,
+  size,
+  className,
+  ...props
+}: CartoonButtonProps) {
   return (
     <Button
       className={cn(cartoonButtonVariants({ variant, size }), className)}

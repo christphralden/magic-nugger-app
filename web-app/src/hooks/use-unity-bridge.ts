@@ -3,7 +3,7 @@ import { Unity, useUnityContext } from "react-unity-webgl";
 
 export function useUnityBridge() {
   const {
-    unityProvider,
+    unityProvider: provider,
     sendMessage,
     isLoaded,
     addEventListener,
@@ -15,23 +15,23 @@ export function useUnityBridge() {
     codeUrl: "/unity/build.wasm",
   });
 
-  const postAnswer = useCallback(
-    (isCorrect: boolean, timeTakenMs: number) => {
+  const handleCommunicationTest = useCallback(
+    (data: Object) => {
       sendMessage(
-        "GameManager",
-        "ReceiveAnswer",
-        JSON.stringify({ isCorrect, timeTakenMs }),
+        "ReactUnityCommunication",
+        "SpawnNiggers",
+        JSON.stringify(data),
       );
     },
     [sendMessage],
   );
 
   return {
-    unityProvider,
+    Unity: Unity,
+    provider,
     isLoaded,
-    postAnswer,
     addEventListener,
     removeEventListener,
-    UnityComponent: Unity,
+    handleCommunicationTest,
   };
 }

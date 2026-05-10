@@ -1,7 +1,17 @@
 import { type ComponentType } from "react";
-import { RegisterProvider, useRegisterContext } from "@/contexts/register.context";
+import {
+  RegisterProvider,
+  useRegisterContext,
+} from "@/contexts/register.context";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { CartoonSelect } from "@/components/ui/cartoon-select";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
@@ -20,6 +30,7 @@ import { Cloud } from "@/components/decor/cloud";
 import { Coin } from "@/components/decor/coin";
 import { AVATARS, type AvatarId } from "@/constants/avatars";
 import { GRADES } from "@/constants/grades";
+import { CloudPixel } from "@/components/decor/cloud-pixel";
 
 const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
   fox: AvatarFox,
@@ -32,7 +43,8 @@ const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
 const INPUT_CLASS =
   "bg-paper border-[3px] border-ink rounded-cartoon-md px-[18px] py-4 text-[17px] text-ink font-semibold h-auto placeholder:text-placeholder placeholder:font-medium focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]";
 
-const LABEL_CLASS = "font-display font-semibold text-ink text-[15px] tracking-wide";
+const LABEL_CLASS =
+  "font-display font-semibold text-ink text-[15px] tracking-wide";
 
 interface StepDotsProps {
   currentStep: number;
@@ -61,8 +73,13 @@ function StepDots({ currentStep, totalSteps }: StepDotsProps) {
 }
 
 function InfoStep() {
-  const { form, showPassword, handleInfoNext, handleTogglePassword, handleNavigateLogin } =
-    useRegisterContext();
+  const {
+    form,
+    showPassword,
+    handleInfoNext,
+    handleTogglePassword,
+    handleNavigateLogin,
+  } = useRegisterContext();
 
   return (
     <>
@@ -71,7 +88,10 @@ function InfoStep() {
       </CartoonButton>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleInfoNext)} className="text-left">
+        <form
+          onSubmit={form.handleSubmit(handleInfoNext)}
+          className="text-left"
+        >
           <FormField
             control={form.control}
             name="name"
@@ -79,14 +99,21 @@ function InfoStep() {
               <FormItem className="mb-4">
                 <FormLabel className={LABEL_CLASS}>Wizard name</FormLabel>
                 <FormControl>
-                  <Input placeholder="merlin_the_brave" className={INPUT_CLASS} {...field} />
+                  <Input
+                    placeholder="merlin_the_brave"
+                    className={INPUT_CLASS}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="text-coral text-[13px] font-semibold" />
               </FormItem>
             )}
           />
 
-          <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: "1fr 1.4fr", alignItems: "end" }}>
+          <div
+            className="grid gap-3 mb-4"
+            style={{ gridTemplateColumns: "1fr 1.4fr", alignItems: "end" }}
+          >
             <FormField
               control={form.control}
               name="age"
@@ -95,7 +122,6 @@ function InfoStep() {
                   <FormLabel className={LABEL_CLASS}>Age</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
                       min="6"
                       max="14"
                       placeholder="9"
@@ -129,7 +155,9 @@ function InfoStep() {
             name="parentEmail"
             render={({ field }) => (
               <FormItem className="mb-4">
-                <FormLabel className={LABEL_CLASS}>Parent&apos;s email</FormLabel>
+                <FormLabel className={LABEL_CLASS}>
+                  Parent&apos;s email
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -231,17 +259,27 @@ function AvatarStep() {
       <div className="bg-cream-2 border-[3px] border-ink rounded-cartoon-md p-[14px] mb-5 flex items-center gap-3 text-left">
         <Sparkle size={26} className="text-gold" />
         <div>
-          <div className="font-display font-bold text-[15px] text-ink">Your first quest is free!</div>
-          <div className="text-[12px] text-ink-soft font-semibold">Defend the village. Solve 5 equations.</div>
+          <div className="font-display font-bold text-[15px] text-ink">
+            Your first quest is free!
+          </div>
+          <div className="text-[12px] text-ink-soft font-semibold">
+            Defend the village. Solve 5 equations.
+          </div>
         </div>
       </div>
 
       <div className="flex gap-3">
-        <CartoonButton type="button" variant="secondary" onClick={handleBack} className="flex-shrink-0">
+        <CartoonButton
+          type="button"
+          variant="secondary"
+          onClick={handleBack}
+          className="flex-shrink-0"
+        >
           Back
         </CartoonButton>
         <CartoonButton type="submit" variant="primary" className="flex-1">
-          <Sparkle size={20} className="text-white" /> Begin Adventure <ArrowRightIcon size={20} />
+          <Sparkle size={20} className="text-white" /> Begin Adventure{" "}
+          <ArrowRightIcon size={20} />
         </CartoonButton>
       </div>
     </form>
@@ -256,7 +294,9 @@ function RegisterHeader() {
         {step === 1 ? "Start your quest" : "Pick your wizard"}
       </h1>
       <p className="text-[15px] text-ink-soft font-semibold mb-6">
-        {step === 1 ? "A few quick questions and you're in." : "Your hero awaits — choose wisely!"}
+        {step === 1
+          ? "A few quick questions and you're in."
+          : "Your hero awaits — choose wisely!"}
       </p>
     </>
   );
@@ -270,7 +310,7 @@ function RegisterCard() {
 
       <div className="flex-1 relative flex items-center justify-center px-6 py-10">
         <div className="absolute top-6 left-[8%] animate-float-slow">
-          <Cloud size={120} />
+          <CloudPixel variant="1" className="w-[186px]" />
         </div>
         <div className="absolute top-14 right-[10%] animate-float">
           <Sparkle size={28} className="text-gold" />
@@ -282,7 +322,7 @@ function RegisterCard() {
           <Coin size={48} />
         </div>
 
-        <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
+        <div className="animate-pop-in w-full max-w-[580px] bg-white border-[3px] border-ink rounded-xl shadow-cartoon-lg px-10 py-10 text-center">
           <RegisterHeader />
           <StepDots currentStep={step} totalSteps={2} />
           {step === 1 && <InfoStep />}

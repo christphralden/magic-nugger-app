@@ -1,7 +1,14 @@
 import { LoginProvider, useLoginContext } from "@/contexts/login.context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { MagicNuggerHeader } from "@/components/brand/magic-nugger-header";
@@ -83,7 +90,8 @@ function LoginPasswordField() {
 }
 
 function LoginFormFooter() {
-  const { rememberMe, handleToggleRememberMe, handleForgotPassword } = useLoginContext();
+  const { rememberMe, handleToggleRememberMe, handleForgotPassword } =
+    useLoginContext();
   return (
     <div className="flex justify-between items-center mb-6">
       <button
@@ -94,7 +102,7 @@ function LoginFormFooter() {
         <span
           className={cn(
             "w-[22px] h-[22px] border-[3px] border-ink rounded-[6px] bg-white flex-shrink-0 inline-flex items-center justify-center",
-            rememberMe && "bg-gold"
+            rememberMe && "bg-gold",
           )}
         >
           {rememberMe && (
@@ -175,9 +183,13 @@ function LoginCard() {
           <Coin size={48} />
         </div>
 
-        <div className="animate-pop-in w-full max-w-[480px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
-          <h1 className="font-display font-bold text-ink text-[40px] leading-[0.95] mb-2">Welcome back!</h1>
-          <p className="text-[16px] text-ink-soft font-semibold mb-7">Your towers missed you</p>
+        <div className="animate-pop-in w-full max-w-[580px] bg-white border-[3px] border-ink rounded-cartoon-lg shadow-cartoon-lg px-10 py-10 text-center">
+          <h1 className="font-display font-bold text-ink text-[40px] leading-[0.95] mb-2">
+            Welcome back!
+          </h1>
+          <p className="text-[16px] text-ink-soft font-semibold mb-7">
+            Your towers missed you
+          </p>
           <LoginGoogleButton />
           <LoginForm />
           <LoginSignupLink />

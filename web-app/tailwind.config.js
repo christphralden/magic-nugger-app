@@ -54,24 +54,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ["Fredoka", "Baloo 2", "system-ui", "sans-serif"],
-        body: ["Nunito", "Quicksand", "system-ui", "sans-serif"],
-      },
-      spacing: {
-        "btn-x-sm": "1.5rem",
-        "btn-x-md": "1.75rem",
-        "btn-x-lg": "2.5rem",
-        "btn-x-xl": "2.75rem",
-        "btn-y-sm": "0.75rem",
-        "btn-y-md": "1rem",
-        "btn-y-lg": "1.375rem",
-        "btn-y-xl": "1.625rem",
-      },
-      borderRadius: {
-        cartoon: "12px",
-        "cartoon-md": "18px",
-        "cartoon-lg": "28px",
-        "cartoon-xl": "40px",
+        display: ["Fredoka", "sans-serif"],
+        body: ["Nunito", "system-ui", "sans-serif"],
       },
       boxShadow: {
         cartoon: "0 6px 0 0 #2A1B3D, 0 12px 24px -4px rgba(42,27,61,0.18)",
@@ -97,6 +81,10 @@ export default {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
         },
+        nudge: {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(3deg)" },
+        },
       },
       animation: {
         float: "float 4s ease-in-out infinite",
@@ -105,6 +93,7 @@ export default {
         wiggle: "wiggle 2.6s ease-in-out infinite",
         "pop-in": "pop-in 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
         "spin-slow": "spin-slow 0.9s linear infinite",
+        nudge: "nudge 0.1s ease-out forwards",
       },
     },
   },

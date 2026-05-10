@@ -29,7 +29,8 @@ const LoginContext = createContext<LoginContextValue | null>(null);
 
 export function useLoginContext() {
   const ctx = useContext(LoginContext);
-  if (!ctx) throw new Error("useLoginContext must be used within LoginProvider");
+  if (!ctx)
+    throw new Error("useLoginContext must be used within LoginProvider");
   return ctx;
 }
 
@@ -48,7 +49,7 @@ export function LoginProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigate("/levels");
+      navigate("/game");
     }, LOADING_DURATION_MS);
   };
 
