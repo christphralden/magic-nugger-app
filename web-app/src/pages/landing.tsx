@@ -115,7 +115,7 @@ function HeroSection({ scrollY }: { scrollY: number }) {
             <br />
             <Typography
               variant={"heading"}
-              as="h1"
+              as="span"
               className="text-coral inline-block relative"
             >
               <FloatingText text="with math!" offset={19} />

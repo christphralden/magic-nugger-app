@@ -12,6 +12,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { type AvatarId } from "@/constants/avatars";
 import { RequestCreatePlayerSchema } from "@magic-nugger-app/shared";
+import { useDispatch, useSelector } from "@/store/hooks";
+import { selectAuthStatus } from "@/feature/auth/state/auth.slice";
+import { handleRegister } from "@/feature/auth/actions/auth.actions";
+import { registerPlayer } from "@/feature/auth/state/auth.thunk";
+import { toastError } from "@/lib/toast";
 
 const registerFormSchema = RequestCreatePlayerSchema.extend({
   username: z
@@ -36,8 +41,6 @@ const registerFormSchema = RequestCreatePlayerSchema.extend({
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 type RegisterStep = 1 | 2;
-
-const LOADING_DURATION_MS = 2400;
 
 interface RegisterContextValue {
   form: UseFormReturn<RegisterFormValues>;
@@ -64,10 +67,11 @@ export function useRegisterContext() {
 
 export function RegisterProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const status = useSelector(selectAuthStatus);
   const [step, setStep] = useState<RegisterStep>(1);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>("fox");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -76,7 +80,7 @@ export function RegisterProvider({ children }: { children: ReactNode }) {
       email: "",
       password: "",
       age: "",
-      grade: "3rd grade",
+      grade: "3",
     },
   });
 
@@ -84,13 +88,26 @@ export function RegisterProvider({ children }: { children: ReactNode }) {
     setStep(2);
   });
 
-  const handleAvatarSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleAvatarSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/levels");
-    }, LOADING_DURATION_MS);
+    const values = form.getValues();
+    const result = await dispatch(
+      handleRegister({
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        display_name: values.display_name,
+        age: parseInt(values.age, 10),
+        grade: parseInt(values.grade, 10),
+      }),
+    );
+    if (!result) return;
+    if (registerPlayer.fulfilled.match(result)) {
+      navigate("/home");
+    } else {
+      toastError((result.payload as string) ?? "Registration failed");
+      setStep(1);
+    }
   };
 
   const handleSelectAvatar = (id: AvatarId) => setSelectedAvatar(id);
@@ -105,7 +122,7 @@ export function RegisterProvider({ children }: { children: ReactNode }) {
         step,
         selectedAvatar,
         showPassword,
-        loading,
+        loading: status === "loading",
         handleInfoNext,
         handleAvatarSubmit,
         handleSelectAvatar,

@@ -26,7 +26,6 @@ import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Alert } from "@/components/ui/alert";
-import { XCircle } from "lucide-react";
 import { Coin } from "@/components/decor/coin";
 import { AVATARS, type AvatarId } from "@/constants/avatars";
 import { GRADES } from "@/constants/grades";
@@ -259,16 +258,11 @@ function AvatarStep() {
         })}
       </div>
 
-      <Alert
-        variant="info"
-        icon={<Sparkle size={26} className="text-gold flex-shrink-0" />}
-        title="Start your adventure"
-      />
+      <Alert variant="info" title="Start your adventure" />
 
       {form.formState.errors.root && (
         <Alert
           variant="error"
-          icon={<XCircle size={22} className="text-coral flex-shrink-0" />}
           title="Something went wrong"
           description={form.formState.errors.root.message}
         />

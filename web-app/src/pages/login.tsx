@@ -11,15 +11,12 @@ import {
 } from "@/components/ui/form";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { Alert } from "@/components/ui/alert";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { PlayIcon } from "@/components/icons/play-icon";
-import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Cloud } from "@/components/decor/cloud";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Coin } from "@/components/decor/coin";
-import { XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
@@ -148,14 +145,6 @@ function LoginForm() {
         <LoginEmailField />
         <LoginPasswordField />
         <LoginFormFooter />
-        {form.formState.errors.root && (
-          <Alert
-            variant="error"
-            icon={<XCircle size={22} className="text-coral flex-shrink-0" />}
-            title="Couldn't sign in"
-            description={form.formState.errors.root.message}
-          />
-        )}
         <CartoonButton type="submit" variant="primary" className="w-full">
           <PlayIcon size={22} /> Enter the Realm
         </CartoonButton>

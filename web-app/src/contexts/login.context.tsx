@@ -4,6 +4,11 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { RequestLoginSchema } from "@magic-nugger-app/shared";
+import { useDispatch, useSelector } from "@/store/hooks";
+import { selectAuthStatus } from "@/feature/auth/state/auth.slice";
+import { handleLogin } from "@/feature/auth/actions/auth.actions";
+import { loginPlayer } from "@/feature/auth/state/auth.thunk";
+import { toastError } from "@/lib/toast";
 
 const loginFormSchema = RequestLoginSchema.extend({
   email: z.string().min(1, "Email is required").email("Enter a valid email"),
@@ -11,8 +16,6 @@ const loginFormSchema = RequestLoginSchema.extend({
 });
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
-
-const LOADING_DURATION_MS = 2200;
 
 interface LoginContextValue {
   form: UseFormReturn<LoginFormValues>;
@@ -37,21 +40,24 @@ export function useLoginContext() {
 
 export function LoginProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const status = useSelector(selectAuthStatus);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  const handleSubmit = form.handleSubmit((_values) => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/game");
-    }, LOADING_DURATION_MS);
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const result = await dispatch(handleLogin(values));
+    if (!result) return;
+    if (loginPlayer.fulfilled.match(result)) {
+      navigate("/home");
+    } else {
+      toastError((result.payload as string) ?? "Invalid credentials");
+    }
   });
 
   const handleTogglePassword = () => setShowPassword((s) => !s);
@@ -65,7 +71,7 @@ export function LoginProvider({ children }: { children: ReactNode }) {
         form,
         showPassword,
         rememberMe,
-        loading,
+        loading: status === "loading",
         handleSubmit,
         handleTogglePassword,
         handleToggleRememberMe,

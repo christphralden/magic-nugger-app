@@ -3,9 +3,11 @@ import { motion } from "motion/react";
 export function FloatingText({
   text,
   offset = 0,
+  duration = 3.6,
 }: {
   text: string;
   offset?: number;
+  duration?: number;
 }) {
   return (
     <>
@@ -15,7 +17,7 @@ export function FloatingText({
           className="inline-block"
           animate={{ y: [0, -8, 0] }}
           transition={{
-            duration: 3.6,
+            duration: duration,
             repeat: Infinity,
             ease: "easeInOut",
             delay: (offset + i) * 0.065,

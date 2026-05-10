@@ -1,5 +1,5 @@
-import { Typography } from "@/components/ui/typography";
 import { Link } from "react-router-dom";
+import { MagicNuggerLogo } from "./magic-nugger-logo";
 
 export function MagicNuggerHeader() {
   return (
@@ -7,9 +7,7 @@ export function MagicNuggerHeader() {
       to={"/"}
       className="w-full flex items-center justify-center pt-6 pb-4 bg-cream"
     >
-      <Typography as="h2" variant={"logo"}>
-        Calculon
-      </Typography>
+      <MagicNuggerLogo />
     </Link>
   );
 }
