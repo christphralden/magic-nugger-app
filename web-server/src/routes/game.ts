@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, currentUser } from "@/middleware/authenticate.js";
+import { authenticate, getUser } from "@/middleware/authenticate.js";
 import { validate } from "@/middleware/validate.js";
 import { getClientIp, getUserAgent } from "@/utils/connectivity.js";
 import {
@@ -24,7 +24,7 @@ gameRouter.post(
   "/",
   validate(RequestCreateGameSessionSchema),
   async (req, res) => {
-    const user = currentUser(req);
+    const user = getUser(req);
     const { session, created } = await gameService.start({
       userId: user.id,
       levelId: req.body.level_id,
@@ -77,7 +77,7 @@ gameRouter.post(
 );
 
 gameRouter.post("/:id/end", async (req, res) => {
-  const user = currentUser(req);
+  const user = getUser(req);
   const { levelId } = await gameService.end({
     sessionId: req.params.id,
     userId: user.id,
@@ -106,7 +106,7 @@ gameRouter.post("/:id/end", async (req, res) => {
 });
 
 gameRouter.post("/:id/fail", async (req, res) => {
-  const user = currentUser(req);
+  const user = getUser(req);
   const { levelId } = await gameService.end({
     sessionId: req.params.id,
     userId: user.id,

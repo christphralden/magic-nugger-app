@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # One-time EC2 provisioning. Run as root (User Data) or: sudo bash scripts/bootstrap.sh
 # After this completes, see DEPLOYMENT.md for the remaining one-time manual steps.
 set -euo pipefail

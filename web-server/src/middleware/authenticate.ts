@@ -13,7 +13,7 @@ export const authenticate = (
   next();
 };
 
-export function currentUser(req: Request): Express.User {
+export function getUser(req: Request): Express.User {
   if (!req.user) {
     throw new AppError(HttpCode.UNAUTHORIZED, "You must be logged in");
   }

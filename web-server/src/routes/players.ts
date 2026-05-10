@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { playerService } from "@/services/player.service";
 import { validate } from "@/middleware/validate";
-import { authenticate, currentUser } from "@/middleware/authenticate";
+import { authenticate, getUser } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { HttpCode, RequestUpdatePlayerSchema } from "@magic-nugger-app/shared";
 import type { ApiResponse, ResponsePlayer } from "@magic-nugger-app/shared";
@@ -24,7 +24,7 @@ playersRouter.patch(
   authorize("player:update"),
   validate(RequestUpdatePlayerSchema),
   async (req, res) => {
-    const user = currentUser(req);
+    const user = getUser(req);
     const player = await playerService.update(user.id, req.body);
     res.json({
       code: HttpCode.OK,

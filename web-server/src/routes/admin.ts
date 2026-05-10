@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { authenticate, currentUser } from "@/middleware/authenticate";
+import { authenticate, getUser } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { validate } from "@/middleware/validate";
 import { parsePagination } from "@/utils/pagination";
@@ -20,7 +20,7 @@ export const adminRouter = Router();
 adminRouter.use(authenticate, authorize("admin:full"));
 
 adminRouter.get("/players", async (req, res) => {
-  const admin = currentUser(req);
+  const admin = getUser(req);
   const { cursor, limit } = parsePagination(req.query);
   const { rows } = await getDb().query<Player>(
     `SELECT id, username, display_name, email, role_id, current_elo, created_at
@@ -50,7 +50,7 @@ adminRouter.patch(
   "/players/:id/role",
   validate(z.object({ role: z.string() })),
   async (req, res) => {
-    const admin = currentUser(req);
+    const admin = getUser(req);
     const { rows } = await getDb().query(
       `UPDATE players SET role_id = (SELECT id FROM roles WHERE name = $2), updated_at = now() WHERE id = $1 RETURNING id`,
       [req.params.id, req.body.role],
@@ -80,7 +80,7 @@ adminRouter.patch(
   "/players/:id/elo",
   validate(RequestAdjustEloSchema),
   async (req, res) => {
-    const admin = currentUser(req);
+    const admin = getUser(req);
     const { elo } = req.body;
     const { rows: playerRows } = await getDb().query<{ current_elo: number }>(
       `SELECT current_elo FROM players WHERE id = $1`,
@@ -135,7 +135,7 @@ adminRouter.patch(
 );
 
 adminRouter.get("/game-sessions/active", async (req, res) => {
-  const admin = currentUser(req);
+  const admin = getUser(req);
   const { rows } = await getDb().query<GameSession>(
     `SELECT * FROM game_sessions
      WHERE status = 'in_progress'
@@ -156,7 +156,7 @@ adminRouter.get("/game-sessions/active", async (req, res) => {
 });
 
 adminRouter.get("/game-sessions", async (req, res) => {
-  const admin = currentUser(req);
+  const admin = getUser(req);
   const { player_id, level_id, status } = req.query;
   const { cursor, limit } = parsePagination(req.query);
   const conditions: string[] = [];
