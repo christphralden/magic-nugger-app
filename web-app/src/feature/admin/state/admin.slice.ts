@@ -20,9 +20,18 @@ import type { AsyncStatus, GameSession, Level } from "@magic-nugger-app/shared";
 type AdminState = {
   stats: AdminStats | null;
   statsStatus: AsyncStatus;
-  players: { items: AdminPlayer[]; next_cursor: string | null; status: AsyncStatus };
+  players: {
+    items: AdminPlayer[];
+    next_cursor: string | null;
+    status: AsyncStatus;
+  };
   activeSessions: { items: GameSession[]; status: AsyncStatus };
-  sessions: { items: GameSession[]; next_cursor: string | null; status: AsyncStatus; filters: { player_id?: string; level_id?: string; status?: string } };
+  sessions: {
+    items: GameSession[];
+    next_cursor: string | null;
+    status: AsyncStatus;
+    filters: { player_id?: string; level_id?: string; status?: string };
+  };
   levels: { items: Level[]; status: AsyncStatus };
   selectedLevel: { data: Level | null; status: AsyncStatus };
   leaderboardCacheBust: { status: AsyncStatus };
@@ -46,9 +55,19 @@ const adminSlice = createSlice({
   } as AdminState,
   reducers: {
     resetAdminSessions: (state) => {
-      state.sessions = { items: [], next_cursor: null, status: "idle", filters: state.sessions.filters };
+      state.sessions = {
+        items: [],
+        next_cursor: null,
+        status: "idle",
+        filters: state.sessions.filters,
+      };
     },
-    setSessionFilters: (state, action: { payload: { player_id?: string; level_id?: string; status?: string } }) => {
+    setSessionFilters: (
+      state,
+      action: {
+        payload: { player_id?: string; level_id?: string; status?: string };
+      },
+    ) => {
       state.sessions.filters = action.payload;
     },
     resetAdminPlayers: (state) => {
@@ -100,7 +119,8 @@ const adminSlice = createSlice({
       })
       .addCase(fetchActiveSessionsAdmin.rejected, (state, action) => {
         state.activeSessions.status = "failed";
-        state.error = (action.payload as string) ?? "Failed to fetch active sessions";
+        state.error =
+          (action.payload as string) ?? "Failed to fetch active sessions";
       })
 
       .addCase(fetchSessionsAdmin.pending, (state) => {
@@ -153,20 +173,29 @@ const adminSlice = createSlice({
       })
 
       .addCase(updateLevelAdmin.fulfilled, (state, action) => {
-        const idx = state.levels.items.findIndex((l) => l.id === action.payload.id);
+        const idx = state.levels.items.findIndex(
+          (l) => l.id === action.payload.id,
+        );
         if (idx !== -1) state.levels.items[idx] = action.payload;
-        if (state.selectedLevel.data?.id === action.payload.id) state.selectedLevel.data = action.payload;
+        if (state.selectedLevel.data?.id === action.payload.id)
+          state.selectedLevel.data = action.payload;
       })
 
       .addCase(activateLevelAdmin.fulfilled, (state, action) => {
         const { id, is_active } = action.payload;
         const level = state.levels.items.find((l) => l.id === id);
         if (level) level.is_active = is_active;
-        if (state.selectedLevel.data?.id === id) state.selectedLevel.data = action.payload;
+        if (state.selectedLevel.data?.id === id)
+          state.selectedLevel.data = action.payload;
       })
 
       .addCase(deleteLevelAdmin.fulfilled, (state, action) => {
-        state.levels.items = state.levels.items.filter((l) => l.id !== action.meta.arg.id);
+        state.levels.items = state.levels.items.map((l) => {
+          if (l.id !== action.meta.arg.id) {
+            l.is_active = false;
+          }
+          return l;
+        });
         if (state.selectedLevel.data?.id === action.meta.arg.id) {
           state.selectedLevel = { data: null, status: "idle" };
         }
@@ -192,7 +221,8 @@ const adminSlice = createSlice({
       })
       .addCase(fetchMemoryStatsInternal.rejected, (state, action) => {
         state.memoryStats.status = "failed";
-        state.error = (action.payload as string) ?? "Failed to fetch memory stats";
+        state.error =
+          (action.payload as string) ?? "Failed to fetch memory stats";
       });
   },
   selectors: {
@@ -209,7 +239,13 @@ const adminSlice = createSlice({
   },
 });
 
-export const { resetAdminSessions, resetAdminPlayers, resetAdminLevels, resetSelectedLevel, setSessionFilters } = adminSlice.actions;
+export const {
+  resetAdminSessions,
+  resetAdminPlayers,
+  resetAdminLevels,
+  resetSelectedLevel,
+  setSessionFilters,
+} = adminSlice.actions;
 export const {
   selectAdminStats,
   selectAdminStatsStatus,
