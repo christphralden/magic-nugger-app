@@ -12,8 +12,9 @@ import { Typography } from "@/components/ui/typography";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
-import { FloatingText } from "@/components/floating-text";
 import { IconStreak } from "@/components/decor/streak";
+import { LevelCardSkeleton } from "@/feature/levels/level-card-skeleton";
+import { FloatingText } from "@/components/floating-text";
 
 export function LevelSelectPage() {
   const dispatch = useDispatch();
@@ -40,10 +41,10 @@ export function LevelSelectPage() {
         </Typography>
 
         {levelsStatus === "loading" && (
-          <div className="w-full justify-center text-center">
-            <Typography variant={"primary"}>
-              <FloatingText text={"Loading levels..."} duration={1} />
-            </Typography>
+          <div className="flex flex-col gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <LevelCardSkeleton key={i} />
+            ))}
           </div>
         )}
 

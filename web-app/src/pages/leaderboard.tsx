@@ -10,7 +10,10 @@ import {
   handleLoadGlobal,
   handleLoadByLevel,
 } from "@/feature/leaderboard/state/leaderboard.actions";
-import { selectLevels, selectLevelsStatus } from "@/feature/levels/state/levels.slice";
+import {
+  selectLevels,
+  selectLevelsStatus,
+} from "@/feature/levels/state/levels.slice";
 import { handleLoadLevels } from "@/feature/levels/state/levels.actions";
 import { GlobalRow } from "@/feature/leaderboard/components/global-row";
 import { LevelRow } from "@/feature/leaderboard/components/level-row";
@@ -22,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { LEADERBOARD_PAGINATION_LIMIT } from "@/constants";
 import type { LeaderboardPeriod } from "@magic-nugger-app/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { IconStreak } from "@/components/decor/streak";
 
 type MainTab = "global" | "level";
 
@@ -60,7 +64,9 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
   });
   const [period, setPeriod] = useState<LeaderboardPeriod>(() => {
     const p = searchParams.get("period");
-    return (["week", "month", "alltime"] as LeaderboardPeriod[]).includes(p as LeaderboardPeriod)
+    return (["week", "month", "alltime"] as LeaderboardPeriod[]).includes(
+      p as LeaderboardPeriod,
+    )
       ? (p as LeaderboardPeriod)
       : "alltime";
   });
@@ -69,7 +75,9 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
     const parsed = l ? parseInt(l, 10) : NaN;
     return isNaN(parsed) ? null : parsed;
   });
-  const [cursorStack, setCursorStack] = useState<(number | undefined)[]>([undefined]);
+  const [cursorStack, setCursorStack] = useState<(number | undefined)[]>([
+    undefined,
+  ]);
 
   const activeLevels = levels
     .filter((l) => l.is_active)
@@ -84,7 +92,8 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
 
   const showTable = mainTab === "global" || selectedLevelId !== null;
   const isLoading =
-    (mainTab === "global" ? globalState.status : levelState.status) === "loading";
+    (mainTab === "global" ? globalState.status : levelState.status) ===
+    "loading";
   const activeNextCursor =
     mainTab === "global" ? globalState.next_cursor : levelState.next_cursor;
 
@@ -241,7 +250,8 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                           Player
                         </Typography>
                       </th>
-                      <th className="px-6 py-3 text-right">
+                      <th className="px-6 py-3 text-right flex justify-end">
+                        <IconStreak className="size-5 text-coral" />
                         <Typography variant="label" className="text-ink-soft">
                           ELO
                         </Typography>

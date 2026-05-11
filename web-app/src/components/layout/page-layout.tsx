@@ -20,7 +20,7 @@ const NAV_LINKS = [
 ];
 
 export function PageLayout({ title, children }: PageLayoutProps) {
-  const { username, display_name, current_elo } =
+  const { username, display_name, current_elo, avatar_url } =
     useSelector(selectCurrentPlayer)!;
   const location = useLocation();
 
@@ -33,13 +33,13 @@ export function PageLayout({ title, children }: PageLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex items-center justify-between px-8 py-4 border-b-[3px] border-border bg-paper">
-        <section className="w-full max-w-64">
+        <section className="flex w-full max-w-64 justify-start">
           <Link to={"/home"}>
             <MagicNuggerLogo />
           </Link>
         </section>
 
-        <nav className="flex items-center gap-6 w-full max-w-64">
+        <nav className="flex items-center gap-6 w-full max-w-64 justify-center">
           {NAV_LINKS.map(({ to, label }) => (
             <Link key={to} to={to}>
               <Typography
@@ -57,16 +57,17 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           ))}
         </nav>
 
-        <section className="flex items-center gap-6 w-full max-w-64">
+        <section className="flex items-center gap-6 w-full max-w-64 justify-end">
           <div className="flex items-center">
             <IconStreak className="fill-coral size-5" />
             <Typography variant={"label"}>{current_elo}</Typography>
           </div>
           <Link to="/settings/profile" className="flex items-center gap-2">
             <Avatar className="size-8">
-              <AvatarImage src="https://github.com/shadcn.png" />
+              {avatar_url && <AvatarImage src={avatar_url} />}
               <AvatarFallback>{avatarFallback}</AvatarFallback>
             </Avatar>
+
             <Typography variant={"label"}>{name || "Profile"}</Typography>
           </Link>
         </section>

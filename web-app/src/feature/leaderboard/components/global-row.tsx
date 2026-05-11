@@ -31,7 +31,7 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
         <div className="flex items-center gap-3">
           <Avatar className="size-8">
             {row.avatar_url && <AvatarImage src={row.avatar_url} />}
-            <AvatarFallback className="text-xs">
+            <AvatarFallback>
               {nameInitials(row.display_name || row.username)}
             </AvatarFallback>
           </Avatar>
