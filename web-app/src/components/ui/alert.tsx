@@ -42,7 +42,10 @@ export function Alert({
   ...props
 }: AlertProps) {
   return (
-    <div className={cn(alertVariants({ variant }), className)} {...props}>
+    <div
+      className={cn(alertVariants({ variant }), className, "items-start")}
+      {...props}
+    >
       {ALERT_ICONS[variant ?? "info"]}
       <div>
         {title && (
