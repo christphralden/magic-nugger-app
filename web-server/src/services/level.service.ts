@@ -1,6 +1,6 @@
 import { getDb } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
-import { HttpCode, LevelSchema } from "@magic-nugger-app/shared";
+import { HttpCode } from "@magic-nugger-app/shared";
 import type {
   Level,
   RequestCreateLevel,
@@ -9,37 +9,33 @@ import type {
 } from "@magic-nugger-app/shared";
 
 export const levelService = {
-  async getAll(): Promise<Level[]> {
+  async getAll(includeInactive = false): Promise<Level[]> {
     const { rows } = await getDb().query<Level>(
-      `SELECT 
+      `SELECT
         id, name, description, order_index, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
         enemy_wave_config, question_gen_config, max_score, is_active,
-        created_at, updated_at 
-      FROM levels 
-      WHERE is_active = true 
+        created_at, updated_at
+      FROM levels
+      WHERE (is_active = true OR $1::boolean)
       ORDER BY order_index
       `,
+      [includeInactive],
     );
-    rows.forEach((v) => {
-      console.log(LevelSchema.safeParse(v).error?.toString());
-    });
     return rows;
   },
 
-  async getById(id: string): Promise<Level> {
+  async getById(id: string, includeInactive = false): Promise<Level> {
     const { rows } = await getDb().query<Level>(
-      `SELECT 
+      `SELECT
         id, name, description, order_index, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
         enemy_wave_config, question_gen_config, max_score, is_active,
-        created_at, updated_at 
-      FROM levels 
-      WHERE 
-        id = $1 
-        AND is_active = true
+        created_at, updated_at
+      FROM levels
+      WHERE id = $1 AND (is_active = true OR $2::boolean)
       `,
-      [id],
+      [id, includeInactive],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
     return rows[0];

@@ -1,3 +1,4 @@
+import { TableRow, TableCell } from "@/components/ui/table";
 import { Typography } from "@/components/ui/typography";
 
 interface EmptyRowProps {
@@ -7,12 +8,12 @@ interface EmptyRowProps {
 
 export function EmptyRow({ colSpan, message }: EmptyRowProps) {
   return (
-    <tr>
-      <td colSpan={colSpan} className="px-6 py-12 text-center">
+    <TableRow>
+      <TableCell colSpan={colSpan} className="py-12 text-center">
         <Typography variant="body" className="text-placeholder">
           {message}
         </Typography>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

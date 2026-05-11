@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useCursor } from "@/hooks/use-cursor";
 import { useSelector, useDispatch } from "@/store/hooks";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
@@ -21,6 +22,14 @@ import { EmptyRow } from "@/feature/leaderboard/components/empty-row";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
 import { CartoonButton } from "@/components/ui/cartoon-button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { LEADERBOARD_PAGINATION_LIMIT } from "@/constants";
 import type { LeaderboardPeriod } from "@magic-nugger-app/shared";
@@ -75,9 +84,7 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
     const parsed = l ? parseInt(l, 10) : NaN;
     return isNaN(parsed) ? null : parsed;
   });
-  const [cursorStack, setCursorStack] = useState<(number | undefined)[]>([
-    undefined,
-  ]);
+  const cursor = useCursor();
 
   const activeLevels = levels
     .filter((l) => l.is_active)
@@ -87,8 +94,8 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
     selectSelectedLevelLeaderboard(state, selectedLevelId),
   );
 
-  const currentCursor = cursorStack[cursorStack.length - 1];
-  const pageOffset = (cursorStack.length - 1) * LEADERBOARD_PAGINATION_LIMIT;
+  const currentCursor = cursor.current;
+  const pageOffset = cursor.pageIndex * LEADERBOARD_PAGINATION_LIMIT;
 
   const showTable = mainTab === "global" || selectedLevelId !== null;
   const isLoading =
@@ -135,33 +142,33 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
   function handleMainTab(tab: MainTab) {
     setMainTab(tab);
     setSelectedLevelId(null);
-    setCursorStack([undefined]);
+    cursor.reset();
     syncParams({ tab, level: null });
   }
 
   function handlePeriod(p: LeaderboardPeriod) {
     setPeriod(p);
-    setCursorStack([undefined]);
+    cursor.reset();
     syncParams({ period: p });
   }
 
   function handleLevelSelect(levelId: number) {
     setSelectedLevelId(levelId);
-    setCursorStack([undefined]);
+    cursor.reset();
     syncParams({ level: levelId });
   }
 
-  const hasPrev = cursorStack.length > 1;
+  const hasPrev = cursor.hasPrev;
   const hasNext = activeNextCursor !== null;
 
   function handleNext() {
     if (!hasNext) return;
-    setCursorStack((prev) => [...prev, activeNextCursor!]);
+    cursor.next(activeNextCursor!);
   }
 
   function handlePrev() {
     if (!hasPrev) return;
-    setCursorStack((prev) => prev.slice(0, -1));
+    cursor.prev();
   }
 
   return (
@@ -235,94 +242,103 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                 Level {">"} {levels.find((l) => l.id === selectedLevelId)?.name}
               </Typography>
             )}
-            <div className="bg-paper border-[3px] border-border rounded-md shadow-cartoon overflow-hidden">
+            <div className="bg-white border-[3px] border-border rounded-md shadow-cartoon overflow-hidden">
               {mainTab === "global" ? (
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b-[3px] border-border">
-                      <th className="px-6 py-3 text-left">
-                        <Typography variant="label" className="text-ink-soft">
-                          #
-                        </Typography>
-                      </th>
-                      <th className="px-6 py-3 text-left">
-                        <Typography variant="label" className="text-ink-soft">
-                          Player
-                        </Typography>
-                      </th>
-                      <th className="px-6 py-3 text-right flex justify-end">
-                        <IconStreak className="size-5 text-coral" />
-                        <Typography variant="label" className="text-ink-soft">
-                          ELO
-                        </Typography>
-                      </th>
-                      <th className="px-6 py-3 text-right">
-                        <Typography variant="label" className="text-ink-soft">
-                          Best Streak
-                        </Typography>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className={cn(isLoading && "opacity-50")}>
-                    {globalState.items.map((row, i) => (
-                      <GlobalRow
-                        key={row.id}
-                        row={row}
-                        rank={pageOffset + i + 1}
-                        currentPlayerId={currentPlayerId}
-                      />
-                    ))}
-                    {!isLoading && globalState.items.length === 0 && (
-                      <EmptyRow colSpan={4} message="No players yet." />
-                    )}
-                  </tbody>
-                </table>
+                <ScrollArea className="h-[60dvh]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow header>
+                        <TableHead>
+                          <Typography variant="label" className="text-ink-soft">
+                            #
+                          </Typography>
+                        </TableHead>
+                        <TableHead>
+                          <Typography variant="label" className="text-ink-soft">
+                            Player
+                          </Typography>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <div className="flex justify-end items-center">
+                            <IconStreak className="size-5 text-coral" />
+                            <Typography
+                              variant="label"
+                              className="text-ink-soft"
+                            >
+                              ELO
+                            </Typography>
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Typography variant="label" className="text-ink-soft">
+                            Best Streak
+                          </Typography>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className={cn(isLoading && "opacity-50")}>
+                      {globalState.items.map((row, i) => (
+                        <GlobalRow
+                          key={row.id}
+                          row={row}
+                          rank={pageOffset + i + 1}
+                          currentPlayerId={currentPlayerId}
+                        />
+                      ))}
+                      {!isLoading && globalState.items.length === 0 && (
+                        <EmptyRow colSpan={4} message="No players yet." />
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b-[3px] border-border">
-                      <th className="px-6 py-3 text-left">
-                        <Typography variant="label" className="text-ink-soft">
-                          #
-                        </Typography>
-                      </th>
-                      <th className="px-6 py-3 text-left">
-                        <Typography variant="label" className="text-ink-soft">
-                          Player
-                        </Typography>
-                      </th>
-                      <th className="px-6 py-3 text-right">
-                        <Typography variant="label" className="text-ink-soft">
-                          Best Score
-                        </Typography>
-                      </th>
-                      <th className="px-6 py-3 text-right">
-                        <Typography variant="label" className="text-ink-soft">
-                          Best Streak
-                        </Typography>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className={cn(isLoading && "opacity-50")}>
-                    {levelState.items.map((row, i) => (
-                      <LevelRow
-                        key={row.player_id}
-                        row={row}
-                        rank={pageOffset + i + 1}
-                        currentPlayerId={currentPlayerId}
-                      />
-                    ))}
-                    {!isLoading && levelState.items.length === 0 && (
-                      <EmptyRow colSpan={4} message="No scores yet." />
-                    )}
-                  </tbody>
-                </table>
+                <ScrollArea className="h-[480px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow header>
+                        <TableHead>
+                          <Typography variant="label" className="text-ink-soft">
+                            #
+                          </Typography>
+                        </TableHead>
+                        <TableHead>
+                          <Typography variant="label" className="text-ink-soft">
+                            Player
+                          </Typography>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Typography variant="label" className="text-ink-soft">
+                            Best Score
+                          </Typography>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Typography variant="label" className="text-ink-soft">
+                            Best Streak
+                          </Typography>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className={cn(isLoading && "opacity-50")}>
+                      {levelState.items.map((row, i) => (
+                        <LevelRow
+                          key={row.player_id}
+                          row={row}
+                          rank={pageOffset + i + 1}
+                          currentPlayerId={currentPlayerId}
+                        />
+                      ))}
+                      {!isLoading && levelState.items.length === 0 && (
+                        <EmptyRow colSpan={4} message="No scores yet." />
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               )}
             </div>
 
             <div className="flex items-center justify-between mt-4">
               <Typography variant="label" className="text-ink-soft">
-                Page {cursorStack.length}
+                Page {cursor.pageIndex + 1}
               </Typography>
               <div className="flex gap-2">
                 <CartoonButton

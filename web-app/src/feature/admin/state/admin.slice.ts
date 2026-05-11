@@ -1,0 +1,222 @@
+import { createSlice } from "@reduxjs/toolkit";
+import {
+  fetchStatsAdmin,
+  fetchPlayersAdmin,
+  fetchActiveSessionsAdmin,
+  fetchSessionsAdmin,
+  adjustPlayerEloAdmin,
+  fetchLevelsAdmin,
+  fetchLevelAdmin,
+  createLevelAdmin,
+  updateLevelAdmin,
+  activateLevelAdmin,
+  deleteLevelAdmin,
+  clearLeaderboardCacheAdmin,
+  fetchMemoryStatsInternal,
+} from "./admin.thunk";
+import type { AdminStats, AdminPlayer, MemoryStats } from "./admin.thunk";
+import type { AsyncStatus, GameSession, Level } from "@magic-nugger-app/shared";
+
+type AdminState = {
+  stats: AdminStats | null;
+  statsStatus: AsyncStatus;
+  players: { items: AdminPlayer[]; next_cursor: number | null; status: AsyncStatus };
+  activeSessions: { items: GameSession[]; status: AsyncStatus };
+  sessions: { items: GameSession[]; next_cursor: number | null; status: AsyncStatus };
+  levels: { items: Level[]; status: AsyncStatus };
+  selectedLevel: { data: Level | null; status: AsyncStatus };
+  leaderboardCacheBust: { status: AsyncStatus };
+  memoryStats: { data: MemoryStats | null; status: AsyncStatus };
+  error: string | null;
+};
+
+const adminSlice = createSlice({
+  name: "admin",
+  initialState: {
+    stats: null,
+    statsStatus: "idle",
+    players: { items: [], next_cursor: null, status: "idle" },
+    activeSessions: { items: [], status: "idle" },
+    sessions: { items: [], next_cursor: null, status: "idle" },
+    levels: { items: [], status: "idle" },
+    selectedLevel: { data: null, status: "idle" },
+    leaderboardCacheBust: { status: "idle" },
+    memoryStats: { data: null, status: "idle" },
+    error: null,
+  } as AdminState,
+  reducers: {
+    resetAdminSessions: (state) => {
+      state.sessions = { items: [], next_cursor: null, status: "idle" };
+    },
+    resetAdminPlayers: (state) => {
+      state.players = { items: [], next_cursor: null, status: "idle" };
+    },
+    resetAdminLevels: (state) => {
+      state.levels = { items: [], status: "idle" };
+    },
+    resetSelectedLevel: (state) => {
+      state.selectedLevel = { data: null, status: "idle" };
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchStatsAdmin.pending, (state) => {
+        state.statsStatus = "loading";
+        state.error = null;
+      })
+      .addCase(fetchStatsAdmin.fulfilled, (state, action) => {
+        state.statsStatus = "succeeded";
+        state.stats = action.payload;
+      })
+      .addCase(fetchStatsAdmin.rejected, (state, action) => {
+        state.statsStatus = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch stats";
+      })
+
+      .addCase(fetchPlayersAdmin.pending, (state) => {
+        state.players.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchPlayersAdmin.fulfilled, (state, action) => {
+        state.players.status = "succeeded";
+        state.players.items = action.payload.items;
+        state.players.next_cursor = action.payload.next_cursor;
+      })
+      .addCase(fetchPlayersAdmin.rejected, (state, action) => {
+        state.players.status = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch players";
+      })
+
+      .addCase(fetchActiveSessionsAdmin.pending, (state) => {
+        state.activeSessions.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchActiveSessionsAdmin.fulfilled, (state, action) => {
+        state.activeSessions.status = "succeeded";
+        state.activeSessions.items = action.payload;
+      })
+      .addCase(fetchActiveSessionsAdmin.rejected, (state, action) => {
+        state.activeSessions.status = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch active sessions";
+      })
+
+      .addCase(fetchSessionsAdmin.pending, (state) => {
+        state.sessions.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchSessionsAdmin.fulfilled, (state, action) => {
+        state.sessions.status = "succeeded";
+        state.sessions.items = action.payload.items;
+        state.sessions.next_cursor = action.payload.next_cursor;
+      })
+      .addCase(fetchSessionsAdmin.rejected, (state, action) => {
+        state.sessions.status = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch sessions";
+      })
+
+      .addCase(adjustPlayerEloAdmin.fulfilled, (state, action) => {
+        const { id, elo } = action.meta.arg;
+        const player = state.players.items.find((p) => p.id === id);
+        if (player) player.current_elo = elo;
+      })
+
+      .addCase(fetchLevelsAdmin.pending, (state) => {
+        state.levels.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchLevelsAdmin.fulfilled, (state, action) => {
+        state.levels.status = "succeeded";
+        state.levels.items = action.payload;
+      })
+      .addCase(fetchLevelsAdmin.rejected, (state, action) => {
+        state.levels.status = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch levels";
+      })
+
+      .addCase(fetchLevelAdmin.pending, (state) => {
+        state.selectedLevel.status = "loading";
+      })
+      .addCase(fetchLevelAdmin.fulfilled, (state, action) => {
+        state.selectedLevel.status = "succeeded";
+        state.selectedLevel.data = action.payload;
+      })
+      .addCase(fetchLevelAdmin.rejected, (state, action) => {
+        state.selectedLevel.status = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch level";
+      })
+
+      .addCase(createLevelAdmin.fulfilled, (state, action) => {
+        state.levels.items.unshift(action.payload);
+      })
+
+      .addCase(updateLevelAdmin.fulfilled, (state, action) => {
+        const idx = state.levels.items.findIndex((l) => l.id === action.payload.id);
+        if (idx !== -1) state.levels.items[idx] = action.payload;
+        if (state.selectedLevel.data?.id === action.payload.id) state.selectedLevel.data = action.payload;
+      })
+
+      .addCase(activateLevelAdmin.fulfilled, (state, action) => {
+        const { id, is_active } = action.payload;
+        const level = state.levels.items.find((l) => l.id === id);
+        if (level) level.is_active = is_active;
+        if (state.selectedLevel.data?.id === id) state.selectedLevel.data = action.payload;
+      })
+
+      .addCase(deleteLevelAdmin.fulfilled, (state, action) => {
+        state.levels.items = state.levels.items.filter((l) => l.id !== action.meta.arg.id);
+        if (state.selectedLevel.data?.id === action.meta.arg.id) {
+          state.selectedLevel = { data: null, status: "idle" };
+        }
+      })
+
+      .addCase(clearLeaderboardCacheAdmin.pending, (state) => {
+        state.leaderboardCacheBust.status = "loading";
+      })
+      .addCase(clearLeaderboardCacheAdmin.fulfilled, (state) => {
+        state.leaderboardCacheBust.status = "succeeded";
+      })
+      .addCase(clearLeaderboardCacheAdmin.rejected, (state) => {
+        state.leaderboardCacheBust.status = "failed";
+      })
+
+      .addCase(fetchMemoryStatsInternal.pending, (state) => {
+        state.memoryStats.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchMemoryStatsInternal.fulfilled, (state, action) => {
+        state.memoryStats.status = "succeeded";
+        state.memoryStats.data = action.payload;
+      })
+      .addCase(fetchMemoryStatsInternal.rejected, (state, action) => {
+        state.memoryStats.status = "failed";
+        state.error = (action.payload as string) ?? "Failed to fetch memory stats";
+      });
+  },
+  selectors: {
+    selectAdminStats: (state) => state.stats,
+    selectAdminStatsStatus: (state) => state.statsStatus,
+    selectAdminPlayers: (state) => state.players,
+    selectAdminActiveSessions: (state) => state.activeSessions,
+    selectAdminSessions: (state) => state.sessions,
+    selectAdminLevels: (state) => state.levels,
+    selectAdminSelectedLevel: (state) => state.selectedLevel,
+    selectAdminLeaderboardCacheBust: (state) => state.leaderboardCacheBust,
+    selectAdminMemoryStats: (state) => state.memoryStats,
+    selectAdminError: (state) => state.error,
+  },
+});
+
+export const { resetAdminSessions, resetAdminPlayers, resetAdminLevels, resetSelectedLevel } = adminSlice.actions;
+export const {
+  selectAdminStats,
+  selectAdminStatsStatus,
+  selectAdminPlayers,
+  selectAdminActiveSessions,
+  selectAdminSessions,
+  selectAdminLevels,
+  selectAdminSelectedLevel,
+  selectAdminLeaderboardCacheBust,
+  selectAdminMemoryStats,
+  selectAdminError,
+} = adminSlice.selectors;
+export const adminReducer = adminSlice.reducer;

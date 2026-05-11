@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { levelService } from "@/services/level.service";
-import { authenticate } from "@/middleware/authenticate";
+import { authenticate, isAdmin } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { validate } from "@/middleware/validate";
 import {
@@ -15,8 +15,8 @@ export const levelsRouter = Router();
 
 levelsRouter.use(authenticate);
 
-levelsRouter.get("/", async (_req, res) => {
-  const levels = await levelService.getAll();
+levelsRouter.get("/", async (req, res) => {
+  const levels = await levelService.getAll(isAdmin(req));
 
   if (levels.length === 0) {
     return res.status(HttpCode.EMPTY).send();
@@ -30,7 +30,7 @@ levelsRouter.get("/", async (_req, res) => {
 });
 
 levelsRouter.get("/:id", async (req, res) => {
-  const level = await levelService.getById(req.params.id);
+  const level = await levelService.getById(req.params.id, isAdmin(req));
   res.json({
     code: HttpCode.OK,
     error: null,

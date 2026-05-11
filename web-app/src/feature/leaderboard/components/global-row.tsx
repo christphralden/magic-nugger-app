@@ -1,4 +1,5 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { TableRow, TableCell } from "@/components/ui/table";
 import { Typography } from "@/components/ui/typography";
 import { cn, nameInitials } from "@/lib/utils";
 import type { GlobalLeaderboardRow } from "@magic-nugger-app/shared";
@@ -13,8 +14,8 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
   const isMe = row.id === currentPlayerId;
   const name = isMe ? "Me" : row.display_name || row.username;
   return (
-    <tr className="border-b-[2px] border-border last:border-0 hover:bg-cream/50 transition-colors">
-      <td className="px-6 py-4 w-16">
+    <TableRow>
+      <TableCell className="w-16">
         <Typography
           variant="label"
           className={cn(
@@ -26,8 +27,8 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
         >
           {rank}
         </Typography>
-      </td>
-      <td className="px-6 py-4">
+      </TableCell>
+      <TableCell>
         <div className="flex items-center gap-3">
           <Avatar className="size-8">
             {row.avatar_url && <AvatarImage src={row.avatar_url} />}
@@ -42,15 +43,15 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
             {name}
           </Typography>
         </div>
-      </td>
-      <td className="px-6 py-4 text-right">
+      </TableCell>
+      <TableCell className="text-right">
         <Typography variant="label" className="text-coral">
           {row.current_elo}
         </Typography>
-      </td>
-      <td className="px-6 py-4 text-right">
+      </TableCell>
+      <TableCell className="text-right">
         <Typography variant="label">{row.max_streak}</Typography>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

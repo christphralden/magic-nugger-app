@@ -20,8 +20,8 @@ const NAV_LINKS = [
 ];
 
 export function PageLayout({ title, children }: PageLayoutProps) {
-  const { username, display_name, current_elo, avatar_url } =
-    useSelector(selectCurrentPlayer)!;
+  const player = useSelector(selectCurrentPlayer)!;
+  const { username, display_name, current_elo, avatar_url, role_name } = player;
   const location = useLocation();
 
   const name = display_name || username;
@@ -31,7 +31,7 @@ export function PageLayout({ title, children }: PageLayoutProps) {
     document.title = `${title} | Magic Nugger`;
   }, [title]);
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <div className="flex items-center justify-between px-8 py-4 border-b-[3px] border-border bg-paper">
         <section className="flex w-full max-w-64 justify-start">
           <Link to={"/home"}>
@@ -55,6 +55,21 @@ export function PageLayout({ title, children }: PageLayoutProps) {
               </Typography>
             </Link>
           ))}
+          {role_name === "admin" && (
+            <Link to="/admin">
+              <Typography
+                variant="label"
+                className={cn(
+                  "transition-colors",
+                  location.pathname.startsWith("/admin")
+                    ? "text-coral"
+                    : "text-ink-soft hover:text-ink",
+                )}
+              >
+                Admin
+              </Typography>
+            </Link>
+          )}
         </nav>
 
         <section className="flex items-center gap-6 w-full max-w-64 justify-end">
@@ -72,7 +87,7 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           </Link>
         </section>
       </div>
-      <div className="px-4 py-8 md:px-8">{children}</div>
+      <div className="flex-1 min-h-0 overflow-auto px-4 py-8 md:px-8">{children}</div>
     </div>
   );
 }

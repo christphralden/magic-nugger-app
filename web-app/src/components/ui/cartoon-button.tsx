@@ -15,7 +15,8 @@ const cartoonButtonVariants = cva(
           "border-transparent shadow-none bg-transparent text-ink active:translate-y-0 hover:bg-white",
       },
       size: {
-        default: "px-8 py-6 text-lg rounded-full",
+        sm: "px-4 py-4 text-base !rounded-xl !shadow-cartoon-sm",
+        default: "px-8 py-6 text-lg rounded-full ",
         lg: "px-12 py-8 text-2xl rounded-full",
         xl: "px-16 py-10 text-3xl rounded-full",
       },

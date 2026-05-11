@@ -66,6 +66,8 @@ export const ResponsePlayerSchema = PlayerSchema.pick({
   total_correct: true,
   total_incorrect: true,
   longest_streak: true,
+}).extend({
+  role_name: z.string(),
 });
 export type ResponsePlayer = z.infer<typeof ResponsePlayerSchema>;
 
