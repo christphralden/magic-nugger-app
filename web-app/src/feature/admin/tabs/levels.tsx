@@ -210,7 +210,7 @@ export function LevelsTab() {
                     </TableRow>
                     {expandedId === level.id && (
                       <TableRow className="border-b border-border">
-                        <TableCell colSpan={5} className="bg-gray-50">
+                        <TableCell colSpan={6} className="bg-gray-50">
                           {selectedLevel.status !== "loading" &&
                             selectedLevel.data?.id === level.id && (
                               <form
