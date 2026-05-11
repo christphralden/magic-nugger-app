@@ -17,7 +17,9 @@ function userSelect(): string {
         JOIN permissions perm ON perm.id = rp2.permission_id
         WHERE rp2.role_id = r.id
       ) as role_permissions,
-      p.current_elo, p.highest_level_unlocked
+      p.current_elo, p.highest_level_unlocked,
+      p.total_questions_answered, p.total_correct, p.total_incorrect, p.longest_streak,
+      p.age, p.grade, p.guardian_email
     FROM players p
     JOIN roles r ON r.id = p.role_id
   `;

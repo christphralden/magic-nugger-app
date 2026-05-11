@@ -22,17 +22,18 @@ adminRouter.use(authenticate, authorize("admin:full"));
 adminRouter.get("/players", async (req, res) => {
   const admin = getUser(req);
   const { cursor, limit } = parsePagination(req.query);
-  const { rows } = await getDb().query<Player>(
-    `SELECT id, username, display_name, email, role_id, current_elo, created_at
-     FROM players
-     WHERE ($1::bigint IS NULL OR EXTRACT(EPOCH FROM created_at)*1000 < $1)
-     ORDER BY created_at DESC
+  const { rows } = await getDb().query<Player & { role_name: string }>(
+    `SELECT p.id, p.username, p.display_name, p.email, r.name AS role_name, p.current_elo, p.created_at
+     FROM players p
+     JOIN roles r ON p.role_id = r.id
+     WHERE ($1::bigint IS NULL OR EXTRACT(EPOCH FROM p.created_at)*1000 < $1)
+     ORDER BY p.created_at DESC
      LIMIT $2`,
     [cursor ?? null, limit],
   );
   const next_cursor =
     rows.length === limit
-      ? new Date(rows[rows.length - 1].created_at).getTime()
+      ? String(new Date(rows[rows.length - 1].created_at).getTime())
       : null;
   loggingService.log({
     event: "admin:player_viewed",
@@ -188,7 +189,7 @@ adminRouter.get("/game-sessions", async (req, res) => {
   );
   const next_cursor =
     rows.length === limit
-      ? new Date(rows[rows.length - 1].started_at).getTime()
+      ? String(new Date(rows[rows.length - 1].started_at).getTime())
       : null;
   loggingService.log({
     event: "admin:sessions_viewed",

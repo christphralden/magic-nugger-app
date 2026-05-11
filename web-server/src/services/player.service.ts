@@ -9,10 +9,11 @@ import type {
 export const playerService = {
   async getById(id: string): Promise<ResponsePlayer> {
     const { rows } = await getDb().query<ResponsePlayer>(
-      `SELECT 
-        id, username, display_name, current_elo, highest_level_unlocked, 
-        avatar_url 
-      FROM players 
+      `SELECT
+        id, username, display_name, current_elo, highest_level_unlocked,
+        total_questions_answered, total_correct, total_incorrect, longest_streak,
+        avatar_url, age, grade, guardian_email
+      FROM players
       WHERE id = $1
       `,
       [id],
@@ -24,18 +25,27 @@ export const playerService = {
   async update(id: string, body: RequestUpdatePlayer): Promise<ResponsePlayer> {
     const { rows } = await getDb().query<ResponsePlayer>(
       `UPDATE players SET
-        display_name = COALESCE($2, display_name),
-        username = COALESCE($3, username),
-        avatar_url = COALESCE($4, avatar_url),
-        updated_at = now()
+        display_name   = COALESCE($2, display_name),
+        username       = COALESCE($3, username),
+        avatar_url     = COALESCE($4, avatar_url),
+        age            = COALESCE($5, age),
+        grade          = COALESCE($6, grade),
+        guardian_email = COALESCE($7, guardian_email),
+        updated_at     = now()
        WHERE id = $1
-       RETURNING id, username, display_name, current_elo, highest_level_unlocked, avatar_url
+       RETURNING
+        id, username, display_name, current_elo, highest_level_unlocked,
+        total_questions_answered, total_correct, total_incorrect, longest_streak,
+        avatar_url, age, grade, guardian_email
       `,
       [
         id,
         body.display_name ?? null,
         body.username ?? null,
         body.avatar_url ?? null,
+        body.age ?? null,
+        body.grade ?? null,
+        body.guardian_email ?? null,
       ],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Player not found");
