@@ -148,6 +148,12 @@ export function ProfileTab() {
           className="flex flex-col gap-8"
         >
           <div className="rounded-xl flex flex-col gap-2 bg-white p-6 pb-12 border-border border-[3px] shadow-cartoon-lg">
+            <div className="flex flex-col gap-1">
+              <Typography variant={"label"}>Email</Typography>
+              <Typography variant={"body"} className="text-ink-soft">
+                {player.email}
+              </Typography>
+            </div>
             <FormField
               control={form.control}
               name="username"
@@ -263,7 +269,7 @@ export function ProfileTab() {
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex flex-col gap-1 rounded-lg bg-white p-4 border-border border-[3px] shadow-cartoon-sm">
-      <Typography variant="label" className="text-ink/60">
+      <Typography variant="label" className="text-ink-soft">
         {label}
       </Typography>
       <Typography variant="subheading">{value}</Typography>
@@ -287,7 +293,7 @@ export function StatisticsTab() {
       </Typography>
 
       <div className="rounded-xl flex flex-col gap-4 bg-white p-6 border-border border-[3px] shadow-cartoon-lg">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <StatCard label="ELO" value={player.current_elo} />
           <StatCard
             label="Highest Level"

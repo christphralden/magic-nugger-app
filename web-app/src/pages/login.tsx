@@ -13,7 +13,6 @@ import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
-import { Cloud } from "@/components/decor/cloud";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Coin } from "@/components/decor/coin";
 import { cn } from "@/lib/utils";

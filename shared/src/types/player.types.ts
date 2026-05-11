@@ -54,6 +54,7 @@ export type RequestUpdatePlayer = z.infer<typeof RequestUpdatePlayerSchema>;
 export const ResponsePlayerSchema = PlayerSchema.pick({
   id: true,
   username: true,
+  email: true,
   display_name: true,
   current_elo: true,
   highest_level_unlocked: true,

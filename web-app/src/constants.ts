@@ -1,0 +1,1 @@
+export const LEADERBOARD_PAGINATION_LIMIT = 10;

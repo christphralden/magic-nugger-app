@@ -1,7 +1,11 @@
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useUnityBridge } from "@/hooks/use-unity-bridge";
 
 export function GamePage() {
+  const [searchParams] = useSearchParams();
+  const levelId = searchParams.get("level") ? Number(searchParams.get("level")) : null;
+
   const {
     Unity,
     provider,
