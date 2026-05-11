@@ -6,7 +6,7 @@ import { Sparkle } from "../decor/sparkle";
 import { AlertWarningIcon, AlertErrorIcon } from "@/components/ui/alert-icons";
 
 const alertVariants = cva(
-  "border-[3px] border-ink rounded-lg p-3 flex items-center gap-3 text-left shadow-cartoon-sm",
+  "border-[3px] border-border rounded-lg p-3 flex items-center gap-3 text-left shadow-cartoon-sm",
   {
     variants: {
       variant: {

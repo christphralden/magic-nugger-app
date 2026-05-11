@@ -11,6 +11,7 @@ export const playerService = {
     const { rows } = await getDb().query<ResponsePlayer>(
       `SELECT
         id, username, display_name, current_elo, highest_level_unlocked,
+        total_questions_answered, total_correct, total_incorrect, longest_streak,
         avatar_url, age, grade, guardian_email
       FROM players
       WHERE id = $1
@@ -34,6 +35,7 @@ export const playerService = {
        WHERE id = $1
        RETURNING
         id, username, display_name, current_elo, highest_level_unlocked,
+        total_questions_answered, total_correct, total_incorrect, longest_streak,
         avatar_url, age, grade, guardian_email
       `,
       [

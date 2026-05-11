@@ -28,11 +28,11 @@ export const fetchPlayer = createAsyncThunk<
 
 export const patchPlayer = createAsyncThunk<
   ResponsePlayer,
-  { id: string; body: RequestUpdatePlayer },
+  { body: RequestUpdatePlayer },
   { state: RootState }
->("player/update", async ({ id, body }, { rejectWithValue }) => {
+>("player/update", async ({ body }, { rejectWithValue }) => {
   const response = await fetch(
-    `${WEB_SERVER_URL}/${API_VERSION_BASE}/players/${id}`,
+    `${WEB_SERVER_URL}/${API_VERSION_BASE}/players`,
     {
       method: "PATCH",
       credentials: "include",

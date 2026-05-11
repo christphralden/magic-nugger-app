@@ -1,7 +1,9 @@
+import { type ReactNode } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save } from "lucide-react";
+import { LogOut, Save } from "lucide-react";
+import { useNavigate, useMatch, Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import { selectPlayerLoading } from "@/feature/player/state/player.slice";
@@ -24,7 +26,11 @@ import { toastError } from "@/lib/toast";
 import type { RequestUpdatePlayer } from "@magic-nugger-app/shared";
 
 const profileFormSchema = z.object({
-  username: z.string().min(3, "At least 3 characters").max(32, "Too long").optional(),
+  username: z
+    .string()
+    .min(3, "At least 3 characters")
+    .max(32, "Too long")
+    .optional(),
   display_name: z.string().max(64, "Too long").optional(),
   age: z
     .string()
@@ -33,24 +39,84 @@ const profileFormSchema = z.object({
     .optional()
     .or(z.literal("")),
   grade: z.string().optional(),
-  guardian_email: z.string().email("Enter a valid email").optional().or(z.literal("")),
+  guardian_email: z
+    .string()
+    .email("Enter a valid email")
+    .optional()
+    .or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-function ProfilePage() {
+function SettingsNavButton({
+  to,
+  children,
+}: {
+  to: string;
+  children: ReactNode;
+}) {
+  const navigate = useNavigate();
+  const match = useMatch(to);
+  return (
+    <CartoonButton
+      className="rounded-xl"
+      variant={match ? "select" : "ghost"}
+      onClick={() => navigate(to)}
+    >
+      {children}
+    </CartoonButton>
+  );
+}
+
+function SettingsLayout() {
+  const navigate = useNavigate();
+
+  return (
+    <PageLayout title="Settings">
+      <div className="w-full flex gap-8 h-[85vh]">
+        <div className="w-1/4 h-full">
+          <div className="flex flex-col h-full gap-8">
+            <Typography variant="subheading">Settings</Typography>
+            <div className="flex flex-col gap-2 flex-1">
+              <SettingsNavButton to="/settings/profile">
+                Profile
+              </SettingsNavButton>
+              <SettingsNavButton to="/settings/statistics">
+                Statistics
+              </SettingsNavButton>
+            </div>
+            <CartoonButton
+              variant="ghost"
+              onClick={() => navigate("/logout")}
+              className="bg-transparent text-coral rounded-lg"
+            >
+              <LogOut size={28} />
+              Logout
+            </CartoonButton>
+          </div>
+        </div>
+
+        <div className="w-3/4 flex flex-col gap-4">
+          <Outlet />
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
+
+export function ProfileTab() {
   const dispatch = useDispatch();
-  const currentPlayer = useSelector(selectCurrentPlayer)!;
+  const player = useSelector(selectCurrentPlayer)!;
   const loading = useSelector(selectPlayerLoading);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      username: currentPlayer.username,
-      display_name: currentPlayer.display_name ?? "",
-      age: currentPlayer.age?.toString() ?? "",
-      grade: currentPlayer.grade?.toString() ?? "",
-      guardian_email: currentPlayer.guardian_email ?? "",
+      username: player.username,
+      display_name: player.display_name ?? "",
+      age: player.age?.toString() ?? "",
+      grade: player.grade?.toString() ?? "",
+      guardian_email: player.guardian_email ?? "",
     },
   });
 
@@ -62,7 +128,7 @@ function ProfilePage() {
     if (values.grade) body.grade = parseInt(values.grade, 10);
     if (values.guardian_email) body.guardian_email = values.guardian_email;
 
-    const result = await dispatch(patchPlayer({ id: currentPlayer.id, body }));
+    const result = await dispatch(patchPlayer({ body }));
     if (patchPlayer.fulfilled.match(result)) {
       form.reset(values);
     } else {
@@ -71,105 +137,89 @@ function ProfilePage() {
   };
 
   return (
-    <PageLayout title="Profile">
-      <div className="max-w-xl mx-auto">
-        <Typography as="h1" variant="subheading" className="mb-6">
-          Your Profile
-        </Typography>
+    <>
+      <Typography as="h1" variant="subheading">
+        Profile
+      </Typography>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <div className="bg-white border-[3px] border-ink rounded-cartoon-lg p-6 space-y-5">
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-8"
+        >
+          <div className="rounded-xl flex flex-col gap-2 bg-white p-6 pb-12 border-border border-[3px] shadow-cartoon-lg">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex gap-2 items-center">
+                    <FormLabel>Username</FormLabel>
+                    <FormMessage />
+                  </div>
+                  <FormControl>
+                    <CartoonInput placeholder="hero_name" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="display_name"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex gap-2 items-center">
+                    <FormLabel>Display Name</FormLabel>
+                    <FormMessage />
+                  </div>
+                  <FormControl>
+                    <CartoonInput
+                      placeholder="Optional display name"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="username"
+                name="age"
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex gap-2 items-center">
-                      <FormLabel>Username</FormLabel>
-                      <FormMessage />
-                    </div>
-                    <FormControl>
-                      <CartoonInput placeholder="hero_name" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="display_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2 items-center">
-                      <FormLabel>Display Name</FormLabel>
-                      <FormMessage />
-                    </div>
-                    <FormControl>
-                      <CartoonInput placeholder="Optional display name" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex gap-2 items-center">
-                        <FormLabel>Age</FormLabel>
-                        <FormMessage />
-                      </div>
-                      <FormControl>
-                        <CartoonInput
-                          type="number"
-                          min={1}
-                          placeholder="10"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="grade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex gap-2 items-center">
-                        <FormLabel>Grade</FormLabel>
-                        <FormMessage />
-                      </div>
-                      <FormControl>
-                        <CartoonSelect
-                          options={GRADES}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder="Select grade"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="guardian_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2 items-center">
-                      <FormLabel>Guardian Email</FormLabel>
+                      <FormLabel>Age</FormLabel>
                       <FormMessage />
                     </div>
                     <FormControl>
                       <CartoonInput
-                        type="email"
-                        placeholder="guardian@example.com"
+                        type="number"
+                        min={1}
+                        placeholder="10"
                         {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="grade"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex gap-2 items-center">
+                      <FormLabel>Grade</FormLabel>
+                      <FormMessage />
+                    </div>
+                    <FormControl>
+                      <CartoonSelect
+                        options={GRADES}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Select grade"
                       />
                     </FormControl>
                   </FormItem>
@@ -177,21 +227,88 @@ function ProfilePage() {
               />
             </div>
 
-            {form.formState.isDirty && (
-              <CartoonButton type="submit" className="w-full" disabled={loading}>
-                <Save className="w-5 h-5" />
-                {loading ? "Saving..." : "Save Changes"}
-              </CartoonButton>
-            )}
-          </form>
-        </Form>
+            <FormField
+              control={form.control}
+              name="guardian_email"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex gap-2 items-center">
+                    <FormLabel>Guardian Email</FormLabel>
+                    <FormMessage />
+                  </div>
+                  <FormControl>
+                    <CartoonInput
+                      type="email"
+                      placeholder="guardian@example.com"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {form.formState.isDirty && (
+            <CartoonButton type="submit" className="w-full" disabled={loading}>
+              <Save className="w-5 h-5" />
+              {loading ? "Saving..." : "Save Changes"}
+            </CartoonButton>
+          )}
+        </form>
+      </Form>
+    </>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg bg-white p-4 border-border border-[3px] shadow-cartoon-sm">
+      <Typography variant="label" className="text-ink/60">
+        {label}
+      </Typography>
+      <Typography variant="subheading">{value}</Typography>
+    </div>
+  );
+}
+
+export function StatisticsTab() {
+  const player = useSelector(selectCurrentPlayer)!;
+  const accuracy =
+    player.total_questions_answered > 0
+      ? Math.round(
+          (player.total_correct / player.total_questions_answered) * 100,
+        )
+      : 0;
+
+  return (
+    <>
+      <Typography as="h1" variant="subheading">
+        Statistics
+      </Typography>
+
+      <div className="rounded-xl flex flex-col gap-4 bg-white p-6 border-border border-[3px] shadow-cartoon-lg">
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard label="ELO" value={player.current_elo} />
+          <StatCard
+            label="Highest Level"
+            value={player.highest_level_unlocked}
+          />
+          <StatCard
+            label="Questions Answered"
+            value={player.total_questions_answered}
+          />
+          <StatCard label="Accuracy" value={`${accuracy}%`} />
+          <StatCard label="Correct" value={player.total_correct} />
+          <StatCard label="Incorrect" value={player.total_incorrect} />
+          <StatCard label="Longest Streak" value={player.longest_streak} />
+        </div>
       </div>
-    </PageLayout>
+    </>
   );
 }
 
 export function ProfilePageContainer() {
   const currentPlayer = useSelector(selectCurrentPlayer);
   if (!currentPlayer) return null;
-  return <ProfilePage />;
+  return <SettingsLayout />;
 }

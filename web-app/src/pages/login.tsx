@@ -13,13 +13,13 @@ import { CartoonButton } from "@/components/ui/cartoon-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
-import { PlayIcon } from "@/components/icons/play-icon";
 import { Cloud } from "@/components/decor/cloud";
 import { Sparkle } from "@/components/decor/sparkle";
 import { Coin } from "@/components/decor/coin";
 import { cn } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
+import { CloudPixel } from "@/components/decor/cloud-pixel";
 
 function LoginGoogleButton() {
   return (
@@ -102,7 +102,7 @@ function LoginFormFooter() {
       >
         <span
           className={cn(
-            "w-[22px] h-[22px] border-[3px] border-ink rounded-[6px] bg-white flex-shrink-0 inline-flex items-center justify-center",
+            "w-[22px] h-[22px] border-[3px] border-border rounded-[6px] bg-paper flex-shrink-0 inline-flex items-center justify-center",
             rememberMe && "bg-gold",
           )}
         >
@@ -146,7 +146,7 @@ function LoginForm() {
         <LoginPasswordField />
         <LoginFormFooter />
         <CartoonButton type="submit" variant="primary" className="w-full">
-          <PlayIcon size={22} /> Enter the Realm
+          <Sparkle size={22} /> Enter the Realm
         </CartoonButton>
       </form>
     </Form>
@@ -174,7 +174,7 @@ function LoginCard() {
   return (
     <AuthPageLayout>
       <div className="absolute top-6 left-[8%] animate-float-slow">
-        <Cloud size={120} />
+        <CloudPixel variant="1" className="w-[186px]" />
       </div>
       <div className="absolute top-14 right-[10%] animate-float">
         <Sparkle size={28} className="text-gold" />

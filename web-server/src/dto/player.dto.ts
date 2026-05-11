@@ -12,5 +12,9 @@ export function toResponsePlayer(user: AppUser | null | undefined): ResponsePlay
     age: user.age,
     grade: user.grade,
     guardian_email: user.guardian_email,
+    total_questions_answered: user.total_questions_answered ?? 0,
+    total_correct: user.total_correct ?? 0,
+    total_incorrect: user.total_incorrect ?? 0,
+    longest_streak: user.longest_streak ?? 0,
   };
 }

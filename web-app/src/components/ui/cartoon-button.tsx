@@ -9,8 +9,10 @@ const cartoonButtonVariants = cva(
       variant: {
         primary: "bg-coral hover:bg-coral text-white",
         secondary: "bg-white hover:bg-white text-ink",
+        select:
+          "bg-cream hover:bg-cream-2 !rounded-xl shadow-cartoon-sm !px-4 text-ink",
         ghost:
-          "border-transparent shadow-none bg-transparent text-ink active:translate-y-0",
+          "border-transparent shadow-none bg-transparent text-ink active:translate-y-0 hover:bg-white",
       },
       size: {
         default: "px-8 py-6 text-lg rounded-full",

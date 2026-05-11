@@ -56,7 +56,7 @@ function StepDots({ currentStep, totalSteps }: StepDotsProps) {
         return (
           <div
             key={step}
-            className={`h-3 border-[3px] border-ink rounded-full transition-all duration-200 ${
+            className={`h-3 border-[3px] border-border rounded-full transition-all duration-200 ${
               active ? "w-9" : "w-3.5"
             } ${step <= currentStep ? "bg-gold" : "bg-cream-2"}`}
           />
@@ -235,7 +235,7 @@ function AvatarStep() {
       <div className="flex justify-center">
         <div
           key={selectedAvatar}
-          className="animate-pop-in w-[140px] h-[140px] rounded-full border-4 border-ink flex items-center justify-center shadow-[0_6px_0_0_#2A1B3D]"
+          className="animate-pop-in w-[140px] h-[140px] rounded-full border-4 border-border flex items-center justify-center shadow-[0_6px_0_0_#2A1B3D]"
           style={{ background: selected.bg }}
         >
           <SelectedComp size={100} />
@@ -257,8 +257,6 @@ function AvatarStep() {
           );
         })}
       </div>
-
-      <Alert variant="info" title="Start your adventure" />
 
       {form.formState.errors.root && (
         <Alert

@@ -158,7 +158,7 @@ function HeroSection({ scrollY }: { scrollY: number }) {
             variant="primary"
             onClick={handleNavigateRegister}
           >
-            ✦ New Adventure
+            <Sparkle size={28} /> New Adventure
           </CartoonButton>
           <CartoonButton
             size="lg"
@@ -228,7 +228,7 @@ function HeroSection({ scrollY }: { scrollY: number }) {
 function MarqueeSection({ scrollY }: { scrollY: number }) {
   return (
     <section
-      className="relative overflow-hidden border-t-[3px] border-b-[3px] border-ink bg-ink"
+      className="relative overflow-hidden border-t-[3px] border-b-[3px] border-border bg-ink"
       style={{ padding: "24px 0" }}
     >
       <div
@@ -257,7 +257,7 @@ function CtaSection() {
   const handleNavigateRegister = () => navigate("/register");
 
   return (
-    <section className="relative px-10 py-20 text-center border-t-[3px] border-ink bg-cream">
+    <section className="relative px-10 py-20 text-center border-t-[3px] border-border bg-background">
       <h2
         className="font-display font-bold text-ink leading-[0.95] mb-3"
         style={{ fontSize: "clamp(36px, 5vw, 64px)" }}
@@ -281,7 +281,7 @@ function CtaSection() {
         variant="primary"
         onClick={handleNavigateRegister}
       >
-        ✦ Start learning&nbsp;
+        <Sparkle size={28} /> Start learning&nbsp;
       </CartoonButton>
     </section>
   );
@@ -291,7 +291,7 @@ export function LandingPage() {
   const scrollY = useScrollY();
 
   return (
-    <div className="min-h-screen bg-cream font-body">
+    <div className="min-h-screen bg-background font-body">
       <MagicNuggerHeader />
       <HeroSection scrollY={scrollY} />
       <MarqueeSection scrollY={scrollY} />

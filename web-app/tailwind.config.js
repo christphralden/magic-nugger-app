@@ -15,7 +15,7 @@ export default {
         "teal-light": "#A0E7E5",
         ink: "#2A1B3D",
         "ink-soft": "#4A3A5C",
-        paper: "#FFFBEF",
+        paper: "#fafafa",
         lavender: "#A78BFA",
         placeholder: "#9A8AAB",
         green: "#7CC576",

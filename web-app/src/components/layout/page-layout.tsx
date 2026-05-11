@@ -1,11 +1,11 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { LogOut } from "lucide-react";
-import { CartoonButton } from "../ui/cartoon-button";
 import { useSelector } from "react-redux";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { MagicNuggerLogo } from "../brand/magic-nugger-logo";
+import { IconStreak } from "../decor/streak";
+import { Typography } from "../ui/typography";
 
 interface PageLayoutProps {
   title: string;
@@ -13,39 +13,38 @@ interface PageLayoutProps {
 }
 
 export function PageLayout({ title, children }: PageLayoutProps) {
-  useEffect(() => {
-    document.title = `${title} | Magic Nugger`;
-  }, [title]);
-
-  const { username, display_name } = useSelector(selectCurrentPlayer)!;
+  const { username, display_name, current_elo } =
+    useSelector(selectCurrentPlayer)!;
 
   const name = display_name || username;
   const avatarFallback = name
     .split(" ", 2)
     .map((v) => v.at(0)?.toUpperCase())
     .join();
+
+  useEffect(() => {
+    document.title = `${title} | Magic Nugger`;
+  }, [title]);
   return (
-    <div className="min-h-screen bg-cream">
-      <div className="flex items-center justify-between px-4 py-2 border-b-[3px] border-ink bg-white">
+    <div className="min-h-screen bg-background">
+      <div className="flex items-center justify-between px-8 py-4 border-b-[3px] border-border bg-paper">
         <section>
-          <MagicNuggerLogo />
+          <Link to={"/home"}>
+            <MagicNuggerLogo />
+          </Link>
         </section>
 
-        <section className="flex items-center gap-4">
-          <Link to="/profile" className="flex items-center gap-2">
-            <Avatar className="size-6">
+        <section className="flex items-center gap-6">
+          <div className="flex gap-1">
+            <IconStreak className="fill-coral size-5" />
+            <Typography variant={"label"}>{current_elo}</Typography>
+          </div>
+          <Link to="/settings/profile" className="flex items-center gap-2">
+            <Avatar className="size-8">
               <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>{avatarFallback}</AvatarFallback>
             </Avatar>
-            <CartoonButton variant="ghost" size={"default"} className="!px-0">
-              {name || "Profile"}
-            </CartoonButton>
-          </Link>
-          <Link to="/logout">
-            <CartoonButton variant="ghost" size={"default"} className="!px-0">
-              <LogOut className="size-5" />
-              Logout
-            </CartoonButton>
+            <Typography variant={"label"}>{name || "Profile"}</Typography>
           </Link>
         </section>
       </div>

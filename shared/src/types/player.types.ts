@@ -61,6 +61,10 @@ export const ResponsePlayerSchema = PlayerSchema.pick({
   age: true,
   grade: true,
   guardian_email: true,
+  total_questions_answered: true,
+  total_correct: true,
+  total_incorrect: true,
+  longest_streak: true,
 });
 export type ResponsePlayer = z.infer<typeof ResponsePlayerSchema>;
 
