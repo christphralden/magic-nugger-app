@@ -20,16 +20,17 @@ const NAV_LINKS = [
 ];
 
 export function PageLayout({ title, children }: PageLayoutProps) {
-  const player = useSelector(selectCurrentPlayer)!;
-  const { username, display_name, current_elo, avatar_url, role_name } = player;
+  const player = useSelector(selectCurrentPlayer);
+
   const location = useLocation();
 
-  const name = display_name || username;
+  const name = player?.display_name || player?.username || "Player";
   const avatarFallback = nameInitials(name);
 
   useEffect(() => {
     document.title = `${title} | Magic Nugger`;
   }, [title]);
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <div className="flex items-center justify-between px-8 py-4 border-b-[3px] border-border bg-paper">
@@ -55,7 +56,7 @@ export function PageLayout({ title, children }: PageLayoutProps) {
               </Typography>
             </Link>
           ))}
-          {role_name === "admin" && (
+          {player?.role_name === "admin" && (
             <Link to="/admin">
               <Typography
                 variant="label"
@@ -75,11 +76,13 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         <section className="flex items-center gap-6 w-full max-w-64 justify-end">
           <div className="flex items-center">
             <IconStreak className="fill-coral size-5" />
-            <Typography variant={"label"}>{current_elo}</Typography>
+            <Typography variant={"label"}>
+              {player?.current_elo ?? 0}
+            </Typography>
           </div>
           <Link to="/settings/profile" className="flex items-center gap-2">
             <Avatar className="size-8">
-              {avatar_url && <AvatarImage src={avatar_url} />}
+              {player?.avatar_url && <AvatarImage src={player.avatar_url} />}
               <AvatarFallback>{avatarFallback}</AvatarFallback>
             </Avatar>
 
@@ -87,7 +90,9 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           </Link>
         </section>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto px-4 py-8 md:px-8">{children}</div>
+      <div className="flex-1 min-h-0 overflow-auto px-4 py-8 md:px-8">
+        {children}
+      </div>
     </div>
   );
 }

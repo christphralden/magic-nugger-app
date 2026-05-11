@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { PATH_TO_UNITY } from "@/constants";
+import { useCallback, useEffect } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 
 export function useUnityBridge() {
@@ -9,10 +10,10 @@ export function useUnityBridge() {
     addEventListener,
     removeEventListener,
   } = useUnityContext({
-    loaderUrl: "/unity/build.loader.js",
-    dataUrl: "/unity/build.data",
-    frameworkUrl: "/unity/build.framework.js",
-    codeUrl: "/unity/build.wasm",
+    loaderUrl: `${PATH_TO_UNITY}/Calculon.loader.js`,
+    dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
+    frameworkUrl: `${PATH_TO_UNITY}/Calculon.framework.js`,
+    codeUrl: `${PATH_TO_UNITY}/Calculon.wasm`,
   });
 
   const handleCommunicationTest = useCallback(
@@ -25,6 +26,17 @@ export function useUnityBridge() {
     },
     [sendMessage],
   );
+
+  const cb = (...args: any) => {
+    console.log(args);
+  };
+
+  useEffect(() => {
+    addEventListener("ReactMessage", cb);
+    return () => {
+      removeEventListener("ReactMessage", cb);
+    };
+  }, [addEventListener, removeEventListener, cb]);
 
   return {
     Unity: Unity,

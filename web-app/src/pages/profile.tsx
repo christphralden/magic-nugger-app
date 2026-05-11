@@ -59,7 +59,7 @@ function SettingsNavButton({
   const match = useMatch(to);
   return (
     <CartoonButton
-      className="rounded-xl"
+      className="rounded-xl justify-start"
       variant={match ? "select" : "ghost"}
       onClick={() => navigate(to)}
     >
@@ -292,7 +292,7 @@ export function StatisticsTab() {
         Statistics
       </Typography>
 
-      <div className="rounded-xl flex flex-col gap-4 bg-white p-6 border-border border-[3px] shadow-cartoon-lg">
+      <div className="rounded-xl flex flex-col gap-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <StatCard label="ELO" value={player.current_elo} />
           <StatCard

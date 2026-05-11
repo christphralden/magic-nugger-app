@@ -9,7 +9,7 @@ function AdminNavButton({ to, children }: { to: string; children: ReactNode }) {
   const match = useMatch(to);
   return (
     <CartoonButton
-      className="rounded-xl font-body"
+      className="rounded-xl font-body justify-start"
       variant={match ? "select" : "ghost"}
       onClick={() => navigate(to)}
     >
