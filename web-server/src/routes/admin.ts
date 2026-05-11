@@ -33,7 +33,7 @@ adminRouter.get("/players", async (req, res) => {
   );
   const next_cursor =
     rows.length === limit
-      ? new Date(rows[rows.length - 1].created_at).getTime()
+      ? String(new Date(rows[rows.length - 1].created_at).getTime())
       : null;
   loggingService.log({
     event: "admin:player_viewed",
@@ -189,7 +189,7 @@ adminRouter.get("/game-sessions", async (req, res) => {
   );
   const next_cursor =
     rows.length === limit
-      ? new Date(rows[rows.length - 1].started_at).getTime()
+      ? String(new Date(rows[rows.length - 1].started_at).getTime())
       : null;
   loggingService.log({
     event: "admin:sessions_viewed",

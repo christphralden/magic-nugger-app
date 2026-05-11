@@ -31,6 +31,8 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
+import { EmptyState } from "@/feature/admin/components/empty-state";
 
 const eloSchema = z.object({
   elo: z.coerce.number().int().min(0, "Must be ≥ 0"),
@@ -82,57 +84,45 @@ export function PlayersTab() {
       </Typography>
 
       <div className="rounded-xl flex flex-col gap-0 bg-white border-border border-[3px] shadow-cartoon-lg overflow-hidden">
-        {status === "loading" && items.length === 0 && (
-          <div className="p-6">
-            <Typography variant="body" className="text-ink-soft">
-              Loading...
-            </Typography>
-          </div>
-        )}
-        {status === "succeeded" && items.length === 0 && (
-          <div className="p-6">
-            <Typography variant="body" className="text-ink-soft">
-              No players found
-            </Typography>
-          </div>
-        )}
-        {items.length > 0 && (
-          <ScrollArea className="h-[75dvh]">
-            <Table>
-              <TableHeader>
-                <TableRow header>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Username
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Email
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Role
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Typography variant="body" className="text-ink-soft">
-                      ELO
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Joined
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Typography variant="body" className="text-ink-soft px-2">
-                      Actions
-                    </Typography>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
+        <ScrollArea className="h-[75dvh]">
+          <Table>
+            <TableHeader>
+              <TableRow header>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Username
+                  </Typography>
+                </TableHead>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Email
+                  </Typography>
+                </TableHead>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Role
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Typography variant="body" className="text-ink-soft">
+                    ELO
+                  </Typography>
+                </TableHead>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Joined
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Typography variant="body" className="text-ink-soft px-2">
+                    Actions
+                  </Typography>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            {status === "loading" && items.length === 0 ? (
+              <TableSkeleton cols={6} />
+            ) : (
               <TableBody>
                 {items.map((player) => (
                   <>
@@ -296,9 +286,9 @@ export function PlayersTab() {
                   </>
                 ))}
               </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
+            )}
+          </Table>
+        </ScrollArea>
       </div>
 
       <div className="flex items-center justify-between">

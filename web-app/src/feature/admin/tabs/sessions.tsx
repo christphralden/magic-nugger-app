@@ -23,7 +23,9 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
+import { EmptyState } from "@/feature/admin/components/empty-state";
+
 const SESSION_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
   { value: "in_progress", label: "In Progress" },
@@ -112,58 +114,46 @@ export function SessionsTab() {
       </div>
 
       <div className="rounded-xl flex flex-col gap-0 bg-white border-border border-[3px] shadow-cartoon-lg overflow-hidden">
-        {status === "loading" && items.length === 0 && (
-          <div className="p-6">
-            <Typography variant="body" className="text-ink-soft">
-              Loading...
-            </Typography>
-          </div>
-        )}
-        {status === "succeeded" && items.length === 0 && (
-          <div className="p-6">
-            <Typography variant="body" className="text-ink-soft">
-              No sessions found
-            </Typography>
-          </div>
-        )}
-        {items.length > 0 && (
-          <ScrollArea className="h-[53.75dvh]">
-            <Table>
-              <TableHeader>
-                <TableRow header>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      ID
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Player
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Level
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Typography variant="body" className="text-ink-soft">
-                      Score
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Date
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Typography variant="body" className="text-ink-soft">
-                      Status
-                    </Typography>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className={cn(status === "loading" && "opacity-50")}>
+        <ScrollArea className="h-[53.75dvh]">
+          <Table>
+            <TableHeader>
+              <TableRow header>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    ID
+                  </Typography>
+                </TableHead>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Player
+                  </Typography>
+                </TableHead>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Level
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Typography variant="body" className="text-ink-soft">
+                    Score
+                  </Typography>
+                </TableHead>
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Date
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Typography variant="body" className="text-ink-soft">
+                    Status
+                  </Typography>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            {status === "loading" && items.length === 0 ? (
+              <TableSkeleton cols={6} />
+            ) : (
+              <TableBody>
                 {items.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell>
@@ -191,9 +181,9 @@ export function SessionsTab() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
+            )}
+          </Table>
+        </ScrollArea>
       </div>
 
       <div className="flex items-center justify-between">

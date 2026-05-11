@@ -8,13 +8,13 @@ import type {
 
 type GlobalTabState = {
   items: GlobalLeaderboardRow[];
-  next_cursor: number | null;
+  next_cursor: string | null;
   status: AsyncStatus;
 };
 
 type LevelTabState = {
   items: LevelLeaderboardRow[];
-  next_cursor: number | null;
+  next_cursor: string | null;
   status: AsyncStatus;
 };
 

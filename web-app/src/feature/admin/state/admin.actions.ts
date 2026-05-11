@@ -16,7 +16,7 @@ import {
   fetchMemoryStatsInternal,
 } from "./admin.thunk";
 import type { RequestCreateLevel, RequestUpdateLevel } from "@magic-nugger-app/shared";
-import { resetAdminSessions, resetAdminPlayers } from "./admin.slice";
+import { resetAdminSessions, resetAdminPlayers, setSessionFilters } from "./admin.slice";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 export const handleFetchStatsAdmin =
@@ -28,7 +28,7 @@ export const handleFetchStatsAdmin =
   };
 
 export const handleFetchPlayersAdmin =
-  (params: { cursor?: number } = {}) =>
+  (params: { cursor?: string } = {}) =>
   async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.players.status === "loading") return;
     const result = await dispatch(fetchPlayersAdmin(params));
@@ -45,15 +45,11 @@ export const handleFetchActiveSessionsAdmin =
   };
 
 export const handleFetchSessionsAdmin =
-  (params: {
-    player_id?: string;
-    level_id?: string;
-    status?: string;
-    cursor?: number;
-  } = {}) =>
+  (params: { cursor?: string } = {}) =>
   async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.sessions.status === "loading") return;
-    const result = await dispatch(fetchSessionsAdmin(params));
+    const filters = getState().admin.sessions.filters;
+    const result = await dispatch(fetchSessionsAdmin({ ...filters, ...params }));
     if (fetchSessionsAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load sessions");
   };
@@ -61,14 +57,14 @@ export const handleFetchSessionsAdmin =
 export const handleApplySessionFilters =
   (filters: { player_id: string; level_id: string; status: string }) =>
   async (dispatch: AppDispatch) => {
+    const normalized = {
+      player_id: filters.player_id || undefined,
+      level_id: filters.level_id || undefined,
+      status: filters.status === "all" ? undefined : filters.status || undefined,
+    };
+    dispatch(setSessionFilters(normalized));
     dispatch(resetAdminSessions());
-    const result = await dispatch(
-      fetchSessionsAdmin({
-        player_id: filters.player_id || undefined,
-        level_id: filters.level_id || undefined,
-        status: filters.status === "all" ? undefined : filters.status || undefined,
-      }),
-    );
+    const result = await dispatch(fetchSessionsAdmin(normalized));
     if (fetchSessionsAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load sessions");
   };

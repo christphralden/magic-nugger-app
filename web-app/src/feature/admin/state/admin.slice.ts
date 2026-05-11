@@ -20,9 +20,9 @@ import type { AsyncStatus, GameSession, Level } from "@magic-nugger-app/shared";
 type AdminState = {
   stats: AdminStats | null;
   statsStatus: AsyncStatus;
-  players: { items: AdminPlayer[]; next_cursor: number | null; status: AsyncStatus };
+  players: { items: AdminPlayer[]; next_cursor: string | null; status: AsyncStatus };
   activeSessions: { items: GameSession[]; status: AsyncStatus };
-  sessions: { items: GameSession[]; next_cursor: number | null; status: AsyncStatus };
+  sessions: { items: GameSession[]; next_cursor: string | null; status: AsyncStatus; filters: { player_id?: string; level_id?: string; status?: string } };
   levels: { items: Level[]; status: AsyncStatus };
   selectedLevel: { data: Level | null; status: AsyncStatus };
   leaderboardCacheBust: { status: AsyncStatus };
@@ -37,7 +37,7 @@ const adminSlice = createSlice({
     statsStatus: "idle",
     players: { items: [], next_cursor: null, status: "idle" },
     activeSessions: { items: [], status: "idle" },
-    sessions: { items: [], next_cursor: null, status: "idle" },
+    sessions: { items: [], next_cursor: null, status: "idle", filters: {} },
     levels: { items: [], status: "idle" },
     selectedLevel: { data: null, status: "idle" },
     leaderboardCacheBust: { status: "idle" },
@@ -46,7 +46,10 @@ const adminSlice = createSlice({
   } as AdminState,
   reducers: {
     resetAdminSessions: (state) => {
-      state.sessions = { items: [], next_cursor: null, status: "idle" };
+      state.sessions = { items: [], next_cursor: null, status: "idle", filters: state.sessions.filters };
+    },
+    setSessionFilters: (state, action: { payload: { player_id?: string; level_id?: string; status?: string } }) => {
+      state.sessions.filters = action.payload;
     },
     resetAdminPlayers: (state) => {
       state.players = { items: [], next_cursor: null, status: "idle" };
@@ -206,7 +209,7 @@ const adminSlice = createSlice({
   },
 });
 
-export const { resetAdminSessions, resetAdminPlayers, resetAdminLevels, resetSelectedLevel } = adminSlice.actions;
+export const { resetAdminSessions, resetAdminPlayers, resetAdminLevels, resetSelectedLevel, setSessionFilters } = adminSlice.actions;
 export const {
   selectAdminStats,
   selectAdminStatsStatus,

@@ -50,12 +50,12 @@ export const fetchStatsAdmin = createAsyncThunk<AdminStats, void>(
 
 export const fetchPlayersAdmin = createAsyncThunk<
   PaginatedData<AdminPlayer>,
-  { cursor?: number; limit?: number }
+  { cursor?: string; limit?: number }
 >(
   "admin/fetchPlayers",
   async ({ cursor, limit = ADMIN_PAGINATION_LIMIT }, { rejectWithValue }) => {
     const params = new URLSearchParams({ limit: String(limit) });
-    if (cursor !== undefined) params.set("cursor", String(cursor));
+    if (cursor !== undefined) params.set("cursor", cursor);
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/players?${params}`,
       { credentials: "include" },
@@ -81,7 +81,7 @@ export const fetchActiveSessionsAdmin = createAsyncThunk<GameSession[], void>(
 
 export const fetchSessionsAdmin = createAsyncThunk<
   PaginatedData<GameSession>,
-  { player_id?: string; level_id?: string; status?: string; cursor?: number; limit?: number }
+  { player_id?: string; level_id?: string; status?: string; cursor?: string; limit?: number }
 >(
   "admin/fetchSessions",
   async (
@@ -92,7 +92,7 @@ export const fetchSessionsAdmin = createAsyncThunk<
     if (player_id) params.set("player_id", player_id);
     if (level_id) params.set("level_id", level_id);
     if (status) params.set("status", status);
-    if (cursor !== undefined) params.set("cursor", String(cursor));
+    if (cursor !== undefined) params.set("cursor", cursor);
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/game-sessions?${params}`,
       { credentials: "include" },

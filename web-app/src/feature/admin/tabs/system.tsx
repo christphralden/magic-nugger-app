@@ -21,6 +21,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { CardSkeleton } from "@/feature/admin/components/card-skeleton";
 
 const secretSchema = z.object({ secret: z.string().min(1, "Required") });
 type SecretForm = z.infer<typeof secretSchema>;
@@ -104,6 +105,11 @@ export function SystemTab() {
             </CartoonButton>
           </form>
         </Form>
+        {memoryStats.status === "loading" && (
+          <div className="mt-8">
+            <CardSkeleton count={5} />
+          </div>
+        )}
         {memoryStats.data && (
           <div className="grid grid-cols-3 gap-4 mt-8">
             {[

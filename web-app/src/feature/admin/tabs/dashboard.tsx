@@ -19,12 +19,16 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { CardSkeleton } from "@/feature/admin/components/card-skeleton";
+import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
 
 export function DashboardTab() {
   const dispatch = useDispatch();
   const stats = useSelector(selectAdminStats);
   const statsStatus = useSelector(selectAdminStatsStatus);
-  const { items: activeSessions } = useSelector(selectAdminActiveSessions);
+  const { items: activeSessions, status: activeSessionsStatus } = useSelector(
+    selectAdminActiveSessions,
+  );
 
   useEffect(() => {
     dispatch(handleFetchStatsAdmin());
@@ -38,6 +42,7 @@ export function DashboardTab() {
       </Typography>
 
       <div className="rounded-xl flex flex-col gap-4">
+        {statsStatus === "loading" && <CardSkeleton count={3} />}
         {stats && (
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -93,27 +98,33 @@ export function DashboardTab() {
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {activeSessions.map((session) => (
-                <TableRow key={session.id}>
-                  <TableCell>
-                    <Typography variant="body">{session.id}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body">{session.player_id}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body">{session.level_id}</Typography>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Typography variant="body">{session.score}</Typography>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Typography variant="body">{session.status}</Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+            {activeSessionsStatus === "loading" ? (
+              <TableSkeleton cols={5} />
+            ) : (
+              <TableBody>
+                {activeSessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell>
+                      <Typography variant="body">{session.id}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body">
+                        {session.player_id}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body">{session.level_id}</Typography>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Typography variant="body">{session.score}</Typography>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Typography variant="body">{session.status}</Typography>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
           </Table>
         </ScrollArea>
       </div>

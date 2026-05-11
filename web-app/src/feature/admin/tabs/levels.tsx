@@ -24,6 +24,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
 import type { RequestUpdateLevel } from "@magic-nugger-app/shared";
 import {
   levelSchema,
@@ -103,52 +104,46 @@ export function LevelsTab() {
       </Typography>
 
       <div className="rounded-xl flex flex-col gap-0 bg-white border-border border-[3px] shadow-cartoon-lg overflow-hidden">
-        {status === "loading" && items.length === 0 && (
-          <div className="p-6">
-            <Typography variant="body" className="text-ink-soft">
-              Loading...
-            </Typography>
-          </div>
-        )}
-        {status === "succeeded" && items.length === 0 && (
-          <div className="p-6">
-            <Typography variant="body" className="text-ink-soft">
-              No levels found
-            </Typography>
-          </div>
-        )}
-        {items.length > 0 && (
-          <ScrollArea className="h-[75vh]">
-            <Table>
-              <TableHeader>
-                <TableRow header>
-                  <TableHead className="w-12">
-                    <Typography variant="body" className="text-ink-soft">
-                      #
-                    </Typography>
-                  </TableHead>
-                  <TableHead>
-                    <Typography variant="body" className="text-ink-soft">
-                      Name
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Typography variant="body" className="text-ink-soft">
-                      ELO Min
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-center">
-                    <Typography variant="body" className="text-ink-soft">
-                      Status
-                    </Typography>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <Typography variant="body" className="text-ink-soft px-4">
-                      Actions
-                    </Typography>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
+        <ScrollArea className="h-[75vh]">
+          <Table>
+            <TableHeader>
+              <TableRow header>
+                <TableHead className="w-12">
+                  <Typography variant="body" className="text-ink-soft">
+                    #
+                  </Typography>
+                </TableHead>
+                <TableHead className="w-12">
+                  <Typography variant="body" className="text-ink-soft">
+                    ID
+                  </Typography>
+                </TableHead>
+
+                <TableHead>
+                  <Typography variant="body" className="text-ink-soft">
+                    Name
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Typography variant="body" className="text-ink-soft">
+                    ELO Min
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-center">
+                  <Typography variant="body" className="text-ink-soft">
+                    Status
+                  </Typography>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Typography variant="body" className="text-ink-soft px-4">
+                    Actions
+                  </Typography>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            {status === "loading" && items.length === 0 ? (
+              <TableSkeleton cols={5} />
+            ) : (
               <TableBody>
                 {items.map((level) => (
                   <>
@@ -156,6 +151,11 @@ export function LevelsTab() {
                       <TableCell>
                         <Typography variant="body" className="text-ink-soft">
                           {level.order_index}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body" className="text-ink-soft">
+                          {level.id}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -211,14 +211,6 @@ export function LevelsTab() {
                     {expandedId === level.id && (
                       <TableRow className="border-b border-border">
                         <TableCell colSpan={5} className="bg-gray-50">
-                          {selectedLevel.status === "loading" && (
-                            <Typography
-                              variant="body"
-                              className="text-ink-soft"
-                            >
-                              Loading...
-                            </Typography>
-                          )}
                           {selectedLevel.status !== "loading" &&
                             selectedLevel.data?.id === level.id && (
                               <form
@@ -267,9 +259,9 @@ export function LevelsTab() {
                   </>
                 ))}
               </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
+            )}
+          </Table>
+        </ScrollArea>
       </div>
     </>
   );

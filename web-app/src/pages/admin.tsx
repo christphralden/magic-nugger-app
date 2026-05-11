@@ -1,5 +1,4 @@
 import { type ReactNode } from "react";
-import { LogOut } from "lucide-react";
 import { useNavigate, useMatch, Outlet } from "react-router-dom";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";

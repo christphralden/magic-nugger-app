@@ -11,10 +11,10 @@ import { LEADERBOARD_PAGINATION_LIMIT } from "@/constants";
 
 export const fetchGlobal = createAsyncThunk<
   PaginatedData<GlobalLeaderboardRow>,
-  { cursor?: number; limit?: number; period?: LeaderboardPeriod }
+  { cursor?: string; limit?: number; period?: LeaderboardPeriod }
 >("leaderboard/fetchGlobal", async ({ cursor, limit = LEADERBOARD_PAGINATION_LIMIT, period = "alltime" }, { rejectWithValue }) => {
   const params = new URLSearchParams({ limit: String(limit), period });
-  if (cursor !== undefined) params.set("cursor", String(cursor));
+  if (cursor !== undefined) params.set("cursor", cursor);
 
   const response = await fetch(
     `${WEB_SERVER_URL}/${API_VERSION_BASE}/leaderboard/global?${params}`,
@@ -29,12 +29,12 @@ export const fetchGlobal = createAsyncThunk<
 
 export const fetchByLevel = createAsyncThunk<
   PaginatedData<LevelLeaderboardRow>,
-  { levelId: number; cursor?: number; limit?: number; period?: LeaderboardPeriod }
+  { levelId: number; cursor?: string; limit?: number; period?: LeaderboardPeriod }
 >(
   "leaderboard/fetchByLevel",
   async ({ levelId, cursor, limit = LEADERBOARD_PAGINATION_LIMIT, period = "alltime" }, { rejectWithValue }) => {
     const params = new URLSearchParams({ limit: String(limit), period });
-    if (cursor !== undefined) params.set("cursor", String(cursor));
+    if (cursor !== undefined) params.set("cursor", cursor);
 
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/leaderboard/levels/${levelId}?${params}`,
