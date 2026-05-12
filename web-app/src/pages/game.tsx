@@ -8,8 +8,7 @@ import { useRef } from "react";
 
 export function GamePage() {
   // const [searchParams] = useSearchParams();
-  const { Unity, provider, isLoaded, handleCommunicationTest } =
-    useUnityBridge();
+  const { Unity, provider, isLoaded } = useUnityBridge();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -33,9 +32,7 @@ export function GamePage() {
         <div className="absolute bg-blue-200 top-0 left-0 w-[100vw] h-[100vh] relative">
           <CartoonButton
             className="absolute bottom-[100px] right-[100px]"
-            onClick={() => {
-              handleCommunicationTest("Niggersss");
-            }}
+            onClick={() => {}}
           >
             Nigger Button
           </CartoonButton>

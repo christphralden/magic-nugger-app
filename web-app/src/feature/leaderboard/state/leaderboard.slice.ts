@@ -76,9 +76,9 @@ const leaderboardSlice = createSlice({
   selectors: {
     selectGlobalLeaderboard: (state) => state.global,
     selectLevelLeaderboard: (state, levelId: number) =>
-      state.byLevel[levelId] ?? { ...initialTabState },
+      state.byLevel[levelId] ?? initialTabState,
     selectSelectedLevelLeaderboard: (state, levelId: number | null) =>
-      levelId !== null ? (state.byLevel[levelId] ?? { ...initialTabState }) : { ...initialTabState },
+      levelId !== null ? (state.byLevel[levelId] ?? initialTabState) : initialTabState,
   },
 });
 

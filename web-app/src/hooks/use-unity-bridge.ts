@@ -11,32 +11,32 @@ export function useUnityBridge() {
     removeEventListener,
   } = useUnityContext({
     loaderUrl: `${PATH_TO_UNITY}/Calculon.loader.js`,
-    dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
-    frameworkUrl: `${PATH_TO_UNITY}/Calculon.framework.js`,
-    codeUrl: `${PATH_TO_UNITY}/Calculon.wasm`,
+    dataUrl: `${PATH_TO_UNITY}/Calculon.data.br`,
+    frameworkUrl: `${PATH_TO_UNITY}/Calculon.framework.js.br`,
+    codeUrl: `${PATH_TO_UNITY}/Calculon.wasm.br`,
   });
 
-  const handleCommunicationTest = useCallback(
-    (data: Object) => {
-      sendMessage(
-        "ReactUnityCommunication",
-        "SpawnNiggers",
-        JSON.stringify(data),
-      );
-    },
-    [sendMessage],
-  );
+  // const handleCommunicationTest = useCallback(
+  //   (data: Object) => {
+  //     sendMessage(
+  //       "ReactUnityCommunication",
+  //       "SpawnNiggers",
+  //       JSON.stringify(data),
+  //     );
+  //   },
+  //   [sendMessage],
+  // );
 
-  const cb = (...args: any) => {
-    console.log(args);
-  };
-
-  useEffect(() => {
-    addEventListener("ReactMessage", cb);
-    return () => {
-      removeEventListener("ReactMessage", cb);
-    };
-  }, [addEventListener, removeEventListener, cb]);
+  // const onReactMessage = useCallback((message: any, value: any) => {
+  //   console.log(message, value);
+  // }, []);
+  //
+  // useEffect(() => {
+  //   addEventListener("ReactMessage", onReactMessage);
+  //   return () => {
+  //     removeEventListener("ReactMessage", onReactMessage);
+  //   };
+  // }, [addEventListener, removeEventListener, onReactMessage]);
 
   return {
     Unity: Unity,
@@ -44,6 +44,5 @@ export function useUnityBridge() {
     isLoaded,
     addEventListener,
     removeEventListener,
-    handleCommunicationTest,
   };
 }

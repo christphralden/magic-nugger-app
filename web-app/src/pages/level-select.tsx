@@ -5,8 +5,12 @@ import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
   selectLevels,
   selectLevelsStatus,
+  selectUnlockedLevelNames,
 } from "@/feature/levels/state/levels.slice";
-import { handleLoadLevels } from "@/feature/levels/state/levels.actions";
+import {
+  handleLoadLevels,
+  handleLoadUnlockedLevels,
+} from "@/feature/levels/state/levels.actions";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
 import { CartoonButton } from "@/components/ui/cartoon-button";
@@ -22,9 +26,11 @@ export function LevelSelectPage() {
   const currentPlayer = useSelector(selectCurrentPlayer);
   const levels = useSelector(selectLevels);
   const levelsStatus = useSelector(selectLevelsStatus);
+  const unlockedNames = useSelector(selectUnlockedLevelNames);
 
   useEffect(() => {
     dispatch(handleLoadLevels());
+    dispatch(handleLoadUnlockedLevels());
   }, [dispatch]);
 
   if (!currentPlayer) return null;
@@ -58,8 +64,7 @@ export function LevelSelectPage() {
 
         <div className="flex flex-col gap-6">
           {activeLevels.map((level) => {
-            const isAccessible =
-              currentPlayer.highest_level_unlocked >= level.order_index;
+            const isAccessible = unlockedNames.includes(level.name);
 
             return (
               <div

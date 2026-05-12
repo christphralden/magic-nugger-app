@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { selectAdminSessions } from "@/feature/admin/state/admin.slice";
 import {
@@ -24,7 +24,6 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
-import { EmptyState } from "@/feature/admin/components/empty-state";
 
 const SESSION_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -150,37 +149,38 @@ export function SessionsTab() {
                 </TableHead>
               </TableRow>
             </TableHeader>
-            {status === "loading" && items.length === 0 ? (
-              <TableSkeleton cols={6} />
-            ) : (
-              <TableBody>
-                {items.map((session) => (
-                  <TableRow key={session.id}>
-                    <TableCell>
-                      <Typography variant="body">{session.id}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body">
-                        {session.player_id}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body">{session.level_id}</Typography>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Typography variant="body">{session.score}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body">
-                        {new Date(session.started_at).toLocaleDateString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Typography variant="body">{session.status}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+            <TableBody>
+              {items.map((session) => (
+                <TableRow key={session.id}>
+                  <TableCell>
+                    <Typography variant="body">{session.id}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body">{session.player_id}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body">{session.level_id}</Typography>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Typography variant="body">{session.score}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body">
+                      {new Date(session.started_at).toLocaleDateString()}
+                    </Typography>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Typography variant="body">{session.status}</Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            {status === "loading" && (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  <Loader2 className="animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
             )}
           </Table>
         </ScrollArea>

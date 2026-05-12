@@ -14,7 +14,7 @@ export function LevelRow({ row, rank, currentPlayerId }: LevelRowProps) {
   const name = isMe ? "Me" : row.display_name || row.username;
   return (
     <TableRow>
-      <TableCell className="w-16">
+      <TableCell colSpan={1}>
         <Typography
           variant="label"
           className={cn(
@@ -27,17 +27,17 @@ export function LevelRow({ row, rank, currentPlayerId }: LevelRowProps) {
           {rank}
         </Typography>
       </TableCell>
-      <TableCell>
+      <TableCell colSpan={3}>
         <Typography variant="label" className={isMe ? "text-coral" : undefined}>
           {name}
         </Typography>
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" colSpan={1}>
         <Typography variant="label" className="text-coral">
           {row.best_score}
         </Typography>
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" colSpan={1}>
         <Typography variant="label">{row.max_streak}</Typography>
       </TableCell>
     </TableRow>

@@ -27,7 +27,7 @@ authRouter.post(
         (username, email, display_name, password_hash, age, grade, guardian_email)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING
-        id, username, display_name, current_elo, highest_level_unlocked, avatar_url,
+        id, username, display_name, current_elo, avatar_url,
         age, grade, guardian_email`,
       [username, email, display_name ?? null, hash, age ?? null, grade ?? null, guardian_email ?? null],
     );

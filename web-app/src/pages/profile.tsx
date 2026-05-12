@@ -24,6 +24,7 @@ import { Typography } from "@/components/ui/typography";
 import { GRADES } from "@/constants/grades";
 import { toastError } from "@/lib/toast";
 import type { RequestUpdatePlayer } from "@magic-nugger-app/shared";
+import { StatCard } from "@/components/ui/stats-card";
 
 const profileFormSchema = z.object({
   username: z
@@ -74,7 +75,7 @@ function SettingsLayout() {
   return (
     <PageLayout title="Settings">
       <div className="w-full flex gap-8 h-[85vh]">
-        <div className="w-1/4 h-full">
+        <div className="w-1/6 h-full shrink-0">
           <div className="flex flex-col h-full gap-8">
             <Typography variant="subheading">Settings</Typography>
             <div className="flex flex-col gap-2 flex-1">
@@ -96,7 +97,7 @@ function SettingsLayout() {
           </div>
         </div>
 
-        <div className="w-3/4 flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-4">
           <Outlet />
         </div>
       </div>
@@ -266,17 +267,6 @@ export function ProfileTab() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-lg bg-white p-4 border-border border-[3px] shadow-cartoon-sm">
-      <Typography variant="label" className="text-ink-soft">
-        {label}
-      </Typography>
-      <Typography variant="subheading">{value}</Typography>
-    </div>
-  );
-}
-
 export function StatisticsTab() {
   const player = useSelector(selectCurrentPlayer)!;
   const accuracy =
@@ -295,10 +285,6 @@ export function StatisticsTab() {
       <div className="rounded-xl flex flex-col gap-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <StatCard label="ELO" value={player.current_elo} />
-          <StatCard
-            label="Highest Level"
-            value={player.highest_level_unlocked}
-          />
           <StatCard
             label="Questions Answered"
             value={player.total_questions_answered}

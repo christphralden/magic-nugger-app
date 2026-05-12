@@ -10,7 +10,7 @@ export const playerService = {
   async getById(id: string): Promise<ResponsePlayer> {
     const { rows } = await getDb().query<ResponsePlayer>(
       `SELECT
-        id, username, display_name, current_elo, highest_level_unlocked,
+        id, username, display_name, current_elo,
         total_questions_answered, total_correct, total_incorrect, longest_streak,
         avatar_url, age, grade, guardian_email
       FROM players
@@ -34,7 +34,7 @@ export const playerService = {
         updated_at     = now()
        WHERE id = $1
        RETURNING
-        id, username, display_name, current_elo, highest_level_unlocked,
+        id, username, display_name, current_elo,
         total_questions_answered, total_correct, total_incorrect, longest_streak,
         avatar_url, age, grade, guardian_email
       `,
@@ -55,8 +55,6 @@ export const playerService = {
   async updateAfterSession({
     userId,
     eloDelta,
-    status,
-    nextLevelId,
     totalAnswered,
     totalCorrect,
     totalIncorrect,
@@ -65,7 +63,6 @@ export const playerService = {
     userId: string;
     eloDelta: number;
     status: "completed" | "failed";
-    nextLevelId: number | null;
     totalAnswered: number;
     totalCorrect: number;
     totalIncorrect: number;
@@ -74,29 +71,15 @@ export const playerService = {
     await getDb().query(
       `UPDATE players SET
         current_elo = GREATEST(0, current_elo + $2),
-        highest_level_unlocked = CASE
-          WHEN $3 = 'completed' AND $4::int IS NOT NULL
-          THEN GREATEST(highest_level_unlocked, $4::int)
-          ELSE highest_level_unlocked
-          END,
-        total_questions_answered = total_questions_answered + $5,
-        total_correct = total_correct + $6,
-        total_incorrect = total_incorrect + $7,
-        longest_streak = GREATEST(longest_streak, $8),
+        total_questions_answered = total_questions_answered + $3,
+        total_correct = total_correct + $4,
+        total_incorrect = total_incorrect + $5,
+        longest_streak = GREATEST(longest_streak, $6),
         last_active_at = now(),
         updated_at = now()
        WHERE id = $1
       `,
-      [
-        userId,
-        eloDelta,
-        status,
-        nextLevelId,
-        totalAnswered,
-        totalCorrect,
-        totalIncorrect,
-        maxStreak,
-      ],
+      [userId, eloDelta, totalAnswered, totalCorrect, totalIncorrect, maxStreak],
     );
   },
 };

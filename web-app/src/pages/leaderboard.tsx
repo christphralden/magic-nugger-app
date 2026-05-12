@@ -29,11 +29,12 @@ import {
   TableBody,
   TableRow,
   TableHead,
+  TableCell,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { LEADERBOARD_PAGINATION_LIMIT } from "@/constants";
 import type { LeaderboardPeriod } from "@magic-nugger-app/shared";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { IconStreak } from "@/components/decor/streak";
 
 type MainTab = "global" | "level";
@@ -248,17 +249,20 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                   <Table>
                     <TableHeader>
                       <TableRow header>
-                        <TableHead>
+                        <TableHead colSpan={1}>
                           <Typography variant="label" className="text-ink-soft">
                             #
                           </Typography>
                         </TableHead>
-                        <TableHead>
+                        <TableHead colSpan={3}>
                           <Typography variant="label" className="text-ink-soft">
                             Player
                           </Typography>
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead
+                          colSpan={1}
+                          className="text-right min-w-[10rem] max-w-[10rem]"
+                        >
                           <div className="flex justify-end items-center">
                             <IconStreak className="size-5 text-coral" />
                             <Typography
@@ -269,7 +273,10 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                             </Typography>
                           </div>
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead
+                          colSpan={1}
+                          className="text-right min-w-[10rem] max-w-[10rem]"
+                        >
                           <Typography variant="label" className="text-ink-soft">
                             Best Streak
                           </Typography>
@@ -289,6 +296,13 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                         <EmptyRow colSpan={4} message="No players yet." />
                       )}
                     </TableBody>
+                    {isLoading && (
+                      <TableRow>
+                        <TableCell colSpan={8}>
+                          <Loader2 className="animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </Table>
                 </ScrollArea>
               ) : (
@@ -296,22 +310,28 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                   <Table>
                     <TableHeader>
                       <TableRow header>
-                        <TableHead>
+                        <TableHead colSpan={1}>
                           <Typography variant="label" className="text-ink-soft">
                             #
                           </Typography>
                         </TableHead>
-                        <TableHead>
+                        <TableHead colSpan={3} className="w-full">
                           <Typography variant="label" className="text-ink-soft">
                             Player
                           </Typography>
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead
+                          className="text-right min-w-[10rem]"
+                          colSpan={1}
+                        >
                           <Typography variant="label" className="text-ink-soft">
                             Best Score
                           </Typography>
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead
+                          className="text-right min-w-[10rem]"
+                          colSpan={1}
+                        >
                           <Typography variant="label" className="text-ink-soft">
                             Best Streak
                           </Typography>
@@ -328,9 +348,16 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                         />
                       ))}
                       {!isLoading && levelState.items.length === 0 && (
-                        <EmptyRow colSpan={4} message="No scores yet." />
+                        <EmptyRow colSpan={8} message="No scores yet." />
                       )}
                     </TableBody>
+                    {isLoading && (
+                      <TableRow>
+                        <TableCell colSpan={8}>
+                          <Loader2 className="animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </Table>
                 </ScrollArea>
               )}

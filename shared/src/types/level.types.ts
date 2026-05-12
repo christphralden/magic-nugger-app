@@ -6,13 +6,13 @@ export const LevelSchema = z.object({
   name: z.string().max(64),
   description: z.string().nullable(),
   order_index: z.number().int(),
+  child_levels: z.array(z.string()).nullable(),
   elo_min: z.number().int().min(0),
   elo_gain_correct: z.number().int().min(0),
   elo_loss_incorrect: z.number().int().min(0),
   time_limit_seconds: z.number().int().nullable(),
   enemy_wave_config: JSONBSchema(z.unknown()),
   question_gen_config: JSONBSchema(z.unknown()),
-  max_score: z.number().int().min(0),
   is_active: z.boolean(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
@@ -33,6 +33,7 @@ export const RequestCreateLevelSchema = z.object({
   name: z.string().max(64),
   description: z.string().optional(),
   order_index: z.number().int(),
+  child_levels: z.array(z.string()).nullable().optional(),
   elo_min: z.number().int().min(0).default(0),
   elo_gain_correct: z.number().int().min(0).default(15),
   elo_loss_incorrect: z.number().int().min(0).default(5),
@@ -45,7 +46,6 @@ export const RequestCreateLevelSchema = z.object({
     schema: 1,
     data: null,
   }),
-  max_score: z.number().int().min(0).default(1000),
 });
 export type RequestCreateLevel = z.infer<typeof RequestCreateLevelSchema>;
 
@@ -58,3 +58,6 @@ export const RequestUpdateActiveLevelSchema = z.object({
 export type RequestUpdateActiveLevel = z.infer<
   typeof RequestUpdateActiveLevelSchema
 >;
+
+export const ResponseUnlockedLevelsSchema = z.array(z.string());
+export type ResponseUnlockedLevels = z.infer<typeof ResponseUnlockedLevelsSchema>;

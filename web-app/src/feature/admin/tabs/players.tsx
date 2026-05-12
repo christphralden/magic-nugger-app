@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { selectAdminPlayers } from "@/feature/admin/state/admin.slice";
 import {
@@ -120,172 +120,171 @@ export function PlayersTab() {
                 </TableHead>
               </TableRow>
             </TableHeader>
-            {status === "loading" && items.length === 0 ? (
-              <TableSkeleton cols={6} />
-            ) : (
-              <TableBody>
-                {items.map((player) => (
-                  <>
-                    <TableRow key={player.id} className="h-16">
-                      <TableCell>
-                        <Typography variant="body">
-                          {player.username}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body">{player.email}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body">
-                          {player.role_name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Typography variant="body">
-                          {player.current_elo}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body">
-                          {new Date(player.created_at).toLocaleDateString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <CartoonButton
-                            variant="select"
-                            size={"sm"}
-                            className="font-body"
-                            disabled={Boolean(
-                              activeEdit?.id && activeEdit?.id != player.id,
-                            )}
-                            onClick={() =>
-                              openEdit(
-                                player.id,
-                                "elo",
-                                String(player.current_elo),
-                              )
-                            }
-                          >
-                            ELO
-                          </CartoonButton>
-                          <CartoonButton
-                            variant="select"
-                            size={"sm"}
-                            className="font-body"
-                            disabled={Boolean(
-                              activeEdit?.id && activeEdit?.id != player.id,
-                            )}
-                            onClick={() =>
-                              openEdit(player.id, "role", player.role_name)
-                            }
-                          >
-                            Role
-                          </CartoonButton>
-                        </div>
+            <TableBody>
+              {items.map((player) => (
+                <>
+                  <TableRow key={player.id} className="h-16">
+                    <TableCell>
+                      <Typography variant="body">{player.username}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body">{player.email}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body">{player.role_name}</Typography>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Typography variant="body">
+                        {player.current_elo}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body">
+                        {new Date(player.created_at).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <CartoonButton
+                          variant="select"
+                          size={"sm"}
+                          className="font-body"
+                          disabled={Boolean(
+                            activeEdit?.id && activeEdit?.id != player.id,
+                          )}
+                          onClick={() =>
+                            openEdit(
+                              player.id,
+                              "elo",
+                              String(player.current_elo),
+                            )
+                          }
+                        >
+                          ELO
+                        </CartoonButton>
+                        <CartoonButton
+                          variant="select"
+                          size={"sm"}
+                          className="font-body"
+                          disabled={Boolean(
+                            activeEdit?.id && activeEdit?.id != player.id,
+                          )}
+                          onClick={() =>
+                            openEdit(player.id, "role", player.role_name)
+                          }
+                        >
+                          Role
+                        </CartoonButton>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {activeEdit?.id === player.id && (
+                    <TableRow className="bg-gray-50 border-b border-border">
+                      <TableCell colSpan={6}>
+                        {activeEdit.type === "elo" ? (
+                          <Form {...eloForm}>
+                            <form
+                              onSubmit={onSubmitElo}
+                              className="flex items-end gap-2 justify-end"
+                            >
+                              <FormField
+                                control={eloForm.control}
+                                name="elo"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Elo</FormLabel>
+                                    <FormControl>
+                                      <CartoonInput
+                                        type="number"
+                                        placeholder="New ELO value"
+                                        className="!py-2 !text-sm"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage className="font-body" />
+                                  </FormItem>
+                                )}
+                              />
+                              <CartoonButton
+                                variant="primary"
+                                size={"sm"}
+                                type="submit"
+                                className="font-body"
+                                disabled={eloForm.formState.isSubmitting}
+                              >
+                                {eloForm.formState.isSubmitting
+                                  ? "Saving..."
+                                  : "Save"}
+                              </CartoonButton>
+                              <CartoonButton
+                                variant="secondary"
+                                type="button"
+                                size={"sm"}
+                                className="font-body"
+                                onClick={closeEdit}
+                              >
+                                Cancel
+                              </CartoonButton>
+                            </form>
+                          </Form>
+                        ) : (
+                          <Form {...roleForm}>
+                            <form
+                              onSubmit={onSubmitRole}
+                              className="flex items-end gap-2 justify-end"
+                            >
+                              <FormField
+                                control={roleForm.control}
+                                name="role"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Role</FormLabel>
+                                    <FormControl>
+                                      <CartoonInput
+                                        placeholder="Role name"
+                                        className="!py-2 !text-sm"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage className="font-body" />
+                                  </FormItem>
+                                )}
+                              />
+                              <CartoonButton
+                                variant="primary"
+                                type="submit"
+                                size={"sm"}
+                                className="font-body"
+                                disabled={roleForm.formState.isSubmitting}
+                              >
+                                {roleForm.formState.isSubmitting
+                                  ? "Saving..."
+                                  : "Save"}
+                              </CartoonButton>
+                              <CartoonButton
+                                variant="secondary"
+                                type="button"
+                                size={"sm"}
+                                className="font-body"
+                                onClick={closeEdit}
+                              >
+                                Cancel
+                              </CartoonButton>
+                            </form>
+                          </Form>
+                        )}
                       </TableCell>
                     </TableRow>
-                    {activeEdit?.id === player.id && (
-                      <TableRow className="bg-gray-50 border-b border-border">
-                        <TableCell colSpan={6}>
-                          {activeEdit.type === "elo" ? (
-                            <Form {...eloForm}>
-                              <form
-                                onSubmit={onSubmitElo}
-                                className="flex items-end gap-2 justify-end"
-                              >
-                                <FormField
-                                  control={eloForm.control}
-                                  name="elo"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Elo</FormLabel>
-                                      <FormControl>
-                                        <CartoonInput
-                                          type="number"
-                                          placeholder="New ELO value"
-                                          className="!py-2 !text-sm"
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                      <FormMessage className="font-body" />
-                                    </FormItem>
-                                  )}
-                                />
-                                <CartoonButton
-                                  variant="primary"
-                                  size={"sm"}
-                                  type="submit"
-                                  className="font-body"
-                                  disabled={eloForm.formState.isSubmitting}
-                                >
-                                  {eloForm.formState.isSubmitting
-                                    ? "Saving..."
-                                    : "Save"}
-                                </CartoonButton>
-                                <CartoonButton
-                                  variant="secondary"
-                                  type="button"
-                                  size={"sm"}
-                                  className="font-body"
-                                  onClick={closeEdit}
-                                >
-                                  Cancel
-                                </CartoonButton>
-                              </form>
-                            </Form>
-                          ) : (
-                            <Form {...roleForm}>
-                              <form
-                                onSubmit={onSubmitRole}
-                                className="flex items-end gap-2 justify-end"
-                              >
-                                <FormField
-                                  control={roleForm.control}
-                                  name="role"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Role</FormLabel>
-                                      <FormControl>
-                                        <CartoonInput
-                                          placeholder="Role name"
-                                          className="!py-2 !text-sm"
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                      <FormMessage className="font-body" />
-                                    </FormItem>
-                                  )}
-                                />
-                                <CartoonButton
-                                  variant="primary"
-                                  type="submit"
-                                  size={"sm"}
-                                  className="font-body"
-                                  disabled={roleForm.formState.isSubmitting}
-                                >
-                                  {roleForm.formState.isSubmitting
-                                    ? "Saving..."
-                                    : "Save"}
-                                </CartoonButton>
-                                <CartoonButton
-                                  variant="secondary"
-                                  type="button"
-                                  size={"sm"}
-                                  className="font-body"
-                                  onClick={closeEdit}
-                                >
-                                  Cancel
-                                </CartoonButton>
-                              </form>
-                            </Form>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                ))}
-              </TableBody>
+                  )}
+                </>
+              ))}
+            </TableBody>
+            {status === "loading" && (
+              <TableRow className="border-none">
+                <TableCell colSpan={6}>
+                  <Loader2 className="animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
             )}
           </Table>
         </ScrollArea>

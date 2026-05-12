@@ -21,8 +21,8 @@ function AdminNavButton({ to, children }: { to: string; children: ReactNode }) {
 export function AdminLayout() {
   return (
     <PageLayout title="Admin">
-      <div className="w-full flex gap-8 h-full">
-        <div className="w-1/4 h-full flex flex-col overflow-hidden">
+      <div className="w-full flex gap-8 h-full ">
+        <div className="w-1/6 h-full flex flex-col overflow-hidden shrink-0">
           <div className="flex flex-col h-full gap-8">
             <Typography variant="subheading">Admin</Typography>
             <div className="flex flex-col gap-2 flex-1">
@@ -38,7 +38,7 @@ export function AdminLayout() {
           </div>
         </div>
 
-        <div className="w-3/4 flex flex-col gap-4 overflow-y-auto">
+        <div className="w-full flex flex-col gap-4 overflow-y-auto">
           <Outlet />
         </div>
       </div>

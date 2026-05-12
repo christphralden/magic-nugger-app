@@ -78,7 +78,7 @@ gameRouter.post(
 
 gameRouter.post("/:id/end", async (req, res) => {
   const user = getUser(req);
-  const { levelId } = await gameService.end({
+  const { levelId, eloDelta, newlyUnlockedNames } = await gameService.end({
     sessionId: req.params.id,
     userId: user.id,
     currentElo: user.current_elo,
@@ -101,13 +101,13 @@ gameRouter.post("/:id/end", async (req, res) => {
   res.json({
     code: HttpCode.OK,
     error: null,
-    data: null,
-  } satisfies ApiResponse<null>);
+    data: { elo_gained: eloDelta, new_levels_unlocked: newlyUnlockedNames },
+  } satisfies ApiResponse<{ elo_gained: number; new_levels_unlocked: string[] }>);
 });
 
 gameRouter.post("/:id/fail", async (req, res) => {
   const user = getUser(req);
-  const { levelId } = await gameService.end({
+  const { levelId, eloDelta } = await gameService.end({
     sessionId: req.params.id,
     userId: user.id,
     currentElo: user.current_elo,
@@ -130,8 +130,8 @@ gameRouter.post("/:id/fail", async (req, res) => {
   res.json({
     code: HttpCode.OK,
     error: null,
-    data: null,
-  } satisfies ApiResponse<null>);
+    data: { elo_gained: eloDelta, new_levels_unlocked: [] },
+  } satisfies ApiResponse<{ elo_gained: number; new_levels_unlocked: string[] }>);
 });
 
 gameRouter.post("/:id/abandon", async (req, res) => {

@@ -14,7 +14,6 @@ export const GameSessionSchema = z.object({
   level_id: z.number().int(),
   status: GameSessionStatusSchema,
   score: z.number().int().min(0),
-  max_answers: z.number().int().min(0),
   elo_before: z.number().int(),
   elo_after: z.number().int().nullable(),
   elo_delta: z.number().int().nullable(),

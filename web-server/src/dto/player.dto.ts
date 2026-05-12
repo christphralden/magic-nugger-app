@@ -11,7 +11,6 @@ export function toResponsePlayer(
     display_name: user.display_name,
     role_name: user.role_name,
     current_elo: user.current_elo,
-    highest_level_unlocked: user.highest_level_unlocked,
     avatar_url: user.avatar_url,
     age: user.age,
     grade: user.grade,

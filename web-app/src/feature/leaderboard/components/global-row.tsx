@@ -15,7 +15,7 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
   const name = isMe ? "Me" : row.display_name || row.username;
   return (
     <TableRow>
-      <TableCell className="w-16">
+      <TableCell className="w-16" colSpan={1}>
         <Typography
           variant="label"
           className={cn(
@@ -28,7 +28,7 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
           {rank}
         </Typography>
       </TableCell>
-      <TableCell>
+      <TableCell colSpan={3}>
         <div className="flex items-center gap-3">
           <Avatar className="size-8">
             {row.avatar_url && <AvatarImage src={row.avatar_url} />}
@@ -44,12 +44,12 @@ export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
           </Typography>
         </div>
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" colSpan={1}>
         <Typography variant="label" className="text-coral">
           {row.current_elo}
         </Typography>
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" colSpan={1}>
         <Typography variant="label">{row.max_streak}</Typography>
       </TableCell>
     </TableRow>

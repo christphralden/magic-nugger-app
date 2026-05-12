@@ -11,7 +11,6 @@ import {
   handleFetchLevelAdmin,
   handleUpdateLevelAdmin,
   handleActivateLevelAdmin,
-  handleDeleteLevelAdmin,
 } from "@/feature/admin/state/admin.actions";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
@@ -33,6 +32,7 @@ import {
   toRequestPayload,
   LevelFields,
 } from "@/feature/admin/tabs/level-form";
+import { Loader2 } from "lucide-react";
 
 export function LevelsTab() {
   const dispatch = useDispatch();
@@ -58,12 +58,12 @@ export function LevelsTab() {
         name: l.name,
         description: l.description ?? "",
         order_index: String(l.order_index) as unknown as number,
+        child_levels: l.child_levels ?? [],
         elo_min: String(l.elo_min) as unknown as number,
         elo_gain_correct: String(l.elo_gain_correct) as unknown as number,
         elo_loss_incorrect: String(l.elo_loss_incorrect) as unknown as number,
         time_limit_seconds:
           l.time_limit_seconds != null ? String(l.time_limit_seconds) : "",
-        max_score: String(l.max_score) as unknown as number,
         enemy_wave_config: JSON.stringify(l.enemy_wave_config, null, 2),
         question_gen_config: JSON.stringify(l.question_gen_config, null, 2),
       });
@@ -89,12 +89,6 @@ export function LevelsTab() {
     setEditLoading(true);
     await dispatch(handleActivateLevelAdmin(id, !current));
     setEditLoading(false);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Delete this level? This cannot be undone.")) return;
-    await dispatch(handleDeleteLevelAdmin(id));
-    if (expandedId === id) setExpandedId(null);
   };
 
   return (
@@ -141,124 +135,111 @@ export function LevelsTab() {
                 </TableHead>
               </TableRow>
             </TableHeader>
-            {status === "loading" && items.length === 0 ? (
-              <TableSkeleton cols={5} />
-            ) : (
-              <TableBody>
-                {items.map((level) => (
-                  <>
-                    <TableRow key={level.id}>
-                      <TableCell>
-                        <Typography variant="body" className="text-ink-soft">
-                          {level.order_index}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body" className="text-ink-soft">
-                          {level.id}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-0">
-                          <Typography variant="body">{level.name}</Typography>
-                          {level.description && (
-                            <Typography
-                              variant="caption"
-                              className="line-clamp-1"
-                            >
-                              {level.description}
-                            </Typography>
+            <TableBody>
+              {items.map((level) => (
+                <>
+                  <TableRow key={level.id}>
+                    <TableCell>
+                      <Typography variant="body" className="text-ink-soft">
+                        {level.order_index}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body" className="text-ink-soft">
+                        {level.id}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-0">
+                        <Typography variant="body">{level.name}</Typography>
+                        {level.description && (
+                          <Typography
+                            variant="caption"
+                            className="line-clamp-1"
+                          >
+                            {level.description}
+                          </Typography>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Typography variant="body" className="text-ink-soft">
+                        {level.elo_min}
+                      </Typography>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Typography variant={"body"}>
+                        {level.is_active ? "active" : "inactive"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <CartoonButton
+                          variant={"select"}
+                          size={"sm"}
+                          className="font-body"
+                          disabled={Boolean(
+                            expandedId && expandedId !== level.id,
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Typography variant="body" className="text-ink-soft">
-                          {level.elo_min}
-                        </Typography>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Typography variant={"body"}>
-                          {level.is_active ? "active" : "inactive"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <CartoonButton
-                            variant={"select"}
-                            size={"sm"}
-                            className="font-body"
-                            disabled={Boolean(
-                              expandedId && expandedId !== level.id,
-                            )}
-                            onClick={() => handleExpand(level.id)}
-                          >
-                            {expandedId === level.id ? "Close" : "Edit"}
-                          </CartoonButton>
-                          <CartoonButton
-                            variant="secondary"
-                            size={"sm"}
-                            className="font-body"
-                            disabled={Boolean(
-                              expandedId && expandedId !== level.id,
-                            )}
-                            onClick={() => handleDelete(level.id)}
-                          >
-                            Delete
-                          </CartoonButton>
-                        </div>
+                          onClick={() => handleExpand(level.id)}
+                        >
+                          {expandedId === level.id ? "Close" : "Edit"}
+                        </CartoonButton>
+                        <CartoonButton
+                          variant={"secondary"}
+                          size={"sm"}
+                          type="button"
+                          className="font-body"
+                          disabled={editLoading}
+                          onClick={() =>
+                            handleToggleActive(level.id, level.is_active)
+                          }
+                        >
+                          {level.is_active ? "Deactivate" : "Activate"}
+                        </CartoonButton>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {expandedId === level.id && (
+                    <TableRow className="border-b border-border">
+                      <TableCell colSpan={6} className="bg-gray-50">
+                        {selectedLevel.status !== "loading" &&
+                          selectedLevel.data?.id === level.id && (
+                            <form
+                              onSubmit={onSubmitEdit}
+                              className="flex flex-col gap-4 py-4"
+                            >
+                              <LevelFields form={editForm} />
+                              <div className="flex gap-2 w-full justify-end">
+                                <CartoonButton
+                                  variant="primary"
+                                  size={"sm"}
+                                  type="submit"
+                                  className="font-body"
+                                  disabled={
+                                    editForm.formState.isSubmitting ||
+                                    editLoading
+                                  }
+                                >
+                                  {editForm.formState.isSubmitting
+                                    ? "Saving..."
+                                    : "Save Changes"}
+                                </CartoonButton>
+                              </div>
+                            </form>
+                          )}
                       </TableCell>
                     </TableRow>
-                    {expandedId === level.id && (
-                      <TableRow className="border-b border-border">
-                        <TableCell colSpan={6} className="bg-gray-50">
-                          {selectedLevel.status !== "loading" &&
-                            selectedLevel.data?.id === level.id && (
-                              <form
-                                onSubmit={onSubmitEdit}
-                                className="flex flex-col gap-4 py-4"
-                              >
-                                <LevelFields form={editForm} />
-                                <div className="flex gap-2 w-full justify-end">
-                                  <CartoonButton
-                                    variant="primary"
-                                    size={"sm"}
-                                    type="submit"
-                                    className="font-body"
-                                    disabled={
-                                      editForm.formState.isSubmitting ||
-                                      editLoading
-                                    }
-                                  >
-                                    {editForm.formState.isSubmitting
-                                      ? "Saving..."
-                                      : "Save Changes"}
-                                  </CartoonButton>
-                                  <CartoonButton
-                                    variant="secondary"
-                                    size={"sm"}
-                                    type="button"
-                                    className="font-body"
-                                    disabled={editLoading}
-                                    onClick={() =>
-                                      handleToggleActive(
-                                        level.id,
-                                        level.is_active,
-                                      )
-                                    }
-                                  >
-                                    {level.is_active
-                                      ? "Deactivate"
-                                      : "Activate"}
-                                  </CartoonButton>
-                                </div>
-                              </form>
-                            )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                ))}
-              </TableBody>
+                  )}
+                </>
+              ))}
+            </TableBody>
+            {status === "loading" && (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  <Loader2 className="animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
             )}
           </Table>
         </ScrollArea>
