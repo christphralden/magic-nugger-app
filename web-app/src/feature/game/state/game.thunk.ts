@@ -20,17 +20,17 @@ export const createGameSession = createAsyncThunk<GameSession, { level_id: numbe
 
 export const submitAnswer = createAsyncThunk<
   ResponseAnswer,
-  { sessionId: string; is_correct: boolean }
+  { sessionId: string; is_correct: boolean; time_taken_ms?: number }
 >(
   "game/submitAnswer",
-  async ({ sessionId, is_correct }, { rejectWithValue }) => {
+  async ({ sessionId, is_correct, time_taken_ms }, { rejectWithValue }) => {
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/game/${sessionId}/answer`,
       {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_correct }),
+        body: JSON.stringify({ is_correct, time_taken_ms }),
       },
     );
     const data = (await response.json()) as ApiResponse<ResponseAnswer>;

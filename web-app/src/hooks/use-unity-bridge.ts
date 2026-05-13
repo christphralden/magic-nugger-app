@@ -27,6 +27,7 @@ export function useUnityBridge() {
   const levels = useSelector(selectLevels);
 
   const sessionIdRef = useRef<string | null>(null);
+  const lastAnswerAtRef = useRef<number | null>(null);
   const {
     unityProvider: provider,
     sendMessage,
@@ -65,6 +66,7 @@ export function useUnityBridge() {
         );
         if (createGameSession.fulfilled.match(result)) {
           sessionIdRef.current = result.payload.id;
+          lastAnswerAtRef.current = Date.now();
         }
       };
       startSession();
@@ -75,10 +77,14 @@ export function useUnityBridge() {
   const handleAnswer = useCallback(
     (correct: unknown) => {
       if (!sessionIdRef.current) return;
+      const now = Date.now();
+      const time_taken_ms = lastAnswerAtRef.current !== null ? now - lastAnswerAtRef.current : undefined;
+      lastAnswerAtRef.current = now;
       dispatch(
         submitAnswer({
           sessionId: sessionIdRef.current,
           is_correct: Boolean(correct),
+          time_taken_ms,
         }),
       );
     },
