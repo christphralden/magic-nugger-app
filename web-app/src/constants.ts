@@ -7,4 +7,12 @@ export const UNITY_SUBSCRIBED_EVENT = {
   LEVEL: "Level",
   ANSWER: "Answer",
   FINISHED: "Finished",
+  REACT_MESSAGE: "ReactMessage",
+};
+
+export const UNITY_GAME_OBJECT = "ReactUnityCommunication";
+
+export const UNITY_SEND_METHOD = {
+  GIVE_INITIAL_DATA: "GiveInitialdata",
+  FINALIZED: "Finalized",
 };

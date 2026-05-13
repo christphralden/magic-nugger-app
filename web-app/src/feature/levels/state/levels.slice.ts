@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchLevels, fetchUnlockedLevels } from "./levels.thunk";
+import { getLevels, getUnlockedLevels } from "./levels.thunk";
+import { endGameSession } from "@/feature/game/state/game.thunk";
 import type { AsyncStatus, Level } from "@magic-nugger-app/shared";
 
 type LevelsState = {
@@ -20,25 +21,31 @@ const levelsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchLevels.pending, (state) => {
+      .addCase(getLevels.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(fetchLevels.fulfilled, (state, action) => {
+      .addCase(getLevels.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.items = action.payload;
       })
-      .addCase(fetchLevels.rejected, (state) => {
+      .addCase(getLevels.rejected, (state) => {
         state.status = "failed";
       })
-      .addCase(fetchUnlockedLevels.pending, (state) => {
+      .addCase(getUnlockedLevels.pending, (state) => {
         state.unlockedStatus = "loading";
       })
-      .addCase(fetchUnlockedLevels.fulfilled, (state, action) => {
+      .addCase(getUnlockedLevels.fulfilled, (state, action) => {
         state.unlockedStatus = "succeeded";
         state.unlockedNames = action.payload;
       })
-      .addCase(fetchUnlockedLevels.rejected, (state) => {
+      .addCase(getUnlockedLevels.rejected, (state) => {
         state.unlockedStatus = "failed";
+      })
+      .addCase(endGameSession.fulfilled, (state, action) => {
+        const incoming = action.payload.new_levels_unlocked;
+        if (incoming.length > 0) {
+          state.unlockedNames = [...new Set([...state.unlockedNames, ...incoming])];
+        }
       });
   },
   selectors: {

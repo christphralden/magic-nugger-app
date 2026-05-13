@@ -7,8 +7,8 @@ import {
   selectAdminSelectedLevel,
 } from "@/feature/admin/state/admin.slice";
 import {
-  handleFetchLevelsAdmin,
-  handleFetchLevelAdmin,
+  handleGetLevelsAdmin,
+  handleGetLevelAdmin,
   handleUpdateLevelAdmin,
   handleActivateLevelAdmin,
 } from "@/feature/admin/state/admin.actions";
@@ -23,7 +23,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
 import type { RequestUpdateLevel } from "@magic-nugger-app/shared";
 import {
   levelSchema,
@@ -48,7 +47,7 @@ export function LevelsTab() {
   });
 
   useEffect(() => {
-    dispatch(handleFetchLevelsAdmin());
+    dispatch(handleGetLevelsAdmin());
   }, [dispatch]);
 
   useEffect(() => {
@@ -76,7 +75,7 @@ export function LevelsTab() {
       return;
     }
     setExpandedId(id);
-    dispatch(handleFetchLevelAdmin(id));
+    dispatch(handleGetLevelAdmin(id));
   };
 
   const onSubmitEdit = editForm.handleSubmit(async (values) => {

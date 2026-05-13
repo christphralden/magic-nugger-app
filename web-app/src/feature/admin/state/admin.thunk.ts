@@ -35,8 +35,8 @@ export type AdminPlayer = {
   created_at: string;
 };
 
-export const fetchStatsAdmin = createAsyncThunk<AdminStats, void>(
-  "admin/fetchStats",
+export const getStatsAdmin = createAsyncThunk<AdminStats, void>(
+  "admin/getStats",
   async (_, { rejectWithValue }) => {
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/stats`,
@@ -48,11 +48,11 @@ export const fetchStatsAdmin = createAsyncThunk<AdminStats, void>(
   },
 );
 
-export const fetchPlayersAdmin = createAsyncThunk<
+export const getPlayersAdmin = createAsyncThunk<
   PaginatedData<AdminPlayer>,
   { cursor?: string; limit?: number }
 >(
-  "admin/fetchPlayers",
+  "admin/getPlayers",
   async ({ cursor, limit = ADMIN_PAGINATION_LIMIT }, { rejectWithValue }) => {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor !== undefined) params.set("cursor", cursor);
@@ -60,14 +60,16 @@ export const fetchPlayersAdmin = createAsyncThunk<
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/players?${params}`,
       { credentials: "include" },
     );
-    const data = (await response.json()) as ApiResponse<PaginatedData<AdminPlayer>>;
+    const data = (await response.json()) as ApiResponse<
+      PaginatedData<AdminPlayer>
+    >;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
     return data.data;
   },
 );
 
-export const fetchActiveSessionsAdmin = createAsyncThunk<GameSession[], void>(
-  "admin/fetchActiveSessions",
+export const getActiveSessionsAdmin = createAsyncThunk<GameSession[], void>(
+  "admin/getActiveSessions",
   async (_, { rejectWithValue }) => {
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/game-sessions/active`,
@@ -79,11 +81,17 @@ export const fetchActiveSessionsAdmin = createAsyncThunk<GameSession[], void>(
   },
 );
 
-export const fetchSessionsAdmin = createAsyncThunk<
+export const getSessionsAdmin = createAsyncThunk<
   PaginatedData<GameSession>,
-  { player_id?: string; level_id?: string; status?: string; cursor?: string; limit?: number }
+  {
+    player_id?: string;
+    level_id?: string;
+    status?: string;
+    cursor?: string;
+    limit?: number;
+  }
 >(
-  "admin/fetchSessions",
+  "admin/getSessions",
   async (
     { player_id, level_id, status, cursor, limit = ADMIN_PAGINATION_LIMIT },
     { rejectWithValue },
@@ -97,38 +105,40 @@ export const fetchSessionsAdmin = createAsyncThunk<
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/game-sessions?${params}`,
       { credentials: "include" },
     );
-    const data = (await response.json()) as ApiResponse<PaginatedData<GameSession>>;
+    const data = (await response.json()) as ApiResponse<
+      PaginatedData<GameSession>
+    >;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
     return data.data;
   },
 );
 
-export const adjustPlayerRoleAdmin = createAsyncThunk<
+export const patchPlayerRoleAdmin = createAsyncThunk<
   void,
   { id: string; role: string }
->(
-  "admin/adjustPlayerRole",
-  async ({ id, role }, { rejectWithValue }) => {
+>("admin/patchplayerRoleAdmin", async ({ id, role }, { rejectWithValue }) => {
+  const response = await fetch(
+    `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/players/${id}/role`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role }),
+    },
+  );
+  const data = (await response.json()) as ApiResponse<null>;
+  if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
+});
+
+export const getLevelsAdmin = createAsyncThunk<Level[], void>(
+  "admin/getLevels",
+  async (_, { rejectWithValue }) => {
     const response = await fetch(
-      `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/players/${id}/role`,
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels`,
       {
-        method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
       },
     );
-    const data = (await response.json()) as ApiResponse<null>;
-    if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
-  },
-);
-
-export const fetchLevelsAdmin = createAsyncThunk<Level[], void>(
-  "admin/fetchLevels",
-  async (_, { rejectWithValue }) => {
-    const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/levels`, {
-      credentials: "include",
-    });
     if (response.status === 204) return [];
     const data = (await response.json()) as ApiResponse<Level[]>;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
@@ -136,12 +146,15 @@ export const fetchLevelsAdmin = createAsyncThunk<Level[], void>(
   },
 );
 
-export const fetchLevelAdmin = createAsyncThunk<Level, { id: number }>(
-  "admin/fetchLevel",
+export const getLevelAdmin = createAsyncThunk<Level, { id: number }>(
+  "admin/getLevel",
   async ({ id }, { rejectWithValue }) => {
-    const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/${id}`, {
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/${id}`,
+      {
+        credentials: "include",
+      },
+    );
     const data = (await response.json()) as ApiResponse<Level>;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
     return data.data;
@@ -151,12 +164,15 @@ export const fetchLevelAdmin = createAsyncThunk<Level, { id: number }>(
 export const createLevelAdmin = createAsyncThunk<Level, RequestCreateLevel>(
   "admin/createLevel",
   async (payload, { rejectWithValue }) => {
-    const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/levels`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
     const data = (await response.json()) as ApiResponse<Level>;
     if (!response.ok || data.code !== 201) return rejectWithValue(data.error);
     return data.data;
@@ -166,49 +182,49 @@ export const createLevelAdmin = createAsyncThunk<Level, RequestCreateLevel>(
 export const updateLevelAdmin = createAsyncThunk<
   Level,
   { id: number } & RequestUpdateLevel
->(
-  "admin/updateLevel",
-  async ({ id, ...payload }, { rejectWithValue }) => {
-    const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/${id}`, {
+>("admin/updateLevel", async ({ id, ...payload }, { rejectWithValue }) => {
+  const response = await fetch(
+    `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/${id}`,
+    {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    });
-    const data = (await response.json()) as ApiResponse<Level>;
-    if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
-    return data.data;
-  },
-);
+    },
+  );
+  const data = (await response.json()) as ApiResponse<Level>;
+  if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
+  return data.data;
+});
 
 export const activateLevelAdmin = createAsyncThunk<
   Level,
   { id: number } & RequestUpdateActiveLevel
->(
-  "admin/activateLevel",
-  async ({ id, ...payload }, { rejectWithValue }) => {
-    const response = await fetch(
-      `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/active/${id}`,
-      {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    const data = (await response.json()) as ApiResponse<Level>;
-    if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
-    return data.data;
-  },
-);
+>("admin/activateLevel", async ({ id, ...payload }, { rejectWithValue }) => {
+  const response = await fetch(
+    `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/active/${id}`,
+    {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const data = (await response.json()) as ApiResponse<Level>;
+  if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
+  return data.data;
+});
 
 export const deleteLevelAdmin = createAsyncThunk<void, { id: number }>(
   "admin/deleteLevel",
   async ({ id }, { rejectWithValue }) => {
-    const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/${id}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+      },
+    );
     if (response.status === 204) return;
     const data = (await response.json()) as ApiResponse<null>;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
@@ -228,36 +244,36 @@ export const clearLeaderboardCacheAdmin = createAsyncThunk<any, void>(
   },
 );
 
-export const fetchMemoryStatsInternal = createAsyncThunk<MemoryStats, string>(
-  "admin/fetchMemoryStats",
+export const getMemoryStatsInternal = createAsyncThunk<MemoryStats, string>(
+  "admin/getMemoryStatsInternal",
   async (secret, { rejectWithValue }) => {
-    const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/internal/memory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret }),
-    });
+    const response = await fetch(
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/internal/memory`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret }),
+      },
+    );
     const data = (await response.json()) as ApiResponse<MemoryStats>;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
     return data.data;
   },
 );
 
-export const adjustPlayerEloAdmin = createAsyncThunk<
+export const patchPlayerEloAdmin = createAsyncThunk<
   void,
   { id: string; elo: number; reason: string }
->(
-  "admin/adjustPlayerElo",
-  async ({ id, elo, reason }, { rejectWithValue }) => {
-    const response = await fetch(
-      `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/players/${id}/elo`,
-      {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ elo, reason }),
-      },
-    );
-    const data = (await response.json()) as ApiResponse<null>;
-    if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
-  },
-);
+>("admin/patchPlayerElo", async ({ id, elo, reason }, { rejectWithValue }) => {
+  const response = await fetch(
+    `${WEB_SERVER_URL}/${API_VERSION_BASE}/admin/players/${id}/elo`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ elo, reason }),
+    },
+  );
+  const data = (await response.json()) as ApiResponse<null>;
+  if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
+});

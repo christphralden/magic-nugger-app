@@ -7,7 +7,7 @@ import type {
   RequestUpdatePlayer,
 } from "@magic-nugger-app/shared";
 
-export const fetchPlayer = createAsyncThunk<
+export const getPlayer = createAsyncThunk<
   ResponsePlayer,
   string,
   { state: RootState }

@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchMe, loginPlayer, registerPlayer, logoutPlayer } from "./auth.thunk";
+import { getMe, loginPlayer, registerPlayer, logoutPlayer } from "./auth.thunk";
 import { patchPlayer } from "@/feature/player/state/player.thunk";
+import { endGameSession, failGameSession } from "@/feature/game/state/game.thunk";
 import type { AsyncStatus, ResponsePlayer } from "@magic-nugger-app/shared";
 
 type AuthState = {
@@ -25,15 +26,15 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMe.pending, (state) => {
+      .addCase(getMe.pending, (state) => {
         state.status = "loading";
         state.error = null;
       })
-      .addCase(fetchMe.fulfilled, (state, action) => {
+      .addCase(getMe.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.currentPlayer = action.payload;
       })
-      .addCase(fetchMe.rejected, (state) => {
+      .addCase(getMe.rejected, (state) => {
         state.status = "succeeded";
         state.currentPlayer = null;
       })
@@ -76,6 +77,16 @@ const authSlice = createSlice({
       .addCase(patchPlayer.fulfilled, (state, action) => {
         if (state.currentPlayer?.id === action.payload.id) {
           state.currentPlayer = action.payload;
+        }
+      })
+      .addCase(endGameSession.fulfilled, (state, action) => {
+        if (state.currentPlayer) {
+          state.currentPlayer.current_elo += action.payload.elo_gained;
+        }
+      })
+      .addCase(failGameSession.fulfilled, (state, action) => {
+        if (state.currentPlayer) {
+          state.currentPlayer.current_elo += action.payload.elo_gained;
         }
       });
   },

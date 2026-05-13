@@ -6,9 +6,9 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { selectAdminPlayers } from "@/feature/admin/state/admin.slice";
 import {
-  handleFetchPlayersAdmin,
-  handleAdjustPlayerEloAdmin,
-  handleAdjustPlayerRoleAdmin,
+  handleGetPlayersAdmin,
+  handlePatchPlayerEloAdmin,
+  handlePatchPlayerRoleAdmin,
 } from "@/feature/admin/state/admin.actions";
 import { useCursor } from "@/hooks/use-cursor";
 import { CartoonButton } from "@/components/ui/cartoon-button";
@@ -31,8 +31,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
-import { EmptyState } from "@/feature/admin/components/empty-state";
 
 const eloSchema = z.object({
   elo: z.coerce.number().int().min(0, "Must be ≥ 0"),
@@ -54,7 +52,7 @@ export function PlayersTab() {
   const roleForm = useForm<RoleForm>({ resolver: zodResolver(roleSchema) });
 
   useEffect(() => {
-    dispatch(handleFetchPlayersAdmin({ cursor: cursor.current }));
+    dispatch(handleGetPlayersAdmin({ cursor: cursor.current }));
   }, [dispatch, cursor.current]);
 
   const openEdit = (id: string, type: "elo" | "role", current: string) => {
@@ -67,13 +65,13 @@ export function PlayersTab() {
 
   const onSubmitElo = eloForm.handleSubmit(async ({ elo }) => {
     if (!activeEdit) return;
-    const ok = await dispatch(handleAdjustPlayerEloAdmin(activeEdit.id, elo));
+    const ok = await dispatch(handlePatchPlayerEloAdmin(activeEdit.id, elo));
     if (ok) closeEdit();
   });
 
   const onSubmitRole = roleForm.handleSubmit(async ({ role }) => {
     if (!activeEdit) return;
-    const ok = await dispatch(handleAdjustPlayerRoleAdmin(activeEdit.id, role));
+    const ok = await dispatch(handlePatchPlayerRoleAdmin(activeEdit.id, role));
     if (ok) closeEdit();
   });
 

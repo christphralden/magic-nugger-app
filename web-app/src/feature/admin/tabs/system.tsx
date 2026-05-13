@@ -8,7 +8,7 @@ import {
 } from "@/feature/admin/state/admin.slice";
 import {
   handleClearLeaderboardCacheAdmin,
-  handleFetchMemoryStatsInternal,
+  handleGetMemoryStatsInternal,
 } from "@/feature/admin/state/admin.actions";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { CartoonInput } from "@/components/ui/cartoon-input";
@@ -37,7 +37,7 @@ export function SystemTab() {
   });
 
   const onSubmit = form.handleSubmit(async ({ secret }) => {
-    await dispatch(handleFetchMemoryStatsInternal(secret));
+    await dispatch(handleGetMemoryStatsInternal(secret));
   });
 
   return (

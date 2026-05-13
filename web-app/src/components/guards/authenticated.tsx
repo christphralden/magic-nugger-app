@@ -5,7 +5,7 @@ import {
   selectAuthStatus,
   selectIsAuthenticated,
 } from "@/feature/auth/state/auth.slice";
-import { handleFetchMe } from "@/feature/auth/actions/auth.actions";
+import { handleGetMe } from "@/feature/auth/actions/auth.actions";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 
 interface AuthenticatedProps {
@@ -22,7 +22,7 @@ export function Authenticated({
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
   useEffect(() => {
-    dispatch(handleFetchMe());
+    dispatch(handleGetMe());
   }, [dispatch]);
 
   const isChecking = status === "idle" || status === "loading";

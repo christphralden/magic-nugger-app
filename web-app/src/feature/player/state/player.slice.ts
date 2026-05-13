@@ -1,6 +1,6 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
 import { weakMapMemoize } from "@reduxjs/toolkit";
-import { fetchPlayer, patchPlayer } from "./player.thunk";
+import { getPlayer, patchPlayer } from "./player.thunk";
 import type { ResponsePlayer } from "@magic-nugger-app/shared";
 
 type PlayerState = {
@@ -23,15 +23,15 @@ const playerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPlayer.pending, (state) => {
+      .addCase(getPlayer.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchPlayer.fulfilled, (state, action) => {
+      .addCase(getPlayer.fulfilled, (state, action) => {
         state.loading = false;
         state.players[action.payload.id] = action.payload;
       })
-      .addCase(fetchPlayer.rejected, (state, action) => {
+      .addCase(getPlayer.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) ?? "Failed to fetch player";
       })

@@ -1,43 +1,60 @@
-// import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 import { FloatingText } from "@/components/floating-text";
 import { PageLayout } from "@/components/layout/page-layout";
-import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
 import { useUnityBridge } from "@/hooks/use-unity-bridge";
-import { useRef } from "react";
+import { useDispatch, useSelector } from "@/store/hooks";
+import {
+  selectLevelsStatus,
+  selectUnlockedLevelsStatus,
+} from "@/feature/levels/state/levels.slice";
+import {
+  handleGetLevels,
+  handleGetUnlockedLevels,
+} from "@/feature/levels/state/levels.actions";
 
-export function GamePage() {
-  // const [searchParams] = useSearchParams();
+function GameView() {
   const { Unity, provider, isLoaded } = useUnityBridge();
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   return (
     <PageLayout title="Game">
-      <div className="absolute">
-        {!isLoaded && (
-          <div className="w-full h-full flex justify-center items-center">
-            <Typography variant={"heading"}>
-              <FloatingText text="Loading your nuggers..." duration={1} />
-            </Typography>
-          </div>
-        )}
-      </div>
-      <div className="flex justify-center w-full h-full items-center">
-        <Unity
-          unityProvider={provider}
-          className="w-full h-full"
-          ref={canvasRef}
-        />
-        <div className="absolute bg-blue-200 top-0 left-0 w-[100vw] h-[100vh] relative">
-          <CartoonButton
-            className="absolute bottom-[100px] right-[100px]"
-            onClick={() => {}}
-          >
-            Nigger Button
-          </CartoonButton>
+      {!isLoaded && (
+        <div className="absolute w-full h-full flex justify-center items-center">
+          <Typography variant={"heading"}>
+            <FloatingText text="Loading your nuggers..." duration={1} />
+          </Typography>
         </div>
+      )}
+      <div className="flex justify-center w-full h-full items-center">
+        <Unity unityProvider={provider} className="w-full h-full" />
       </div>
     </PageLayout>
   );
+}
+
+export function GamePage() {
+  const dispatch = useDispatch();
+  const levelsStatus = useSelector(selectLevelsStatus);
+  const unlockedStatus = useSelector(selectUnlockedLevelsStatus);
+
+  useEffect(() => {
+    dispatch(handleGetLevels());
+    dispatch(handleGetUnlockedLevels());
+  }, [dispatch]);
+
+  const ready = levelsStatus === "succeeded" && unlockedStatus === "succeeded";
+
+  if (!ready) {
+    return (
+      <PageLayout title="Game">
+        <div className="w-full h-full flex justify-center items-center">
+          <Typography variant={"heading"}>
+            <FloatingText text="Loading your nuggers..." duration={1} />
+          </Typography>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  return <GameView />;
 }

@@ -60,7 +60,7 @@ export const gameSessionService = {
     const { rows } = await getDb().query<GameSession>(
       `INSERT INTO game_sessions 
         (player_id, level_id, elo_before, client_ip, user_agent)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING 
         id, player_id, level_id, status, score,
         elo_before, elo_after, elo_delta, correct_count, 

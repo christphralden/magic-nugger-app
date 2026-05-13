@@ -8,14 +8,14 @@ import {
   selectSelectedLevelLeaderboard,
 } from "@/feature/leaderboard/state/leaderboard.slice";
 import {
-  handleLoadGlobal,
-  handleLoadByLevel,
+  handleGetGlobalLeaderboard,
+  handleGetLevelLeaderboard,
 } from "@/feature/leaderboard/state/leaderboard.actions";
 import {
   selectLevels,
   selectLevelsStatus,
 } from "@/feature/levels/state/levels.slice";
-import { handleLoadLevels } from "@/feature/levels/state/levels.actions";
+import { handleGetLevels } from "@/feature/levels/state/levels.actions";
 import { GlobalRow } from "@/feature/leaderboard/components/global-row";
 import { LevelRow } from "@/feature/leaderboard/components/level-row";
 import { EmptyRow } from "@/feature/leaderboard/components/empty-row";
@@ -106,15 +106,15 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
     mainTab === "global" ? globalState.next_cursor : levelState.next_cursor;
 
   useEffect(() => {
-    dispatch(handleLoadLevels());
+    dispatch(handleGetLevels());
   }, [dispatch]);
 
   useEffect(() => {
     if (mainTab === "global") {
-      dispatch(handleLoadGlobal({ cursor: currentCursor, period }));
+      dispatch(handleGetGlobalLeaderboard({ cursor: currentCursor, period }));
     } else if (selectedLevelId !== null) {
       dispatch(
-        handleLoadByLevel({
+        handleGetLevelLeaderboard({
           levelId: selectedLevelId,
           cursor: currentCursor,
           period,

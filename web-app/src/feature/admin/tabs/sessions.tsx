@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { selectAdminSessions } from "@/feature/admin/state/admin.slice";
 import {
-  handleFetchSessionsAdmin,
+  handleGetSessionsAdmin,
   handleApplySessionFilters,
 } from "@/feature/admin/state/admin.actions";
 import { useCursor } from "@/hooks/use-cursor";
@@ -23,7 +23,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/feature/admin/components/table-skeleton";
 
 const SESSION_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -51,7 +50,7 @@ export function SessionsTab() {
   });
 
   useEffect(() => {
-    dispatch(handleFetchSessionsAdmin({ cursor: cursor.current }));
+    dispatch(handleGetSessionsAdmin({ cursor: cursor.current }));
   }, [dispatch, cursor.current]);
 
   const onApplyFilters = form.handleSubmit((values) => {

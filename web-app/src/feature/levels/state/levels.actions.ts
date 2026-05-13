@@ -1,23 +1,23 @@
 import type { AppDispatch, RootState } from "@/store";
-import { fetchLevels, fetchUnlockedLevels } from "./levels.thunk";
+import { getLevels, getUnlockedLevels } from "./levels.thunk";
 import { toastError } from "@/lib/toast";
 
-export const handleLoadLevels =
-  () =>
-  async (dispatch: AppDispatch, getState: () => RootState) => {
+export const handleGetLevels =
+  () => async (dispatch: AppDispatch, getState: () => RootState) => {
     const s = getState().levels.status;
     if (s === "loading" || s === "succeeded") return;
-    const result = await dispatch(fetchLevels());
-    if (fetchLevels.rejected.match(result))
+    const result = await dispatch(getLevels());
+    if (getLevels.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load levels");
   };
 
-export const handleLoadUnlockedLevels =
-  () =>
-  async (dispatch: AppDispatch, getState: () => RootState) => {
+export const handleGetUnlockedLevels =
+  () => async (dispatch: AppDispatch, getState: () => RootState) => {
     const s = getState().levels.unlockedStatus;
     if (s === "loading" || s === "succeeded") return;
-    const result = await dispatch(fetchUnlockedLevels());
-    if (fetchUnlockedLevels.rejected.match(result))
-      toastError((result.payload as string) ?? "Failed to load unlocked levels");
+    const result = await dispatch(getUnlockedLevels());
+    if (getUnlockedLevels.rejected.match(result))
+      toastError(
+        (result.payload as string) ?? "Failed to load unlocked levels",
+      );
   };

@@ -1,56 +1,65 @@
 import type { AppDispatch, RootState } from "@/store";
 import {
-  fetchStatsAdmin,
-  fetchPlayersAdmin,
-  fetchActiveSessionsAdmin,
-  fetchSessionsAdmin,
-  adjustPlayerRoleAdmin,
-  adjustPlayerEloAdmin,
-  fetchLevelsAdmin,
-  fetchLevelAdmin,
+  getStatsAdmin,
+  getPlayersAdmin,
+  getActiveSessionsAdmin,
+  getSessionsAdmin,
+  patchPlayerRoleAdmin,
+  patchPlayerEloAdmin,
+  getLevelsAdmin,
+  getLevelAdmin,
   createLevelAdmin,
   updateLevelAdmin,
   activateLevelAdmin,
   deleteLevelAdmin,
   clearLeaderboardCacheAdmin,
-  fetchMemoryStatsInternal,
+  getMemoryStatsInternal,
 } from "./admin.thunk";
-import type { RequestCreateLevel, RequestUpdateLevel } from "@magic-nugger-app/shared";
-import { resetAdminSessions, resetAdminPlayers, setSessionFilters } from "./admin.slice";
+import type {
+  RequestCreateLevel,
+  RequestUpdateLevel,
+} from "@magic-nugger-app/shared";
+import {
+  resetAdminSessions,
+  resetAdminPlayers,
+  setSessionFilters,
+} from "./admin.slice";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-export const handleFetchStatsAdmin =
+export const handleGetStatsAdmin =
   () => async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.statsStatus === "loading") return;
-    const result = await dispatch(fetchStatsAdmin());
-    if (fetchStatsAdmin.rejected.match(result))
+    const result = await dispatch(getStatsAdmin());
+    if (getStatsAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load stats");
   };
 
-export const handleFetchPlayersAdmin =
+export const handleGetPlayersAdmin =
   (params: { cursor?: string } = {}) =>
   async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.players.status === "loading") return;
-    const result = await dispatch(fetchPlayersAdmin(params));
-    if (fetchPlayersAdmin.rejected.match(result))
+    const result = await dispatch(getPlayersAdmin(params));
+    if (getPlayersAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load players");
   };
 
-export const handleFetchActiveSessionsAdmin =
+export const handleGetActiveSessionsAdmin =
   () => async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.activeSessions.status === "loading") return;
-    const result = await dispatch(fetchActiveSessionsAdmin());
-    if (fetchActiveSessionsAdmin.rejected.match(result))
-      toastError((result.payload as string) ?? "Failed to load active sessions");
+    const result = await dispatch(getActiveSessionsAdmin());
+    if (getActiveSessionsAdmin.rejected.match(result))
+      toastError(
+        (result.payload as string) ?? "Failed to load active sessions",
+      );
   };
 
-export const handleFetchSessionsAdmin =
+export const handleGetSessionsAdmin =
   (params: { cursor?: string } = {}) =>
   async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.sessions.status === "loading") return;
     const filters = getState().admin.sessions.filters;
-    const result = await dispatch(fetchSessionsAdmin({ ...filters, ...params }));
-    if (fetchSessionsAdmin.rejected.match(result))
+    const result = await dispatch(getSessionsAdmin({ ...filters, ...params }));
+    if (getSessionsAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load sessions");
   };
 
@@ -60,22 +69,23 @@ export const handleApplySessionFilters =
     const normalized = {
       player_id: filters.player_id || undefined,
       level_id: filters.level_id || undefined,
-      status: filters.status === "all" ? undefined : filters.status || undefined,
+      status:
+        filters.status === "all" ? undefined : filters.status || undefined,
     };
     dispatch(setSessionFilters(normalized));
     dispatch(resetAdminSessions());
-    const result = await dispatch(fetchSessionsAdmin(normalized));
-    if (fetchSessionsAdmin.rejected.match(result))
+    const result = await dispatch(getSessionsAdmin(normalized));
+    if (getSessionsAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load sessions");
   };
 
-export const handleAdjustPlayerEloAdmin =
+export const handlePatchPlayerEloAdmin =
   (id: string, elo: number) =>
   async (dispatch: AppDispatch): Promise<boolean> => {
     const result = await dispatch(
-      adjustPlayerEloAdmin({ id, elo, reason: "admin_adjustment" }),
+      patchPlayerEloAdmin({ id, elo, reason: "admin_adjustment" }),
     );
-    if (adjustPlayerEloAdmin.fulfilled.match(result)) {
+    if (patchPlayerEloAdmin.fulfilled.match(result)) {
       toastSuccess("ELO updated");
       return true;
     }
@@ -83,32 +93,32 @@ export const handleAdjustPlayerEloAdmin =
     return false;
   };
 
-export const handleAdjustPlayerRoleAdmin =
+export const handlePatchPlayerRoleAdmin =
   (id: string, role: string) =>
   async (dispatch: AppDispatch): Promise<boolean> => {
-    const result = await dispatch(adjustPlayerRoleAdmin({ id, role }));
-    if (adjustPlayerRoleAdmin.fulfilled.match(result)) {
+    const result = await dispatch(patchPlayerRoleAdmin({ id, role }));
+    if (patchPlayerRoleAdmin.fulfilled.match(result)) {
       toastSuccess("Role updated");
       dispatch(resetAdminPlayers());
-      await dispatch(fetchPlayersAdmin({}));
+      await dispatch(getPlayersAdmin({}));
       return true;
     }
     toastError((result.payload as string) ?? "Failed to update role");
     return false;
   };
 
-export const handleFetchLevelsAdmin =
+export const handleGetLevelsAdmin =
   () => async (dispatch: AppDispatch, getState: () => RootState) => {
     if (getState().admin.levels.status === "loading") return;
-    const result = await dispatch(fetchLevelsAdmin());
-    if (fetchLevelsAdmin.rejected.match(result))
+    const result = await dispatch(getLevelsAdmin());
+    if (getLevelsAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load levels");
   };
 
-export const handleFetchLevelAdmin =
+export const handleGetLevelAdmin =
   (id: number) => async (dispatch: AppDispatch) => {
-    const result = await dispatch(fetchLevelAdmin({ id }));
-    if (fetchLevelAdmin.rejected.match(result))
+    const result = await dispatch(getLevelAdmin({ id }));
+    if (getLevelAdmin.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load level");
   };
 
@@ -161,8 +171,13 @@ export const handleDeleteLevelAdmin =
   };
 
 export const handleClearLeaderboardCacheAdmin =
-  () => async (dispatch: AppDispatch, getState: () => RootState): Promise<boolean> => {
-    if (getState().admin.leaderboardCacheBust.status === "loading") return false;
+  () =>
+  async (
+    dispatch: AppDispatch,
+    getState: () => RootState,
+  ): Promise<boolean> => {
+    if (getState().admin.leaderboardCacheBust.status === "loading")
+      return false;
     const result = await dispatch(clearLeaderboardCacheAdmin());
     if (clearLeaderboardCacheAdmin.fulfilled.match(result)) {
       toastSuccess("Leaderboard cache cleared");
@@ -172,11 +187,15 @@ export const handleClearLeaderboardCacheAdmin =
     return false;
   };
 
-export const handleFetchMemoryStatsInternal =
-  (secret: string) => async (dispatch: AppDispatch, getState: () => RootState): Promise<boolean> => {
+export const handleGetMemoryStatsInternal =
+  (secret: string) =>
+  async (
+    dispatch: AppDispatch,
+    getState: () => RootState,
+  ): Promise<boolean> => {
     if (getState().admin.memoryStats.status === "loading") return false;
-    const result = await dispatch(fetchMemoryStatsInternal(secret));
-    if (fetchMemoryStatsInternal.rejected.match(result)) {
+    const result = await dispatch(getMemoryStatsInternal(secret));
+    if (getMemoryStatsInternal.rejected.match(result)) {
       toastError((result.payload as string) ?? "Failed to fetch memory stats");
       return false;
     }

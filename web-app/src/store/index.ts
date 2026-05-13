@@ -4,6 +4,7 @@ import { authReducer } from "@/feature/auth/state/auth.slice";
 import { leaderboardReducer } from "@/feature/leaderboard/state/leaderboard.slice";
 import { levelsReducer } from "@/feature/levels/state/levels.slice";
 import { adminReducer } from "@/feature/admin/state/admin.slice";
+import { gameReducer } from "@/feature/game/state/game.slice";
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     leaderboard: leaderboardReducer,
     levels: levelsReducer,
     admin: adminReducer,
+    game: gameReducer,
   },
 });
 

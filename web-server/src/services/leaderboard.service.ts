@@ -12,7 +12,9 @@ import type {
 } from "@magic-nugger-app/shared";
 import { loggingService } from "./logging.service";
 
-function parseCompoundCursor(cursor: string | undefined): [number | null, string | null] {
+function parseCompoundCursor(
+  cursor: string | undefined,
+): [number | null, string | null] {
   if (!cursor) return [null, null];
   const sep = cursor.lastIndexOf(":");
   if (sep === -1) return [null, null];
@@ -33,11 +35,6 @@ export const leaderboardService = {
     const cached = leaderboardCache.get(key);
     if (cached) {
       console.log(`[cache] hit ${key}`);
-      loggingService.log({
-        event: "cache:hit",
-        level: "info",
-        description: key,
-      });
       return cached as PaginatedData<GlobalLeaderboardRow>;
     }
 
@@ -87,12 +84,6 @@ export const leaderboardService = {
     const cached = leaderboardCache.get(key);
     if (cached) {
       console.log(`[cache] hit ${key}`);
-      loggingService.log({
-        event: "cache:hit",
-        level: "info",
-        description: key,
-      });
-
       return cached as PaginatedData<LevelLeaderboardRow>;
     }
     console.log(`[cache] miss ${key}`);
@@ -102,7 +93,9 @@ export const leaderboardService = {
       description: key,
     });
 
-    const [cursorScore, cursorPlayerId] = parseCompoundCursor(pagination.cursor);
+    const [cursorScore, cursorPlayerId] = parseCompoundCursor(
+      pagination.cursor,
+    );
     const { rows } = await getDb().query<LevelLeaderboardRow>(
       `SELECT
          gs.player_id, p.username, p.display_name,
@@ -117,7 +110,13 @@ export const leaderboardService = {
        HAVING ($2::int IS NULL OR MAX(gs.score) < $2 OR (MAX(gs.score) = $2 AND gs.player_id > $3))
        ORDER BY best_score DESC, gs.player_id ASC
        LIMIT $5`,
-      [levelId, cursorScore, cursorPlayerId, periodToStartDate(period), pagination.limit],
+      [
+        levelId,
+        cursorScore,
+        cursorPlayerId,
+        periodToStartDate(period),
+        pagination.limit,
+      ],
     );
     const last = rows[rows.length - 1];
     const next_cursor =
@@ -145,12 +144,6 @@ export const leaderboardService = {
     const cached = leaderboardCache.get(key);
     if (cached) {
       console.log(`[cache] hit ${key}`);
-      loggingService.log({
-        event: "cache:hit",
-        level: "info",
-        description: key,
-      });
-
       return cached as PaginatedData<ClassroomLeaderboardRow>;
     }
     console.log(`[cache] miss ${key}`);
@@ -175,7 +168,13 @@ export const leaderboardService = {
        GROUP BY cm.player_id, p.username, p.display_name, cm.classroom_elo
        ORDER BY cm.classroom_elo DESC, cm.player_id ASC
        LIMIT $5`,
-      [classroomId, cursorElo, cursorPlayerId, periodToStartDate(period), pagination.limit],
+      [
+        classroomId,
+        cursorElo,
+        cursorPlayerId,
+        periodToStartDate(period),
+        pagination.limit,
+      ],
     );
     const last = rows[rows.length - 1];
     const next_cursor =

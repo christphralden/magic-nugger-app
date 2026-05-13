@@ -1,18 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
-  fetchStatsAdmin,
-  fetchPlayersAdmin,
-  fetchActiveSessionsAdmin,
-  fetchSessionsAdmin,
-  adjustPlayerEloAdmin,
-  fetchLevelsAdmin,
-  fetchLevelAdmin,
+  getStatsAdmin,
+  getPlayersAdmin,
+  getActiveSessionsAdmin,
+  getSessionsAdmin,
+  patchPlayerEloAdmin,
+  getLevelsAdmin,
+  getLevelAdmin,
   createLevelAdmin,
   updateLevelAdmin,
   activateLevelAdmin,
   deleteLevelAdmin,
   clearLeaderboardCacheAdmin,
-  fetchMemoryStatsInternal,
+  getMemoryStatsInternal,
 } from "./admin.thunk";
 import type { AdminStats, AdminPlayer, MemoryStats } from "./admin.thunk";
 import type { AsyncStatus, GameSession, Level } from "@magic-nugger-app/shared";
@@ -44,13 +44,36 @@ const adminSlice = createSlice({
   initialState: {
     stats: null,
     statsStatus: "idle",
-    players: { items: [], next_cursor: null, status: "idle" },
-    activeSessions: { items: [], status: "idle" },
-    sessions: { items: [], next_cursor: null, status: "idle", filters: {} },
-    levels: { items: [], status: "idle" },
-    selectedLevel: { data: null, status: "idle" },
-    leaderboardCacheBust: { status: "idle" },
-    memoryStats: { data: null, status: "idle" },
+    players: {
+      items: [],
+      next_cursor: null,
+      status: "idle",
+    },
+    activeSessions: {
+      items: [],
+      status: "idle",
+    },
+    sessions: {
+      items: [],
+      next_cursor: null,
+      status: "idle",
+      filters: {},
+    },
+    levels: {
+      items: [],
+      status: "idle",
+    },
+    selectedLevel: {
+      data: null,
+      status: "idle",
+    },
+    leaderboardCacheBust: {
+      status: "idle",
+    },
+    memoryStats: {
+      data: null,
+      status: "idle",
+    },
     error: null,
   } as AdminState,
   reducers: {
@@ -82,88 +105,88 @@ const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchStatsAdmin.pending, (state) => {
+      .addCase(getStatsAdmin.pending, (state) => {
         state.statsStatus = "loading";
         state.error = null;
       })
-      .addCase(fetchStatsAdmin.fulfilled, (state, action) => {
+      .addCase(getStatsAdmin.fulfilled, (state, action) => {
         state.statsStatus = "succeeded";
         state.stats = action.payload;
       })
-      .addCase(fetchStatsAdmin.rejected, (state, action) => {
+      .addCase(getStatsAdmin.rejected, (state, action) => {
         state.statsStatus = "failed";
         state.error = (action.payload as string) ?? "Failed to fetch stats";
       })
 
-      .addCase(fetchPlayersAdmin.pending, (state) => {
+      .addCase(getPlayersAdmin.pending, (state) => {
         state.players.status = "loading";
         state.error = null;
       })
-      .addCase(fetchPlayersAdmin.fulfilled, (state, action) => {
+      .addCase(getPlayersAdmin.fulfilled, (state, action) => {
         state.players.status = "succeeded";
         state.players.items = action.payload.items;
         state.players.next_cursor = action.payload.next_cursor;
       })
-      .addCase(fetchPlayersAdmin.rejected, (state, action) => {
+      .addCase(getPlayersAdmin.rejected, (state, action) => {
         state.players.status = "failed";
         state.error = (action.payload as string) ?? "Failed to fetch players";
       })
 
-      .addCase(fetchActiveSessionsAdmin.pending, (state) => {
+      .addCase(getActiveSessionsAdmin.pending, (state) => {
         state.activeSessions.status = "loading";
         state.error = null;
       })
-      .addCase(fetchActiveSessionsAdmin.fulfilled, (state, action) => {
+      .addCase(getActiveSessionsAdmin.fulfilled, (state, action) => {
         state.activeSessions.status = "succeeded";
         state.activeSessions.items = action.payload;
       })
-      .addCase(fetchActiveSessionsAdmin.rejected, (state, action) => {
+      .addCase(getActiveSessionsAdmin.rejected, (state, action) => {
         state.activeSessions.status = "failed";
         state.error =
           (action.payload as string) ?? "Failed to fetch active sessions";
       })
 
-      .addCase(fetchSessionsAdmin.pending, (state) => {
+      .addCase(getSessionsAdmin.pending, (state) => {
         state.sessions.status = "loading";
         state.error = null;
       })
-      .addCase(fetchSessionsAdmin.fulfilled, (state, action) => {
+      .addCase(getSessionsAdmin.fulfilled, (state, action) => {
         state.sessions.status = "succeeded";
         state.sessions.items = action.payload.items;
         state.sessions.next_cursor = action.payload.next_cursor;
       })
-      .addCase(fetchSessionsAdmin.rejected, (state, action) => {
+      .addCase(getSessionsAdmin.rejected, (state, action) => {
         state.sessions.status = "failed";
         state.error = (action.payload as string) ?? "Failed to fetch sessions";
       })
 
-      .addCase(adjustPlayerEloAdmin.fulfilled, (state, action) => {
+      .addCase(patchPlayerEloAdmin.fulfilled, (state, action) => {
         const { id, elo } = action.meta.arg;
         const player = state.players.items.find((p) => p.id === id);
         if (player) player.current_elo = elo;
       })
 
-      .addCase(fetchLevelsAdmin.pending, (state) => {
+      .addCase(getLevelsAdmin.pending, (state) => {
         state.levels.status = "loading";
         state.error = null;
       })
-      .addCase(fetchLevelsAdmin.fulfilled, (state, action) => {
+      .addCase(getLevelsAdmin.fulfilled, (state, action) => {
         state.levels.status = "succeeded";
         state.levels.items = action.payload;
       })
-      .addCase(fetchLevelsAdmin.rejected, (state, action) => {
+      .addCase(getLevelsAdmin.rejected, (state, action) => {
         state.levels.status = "failed";
         state.error = (action.payload as string) ?? "Failed to fetch levels";
       })
 
-      .addCase(fetchLevelAdmin.pending, (state) => {
+      .addCase(getLevelAdmin.pending, (state) => {
         state.selectedLevel.status = "loading";
       })
-      .addCase(fetchLevelAdmin.fulfilled, (state, action) => {
+      .addCase(getLevelAdmin.fulfilled, (state, action) => {
         state.selectedLevel.status = "succeeded";
         state.selectedLevel.data = action.payload;
       })
-      .addCase(fetchLevelAdmin.rejected, (state, action) => {
+      .addCase(getLevelAdmin.rejected, (state, action) => {
         state.selectedLevel.status = "failed";
         state.error = (action.payload as string) ?? "Failed to fetch level";
       })
@@ -211,15 +234,15 @@ const adminSlice = createSlice({
         state.leaderboardCacheBust.status = "failed";
       })
 
-      .addCase(fetchMemoryStatsInternal.pending, (state) => {
+      .addCase(getMemoryStatsInternal.pending, (state) => {
         state.memoryStats.status = "loading";
         state.error = null;
       })
-      .addCase(fetchMemoryStatsInternal.fulfilled, (state, action) => {
+      .addCase(getMemoryStatsInternal.fulfilled, (state, action) => {
         state.memoryStats.status = "succeeded";
         state.memoryStats.data = action.payload;
       })
-      .addCase(fetchMemoryStatsInternal.rejected, (state, action) => {
+      .addCase(getMemoryStatsInternal.rejected, (state, action) => {
         state.memoryStats.status = "failed";
         state.error =
           (action.payload as string) ?? "Failed to fetch memory stats";

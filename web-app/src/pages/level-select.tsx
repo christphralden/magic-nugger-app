@@ -8,8 +8,8 @@ import {
   selectUnlockedLevelNames,
 } from "@/feature/levels/state/levels.slice";
 import {
-  handleLoadLevels,
-  handleLoadUnlockedLevels,
+  handleGetLevels,
+  handleGetUnlockedLevels,
 } from "@/feature/levels/state/levels.actions";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
@@ -29,8 +29,8 @@ export function LevelSelectPage() {
   const unlockedNames = useSelector(selectUnlockedLevelNames);
 
   useEffect(() => {
-    dispatch(handleLoadLevels());
-    dispatch(handleLoadUnlockedLevels());
+    dispatch(handleGetLevels());
+    dispatch(handleGetUnlockedLevels());
   }, [dispatch]);
 
   if (!currentPlayer) return null;

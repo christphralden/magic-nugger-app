@@ -6,8 +6,8 @@ import {
   selectAdminActiveSessions,
 } from "@/feature/admin/state/admin.slice";
 import {
-  handleFetchStatsAdmin,
-  handleFetchActiveSessionsAdmin,
+  handleGetStatsAdmin,
+  handleGetActiveSessionsAdmin,
 } from "@/feature/admin/state/admin.actions";
 import { Typography } from "@/components/ui/typography";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,8 +31,8 @@ export function DashboardTab() {
   );
 
   useEffect(() => {
-    dispatch(handleFetchStatsAdmin());
-    dispatch(handleFetchActiveSessionsAdmin());
+    dispatch(handleGetStatsAdmin());
+    dispatch(handleGetActiveSessionsAdmin());
   }, [dispatch]);
 
   return (

@@ -7,8 +7,8 @@ import type {
   RequestCreatePlayer,
 } from "@magic-nugger-app/shared";
 
-export const fetchMe = createAsyncThunk<ResponsePlayer>(
-  "auth/fetchMe",
+export const getMe = createAsyncThunk<ResponsePlayer>(
+  "auth/getMe",
   async (_, { rejectWithValue }) => {
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/auth/me`,
@@ -45,25 +45,25 @@ export const loginPlayer = createAsyncThunk<ResponsePlayer, RequestLogin>(
   },
 );
 
-export const registerPlayer = createAsyncThunk<ResponsePlayer, RequestCreatePlayer>(
-  "auth/register",
-  async (body, { rejectWithValue }) => {
-    const response = await fetch(
-      `${WEB_SERVER_URL}/${API_VERSION_BASE}/auth/register`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const data = (await response.json()) as ApiResponse<ResponsePlayer>;
-    if (!response.ok || data.code !== 201) {
-      return rejectWithValue(data.error);
-    }
-    return data.data;
-  },
-);
+export const registerPlayer = createAsyncThunk<
+  ResponsePlayer,
+  RequestCreatePlayer
+>("auth/register", async (body, { rejectWithValue }) => {
+  const response = await fetch(
+    `${WEB_SERVER_URL}/${API_VERSION_BASE}/auth/register`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+  const data = (await response.json()) as ApiResponse<ResponsePlayer>;
+  if (!response.ok || data.code !== 201) {
+    return rejectWithValue(data.error);
+  }
+  return data.data;
+});
 
 export const logoutPlayer = createAsyncThunk<void>(
   "auth/logout",

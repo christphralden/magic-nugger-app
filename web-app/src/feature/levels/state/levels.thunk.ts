@@ -1,9 +1,13 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
-import type { ApiResponse, Level, ResponseUnlockedLevels } from "@magic-nugger-app/shared";
+import type {
+  ApiResponse,
+  Level,
+  ResponseUnlockedLevels,
+} from "@magic-nugger-app/shared";
 
-export const fetchLevels = createAsyncThunk<Level[]>(
-  "levels/fetchLevels",
+export const getLevels = createAsyncThunk<Level[]>(
+  "levels/getLevels",
   async (_, { rejectWithValue }) => {
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels`,
@@ -16,8 +20,8 @@ export const fetchLevels = createAsyncThunk<Level[]>(
   },
 );
 
-export const fetchUnlockedLevels = createAsyncThunk<ResponseUnlockedLevels>(
-  "levels/fetchUnlockedLevels",
+export const getUnlockedLevels = createAsyncThunk<ResponseUnlockedLevels>(
+  "levels/getUnlockedLevels",
   async (_, { rejectWithValue }) => {
     const response = await fetch(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/unlocked`,

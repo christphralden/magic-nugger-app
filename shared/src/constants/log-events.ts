@@ -25,5 +25,6 @@ export const LogEventSchema = z.enum([
   "admin:elo_adjusted",
   "admin:player_viewed",
   "admin:sessions_viewed",
+  "level",
 ]);
 export type LogEvent = z.infer<typeof LogEventSchema>;
