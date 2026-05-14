@@ -47,9 +47,7 @@ flowchart TD
     V -->|valid| GET_S[gameSessionService.getActiveById sessionId]
     GET_S --> CHECK{found?}
     CHECK -->|not found| E404[404 NotFound]
-    CHECK -->|found| MAX{max_answers reached?}
-    MAX -->|yes| E409[409 Conflict]
-    MAX -->|no| GET_L[levelService.getById session.level_id]
+    CHECK -->|found| GET_L[levelService.getById session.level_id]
     GET_L --> CALC[computeDelta + computeStats isCorrect + elo config]
     CALC --> STATS[gameSessionService.updateStats score + streaks + eloDelta]
     CALC --> INS[gameSessionService.insertAnswer isCorrect + delta + timeTakenMs]
@@ -72,13 +70,15 @@ flowchart TD
     ELO --> FIN[gameSessionService.finalize completed + finalElo]
     ELO --> UPD[playerService.updateAfterSession userId + eloDelta + stats]
     ELO --> HIST[eloService.append session_completed]
+    ELO --> UNL[levelService.unlockChildLevels userId + level.child_levels]
     FIN --> INV1[leaderboardService.invalidateGlobal]
     UPD --> INV1
     HIST --> INV1
+    UNL --> INV1
     INV1 --> INV2[leaderboardService.invalidateByLevel levelId]
     INV2 --> LOG1[log session:ended]
     LOG1 --> LOG2[log elo:updated]
-    LOG2 --> R200[200 null]
+    LOG2 --> R200[200 new_levels_unlocked]
 ```
 
 ## POST /:id/fail

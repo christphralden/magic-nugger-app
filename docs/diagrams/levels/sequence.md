@@ -7,6 +7,7 @@
 - `PUT /:id` — update level
 - `PUT /active/:id` — activate or deactivate level
 - `DELETE /:id` — soft delete level
+- `GET /unlocked` — get unlocked levels for player
 
 ---
 
@@ -68,7 +69,7 @@ sequenceDiagram
     participant LS as "<<service>> LevelService"
     participant DB as "<<dataAccess>> Database"
 
-    C->>R: 1. createLevel(name, order_index, elo_min, elo_gain_correct, elo_loss_incorrect, configs, max_score)
+    C->>R: 1. createLevel(name, order_index, child_levels?, elo_min, elo_gain_correct, elo_loss_incorrect, configs)
     R->>R: 1.1. authenticate()
     R->>R: 1.2. authorize(level:create)
     alt unauthorized
@@ -167,6 +168,28 @@ sequenceDiagram
     LS->>DB: 1.3.1. query(Level)
     DB-->>LS: ok
     R-->>C: 204 NoContent
+```
+
+## GET /unlocked
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+sequenceDiagram
+    participant C as "<<view>> Client"
+    participant R as "<<controller>> LevelsRoute"
+    participant LS as "<<service>> LevelService"
+    participant DB as "<<dataAccess>> Database"
+
+    C->>R: 1. getUnlockedLevels()
+    R->>R: 1.1. authenticate()
+    alt unauthenticated
+        R-->>C: 401 Unauthorized
+    end
+    R->>LS: 1.2. getUnlockedByPlayer(userId)
+    LS->>DB: 1.2.1. query(LevelsUnlocked)
+    DB-->>LS: string[]
+    LS-->>R: string[]
+    R-->>C: 200 string[]
 ```
 
 ## Notes
