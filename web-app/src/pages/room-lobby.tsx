@@ -136,10 +136,11 @@ export function RoomLobbyPage() {
     setStarting(false);
   };
 
+  // updated_at = when questions were saved (only write to rooms during waiting phase)
   const timerEnd: number | null = useMemo(() => {
-    if (!roomData?.room.created_at) return null;
-    return new Date(roomData.room.created_at).getTime() + ROOM_WAITING_TTL_MS;
-  }, [roomData?.room.created_at]);
+    if (!roomData?.room.updated_at) return null;
+    return new Date(roomData.room.updated_at).getTime() + ROOM_WAITING_TTL_MS;
+  }, [roomData?.room.updated_at]);
 
   const handleTimerEnd = useCallback(() => {
     if (isHost && id) {

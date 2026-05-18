@@ -20,10 +20,12 @@ import {
 import { useDispatch, useSelector } from "@/store/hooks";
 import { useCallback, useEffect, useRef } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
+import type { Question } from "@magic-nugger-app/shared";
 
 export function useUnityBridge(
   options: {
     roomId?: string;
+    questions?: Question[];
     onSessionFinished?: (result: {
       elo_gained: number;
       new_levels_unlocked: string[];
@@ -52,15 +54,26 @@ export function useUnityBridge(
 
   const handleInit = useCallback(() => {
     if (!currentPlayer) return;
+    const payload: Record<string, unknown> = {
+      all_levels_unlocked: unlockedNames,
+      current_elo: currentPlayer.current_elo,
+    };
+    if (options.roomId) {
+      payload.multiplayer = true;
+      payload.questions = options.questions ?? [];
+    }
     sendMessage(
       UNITY_GAME_OBJECT,
       UNITY_SEND_METHOD.GIVE_INITIAL_DATA,
-      JSON.stringify({
-        all_levels_unlocked: unlockedNames,
-        current_elo: currentPlayer.current_elo,
-      }),
+      JSON.stringify(payload),
     );
-  }, [sendMessage, currentPlayer, unlockedNames]);
+  }, [
+    sendMessage,
+    currentPlayer,
+    unlockedNames,
+    options.roomId,
+    options.questions,
+  ]);
 
   const handleLevel = useCallback(
     (levelName: unknown) => {

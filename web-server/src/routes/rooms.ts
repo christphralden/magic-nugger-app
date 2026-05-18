@@ -9,6 +9,7 @@ import { loggingService } from "@/services/logging.service.js";
 import {
   RequestCreateRoomSchema,
   RequestJoinRoomSchema,
+  RequestSaveQuestionsSchema,
   HttpCode,
   ROOM_SSE_EVENTS,
 } from "@magic-nugger-app/shared";
@@ -140,6 +141,21 @@ roomsRouter.post("/:id/start", authorize("room:start"), async (req, res) => {
     data: room,
   } satisfies ApiResponse<Room>);
 });
+
+roomsRouter.put(
+  "/:id/questions",
+  authorize("room:start"),
+  validate(RequestSaveQuestionsSchema),
+  async (req, res) => {
+    const user = getUser(req);
+    const room = await roomService.saveQuestions(req.params.id, user.id, req.body.questions);
+    res.json({
+      code: HttpCode.OK,
+      error: null,
+      data: room,
+    } satisfies ApiResponse<Room>);
+  },
+);
 
 roomsRouter.delete("/:id/leave", async (req, res) => {
   const user = getUser(req);

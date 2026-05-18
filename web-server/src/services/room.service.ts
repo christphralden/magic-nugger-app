@@ -6,6 +6,7 @@ import type {
   RoomWithMembers,
   RoomMemberDetail,
   RequestCreateRoom,
+  Question,
 } from "@magic-nugger-app/shared";
 import { v4 as uuidv4 } from "uuid";
 
@@ -15,13 +16,13 @@ export const roomService = {
       const inviteCode = uuidv4().slice(0, 8).toUpperCase();
       const { rows } = await getDb().query<Room>(
         `INSERT INTO rooms
-          (host_id, level_id, type, invite_code, max_players)
-         VALUES ($1, $2, 'pvp', $3, $4)
+          (host_id, type, invite_code, max_players, status)
+         VALUES ($1, 'pvp', $2, $3, 'creation')
          RETURNING
           id, host_id, level_id, type, status, invite_code,
-          max_players, started_at, ended_at, created_at, updated_at
+          max_players, questions, started_at, ended_at, created_at, updated_at
         `,
-        [hostId, body.level_id, inviteCode, body.max_players ?? 10],
+        [hostId, inviteCode, body.max_players ?? 10],
       );
       const room = rows[0];
 
@@ -39,7 +40,7 @@ export const roomService = {
       const { rows } = await getDb().query<Room>(
         `SELECT
           id, host_id, level_id, type, status, invite_code,
-          max_players, started_at, ended_at, created_at, updated_at
+          max_players, questions, started_at, ended_at, created_at, updated_at
          FROM rooms
          WHERE invite_code = $1`,
         [inviteCode],
@@ -53,6 +54,13 @@ export const roomService = {
         throw new AppError(
           HttpCode.NOT_FOUND,
           "Room has already ended, you can create a new one",
+        );
+      }
+
+      if (room.status === "creation") {
+        throw new AppError(
+          HttpCode.CONFLICT,
+          "Room is still being set up",
         );
       }
 
@@ -88,7 +96,7 @@ export const roomService = {
     const { rows } = await getDb().query<Room>(
       `SELECT
         id, host_id, level_id, type, status, invite_code,
-        max_players, started_at, ended_at, created_at, updated_at
+        max_players, questions, started_at, ended_at, created_at, updated_at
        FROM rooms WHERE id = $1`,
       [roomId],
     );
@@ -135,7 +143,7 @@ export const roomService = {
        WHERE id = $1 AND status = 'waiting'
        RETURNING
         id, host_id, level_id, type, status, invite_code,
-        max_players, started_at, ended_at, created_at, updated_at`,
+        max_players, questions, started_at, ended_at, created_at, updated_at`,
       [roomId],
     );
     if (!rows[0]) {
@@ -160,6 +168,31 @@ export const roomService = {
        WHERE id = $1 AND status = 'in_progress'`,
       [roomId],
     );
+  },
+
+  async saveQuestions(roomId: string, hostId: string, questions: Question[]): Promise<Room> {
+    const { rows: check } = await getDb().query<{ host_id: string }>(
+      `SELECT host_id FROM rooms WHERE id = $1`,
+      [roomId],
+    );
+    if (!check[0]) throw new AppError(HttpCode.NOT_FOUND, "Room not found");
+    if (check[0].host_id !== hostId) {
+      throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
+    }
+
+    const { rows } = await getDb().query<Room>(
+      `UPDATE rooms
+       SET questions = $2::jsonb, status = 'waiting', updated_at = now()
+       WHERE id = $1 AND status = 'creation'
+       RETURNING
+        id, host_id, level_id, type, status, invite_code,
+        max_players, questions, started_at, ended_at, created_at, updated_at`,
+      [roomId, JSON.stringify({ schema: 1, data: questions })],
+    );
+    if (!rows[0]) {
+      throw new AppError(HttpCode.CONFLICT, "Room is not in creation state");
+    }
+    return rows[0];
   },
 
   async linkMemberSession({

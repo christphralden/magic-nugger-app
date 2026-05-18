@@ -29,13 +29,8 @@ export function NewRoomPage() {
 
   const handleCreate = async () => {
     setCreating(true);
-    const room = await dispatch(
-      handleCreateRoom({
-        level_id: 1,
-        max_players: 10,
-      }),
-    );
-    if (room) navigate(`/game/room/${room.id}`);
+    const room = await dispatch(handleCreateRoom({ max_players: 10 }));
+    if (room) navigate(`/game/room/${room.id}/setup`);
     setCreating(false);
   };
 

@@ -5,10 +5,11 @@ import {
   startRoom,
   cancelRoom,
   getRoomLeaderboard,
+  saveRoomQuestions,
 } from "./room.thunk";
 import { toastError, toastInfo } from "@/lib/toast";
 import { isFulfilled } from "@reduxjs/toolkit";
-import type { RequestCreateRoom, Room } from "@magic-nugger-app/shared";
+import type { RequestCreateRoom, Room, Question } from "@magic-nugger-app/shared";
 
 export const handleCreateRoom =
   (body: RequestCreateRoom) =>
@@ -52,6 +53,17 @@ export const handleCancelRoom =
     if (!isFulfilled(cancelRoom)(result)) {
       toastError("Failed to destroy room");
     }
+  };
+
+export const handleSaveRoomQuestions =
+  (roomId: string, questions: Question[]) =>
+  async (dispatch: AppDispatch): Promise<Room | null> => {
+    const result = await dispatch(saveRoomQuestions({ roomId, questions }));
+    if (isFulfilled(saveRoomQuestions)(result)) {
+      return result.payload;
+    }
+    toastError((result.payload as string) ?? "Failed to save questions");
+    return null;
   };
 
 export const handleGetRoomLeaderboard =

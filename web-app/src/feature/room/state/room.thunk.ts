@@ -6,6 +6,7 @@ import type {
   Room,
   RequestCreateRoom,
   RoomLeaderboardRow,
+  Question,
 } from "@magic-nugger-app/shared";
 
 export const createRoom = createAsyncThunk<Room, RequestCreateRoom>(
@@ -78,6 +79,27 @@ export const cancelRoom = createAsyncThunk<void, string>(
       { method: "DELETE", credentials: "include" },
     );
     if (!response.ok) return rejectWithValue(null);
+  },
+);
+
+export const saveRoomQuestions = createAsyncThunk<
+  Room,
+  { roomId: string; questions: Question[] }
+>(
+  "room/saveQuestions",
+  async ({ roomId, questions }, { rejectWithValue }) => {
+    const response = await fetch(
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/questions`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questions }),
+      },
+    );
+    const data = (await response.json()) as ApiResponse<Room>;
+    if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
+    return data.data;
   },
 );
 

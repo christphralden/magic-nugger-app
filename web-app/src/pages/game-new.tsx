@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FloatingText } from "@/components/floating-text";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
@@ -18,8 +18,10 @@ import { Unity } from "react-unity-webgl";
 import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
-import { toastError } from "@/lib/toast";
+import type { Question, RoomWithMembers } from "@magic-nugger-app/shared";
+import { toastError, toastInfo } from "@/lib/toast";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
+import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 
 function GameView() {
   const { provider, isLoaded } = useUnityBridge();
@@ -45,8 +47,14 @@ export function RoomGameView({ roomId }: { roomId: string }) {
   const allowNavRef = useRef(false);
   const gameActiveRef = useRef(false);
 
+  const [roomData, setRoomData] = useState<RoomWithMembers | null>(null);
+  const questions = roomData?.room.questions?.data;
+  const currentPlayer = useSelector(selectCurrentPlayer);
+  const isHost = currentPlayer?.id === roomData?.room.host_id;
+
   const { provider, isLoaded } = useUnityBridge({
     roomId,
+    questions: questions,
     onSessionFinished: () => {
       allowNavRef.current = true;
       navigate(`/game/room/${roomId}/finished`);
@@ -63,10 +71,16 @@ export function RoomGameView({ roomId }: { roomId: string }) {
           navigate(`/game/room/${roomId}`);
         } else {
           gameActiveRef.current = true;
+          setRoomData(data);
         }
       },
       [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
         allowNavRef.current = true;
+        toastInfo(
+          isHost
+            ? "The room has been destroyed"
+            : "The room has been destroyed by the host",
+        );
         navigate("/game/room/new");
       },
     },
@@ -86,6 +100,7 @@ export function RoomGameView({ roomId }: { roomId: string }) {
     if (currentLocation.pathname === nextLocation.pathname) return false;
     return gameActiveRef.current;
   });
+
   useEffect(() => {
     if (!gameActiveRef.current) return;
     const handleBeforeUnload = () => {
@@ -95,7 +110,7 @@ export function RoomGameView({ roomId }: { roomId: string }) {
         keepalive: true,
       });
     };
-    windows.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [roomId]);
 
