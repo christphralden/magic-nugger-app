@@ -286,14 +286,14 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                     <TableBody className={cn(isLoading && "opacity-50")}>
                       {globalState.items.map((row, i) => (
                         <GlobalRow
-                          key={row.id}
+                          key={pageOffset + i + 1}
                           row={row}
                           rank={pageOffset + i + 1}
                           currentPlayerId={currentPlayerId}
                         />
                       ))}
                       {!isLoading && globalState.items.length === 0 && (
-                        <EmptyRow colSpan={4} message="No players yet." />
+                        <EmptyRow colSpan={8} message="No players yet." />
                       )}
                     </TableBody>
                     {isLoading && (

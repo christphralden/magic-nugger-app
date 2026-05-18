@@ -213,7 +213,7 @@ adminRouter.get("/stats", async (_req, res) => {
     `SELECT
       (SELECT COUNT(*) FROM players) as total_players,
       (SELECT COUNT(*) FROM game_sessions) as total_sessions,
-      (SELECT COUNT(*) FROM game_sessions WHERE status = 'completed') as completed_sessions`,
+      (SELECT COUNT(*) FROM game_sessions WHERE status != 'abandoned') as completed_sessions`,
   );
   res.json({
     code: HttpCode.OK,

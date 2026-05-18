@@ -5,7 +5,7 @@ import { toastError } from "@/lib/toast";
 export const handleGetLevels =
   () => async (dispatch: AppDispatch, getState: () => RootState) => {
     const s = getState().levels.status;
-    if (s === "loading" || s === "succeeded") return;
+    if (s === "loading") return;
     const result = await dispatch(getLevels());
     if (getLevels.rejected.match(result))
       toastError((result.payload as string) ?? "Failed to load levels");

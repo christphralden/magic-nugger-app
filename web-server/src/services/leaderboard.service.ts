@@ -62,7 +62,7 @@ export const leaderboardService = {
     const last = rows[rows.length - 1];
     const next_cursor =
       rows.length === pagination.limit
-        ? `${last.current_elo}:${last.id}`
+        ? `${last.current_elo}:${last.player_id}`
         : null;
     const result: PaginatedData<GlobalLeaderboardRow> = {
       items: rows,
@@ -107,7 +107,7 @@ export const leaderboardService = {
        WHERE gs.level_id = $1
          AND gs.status = 'completed'
          AND ($4::timestamptz IS NULL OR gs.ended_at >= $4)
-       GROUP BY gs.player_id, p.username, p.display_name,
+       GROUP BY gs.player_id, p.username, p.display_name, p.avatar_url
        HAVING ($2::int IS NULL OR MAX(gs.score) < $2 OR (MAX(gs.score) = $2 AND gs.player_id > $3))
        ORDER BY best_score DESC, gs.player_id ASC
        LIMIT $5`,

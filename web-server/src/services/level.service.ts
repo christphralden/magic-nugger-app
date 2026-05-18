@@ -1,5 +1,6 @@
 import { getDb } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
+import { levelsCache } from "@/cache/levels.cache.js";
 import { HttpCode } from "@magic-nugger-app/shared";
 import type {
   Level,
@@ -7,9 +8,23 @@ import type {
   RequestUpdateActiveLevel,
   RequestUpdateLevel,
 } from "@magic-nugger-app/shared";
+import { loggingService } from "./logging.service.js";
 
 export const levelService = {
   async getAll(includeInactive = false): Promise<Level[]> {
+    const key = `levels:all:${includeInactive}`;
+    const cached = levelsCache.get(key);
+    if (cached) {
+      console.log(`[cache] hit ${key}`);
+      return cached as Level[];
+    }
+    console.log(`[cache] miss ${key}`);
+    loggingService.log({
+      event: "cache:miss",
+      level: "info",
+      description: key,
+    });
+
     const { rows } = await getDb().query<Level>(
       `SELECT
         id, name, description, order_index, child_levels, elo_min,
@@ -22,10 +37,24 @@ export const levelService = {
       `,
       [includeInactive],
     );
+    levelsCache.set(key, rows);
     return rows;
   },
 
   async getById(id: string, includeInactive = false): Promise<Level> {
+    const key = `levels:id=${id}:includeInactive=${includeInactive}`;
+    const cached = levelsCache.get(key);
+    if (cached) {
+      console.log(`[cache] hit ${key}`);
+      return cached as Level;
+    }
+    console.log(`[cache] miss ${key}`);
+    loggingService.log({
+      event: "cache:miss",
+      level: "info",
+      description: key,
+    });
+
     const { rows } = await getDb().query<Level>(
       `SELECT
         id, name, description, order_index, child_levels, elo_min,
@@ -38,6 +67,7 @@ export const levelService = {
       [id, includeInactive],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
+    levelsCache.set(key, rows[0]);
     return rows[0];
   },
 
@@ -51,7 +81,7 @@ export const levelService = {
        UNION
 
        SELECT name FROM levels
-       WHERE order_index = 1
+       WHERE order_index <= 1
          AND is_active = true
       `,
       [playerId],
@@ -107,6 +137,7 @@ export const levelService = {
         JSON.stringify(body.question_gen_config),
       ],
     );
+    levelsCache.clear();
     return rows[0];
   },
 
@@ -148,19 +179,21 @@ export const levelService = {
       ],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
+    levelsCache.clear();
     return rows[0];
   },
 
   async delete(id: string): Promise<void> {
     await getDb().query(
-      `UPDATE levels 
-      SET 
-        is_active = false, 
-        updated_at = now() 
+      `UPDATE levels
+      SET
+        is_active = false,
+        updated_at = now()
       WHERE id = $1
       `,
       [id],
     );
+    levelsCache.clear();
   },
 
   async activate(id: string, body: RequestUpdateActiveLevel): Promise<Level> {
@@ -178,6 +211,7 @@ export const levelService = {
       [id, body.is_active],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
+    levelsCache.clear();
     return rows[0];
   },
 };

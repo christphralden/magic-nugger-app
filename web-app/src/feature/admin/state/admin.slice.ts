@@ -5,6 +5,7 @@ import {
   getActiveSessionsAdmin,
   getSessionsAdmin,
   patchPlayerEloAdmin,
+  patchPlayerRoleAdmin,
   getLevelsAdmin,
   getLevelAdmin,
   createLevelAdmin,
@@ -166,6 +167,12 @@ const adminSlice = createSlice({
         if (player) player.current_elo = elo;
       })
 
+      .addCase(patchPlayerRoleAdmin.fulfilled, (state, action) => {
+        const { id, role } = action.meta.arg;
+        const player = state.players.items.find((p) => p.id === id);
+        if (player) player.role_name = role;
+      })
+
       .addCase(getLevelsAdmin.pending, (state) => {
         state.levels.status = "loading";
         state.error = null;
@@ -192,7 +199,8 @@ const adminSlice = createSlice({
       })
 
       .addCase(createLevelAdmin.fulfilled, (state, action) => {
-        state.levels.items.unshift(action.payload);
+        state.levels.items.push(action.payload);
+        state.levels.items.sort((a, b) => a.order_index - b.order_index);
       })
 
       .addCase(updateLevelAdmin.fulfilled, (state, action) => {
@@ -213,12 +221,7 @@ const adminSlice = createSlice({
       })
 
       .addCase(deleteLevelAdmin.fulfilled, (state, action) => {
-        state.levels.items = state.levels.items.map((l) => {
-          if (l.id !== action.meta.arg.id) {
-            l.is_active = false;
-          }
-          return l;
-        });
+        state.levels.items = state.levels.items.filter((l) => l.id !== action.meta.arg.id);
         if (state.selectedLevel.data?.id === action.meta.arg.id) {
           state.selectedLevel = { data: null, status: "idle" };
         }
