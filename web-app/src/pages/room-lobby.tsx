@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useNavigate, useParams, useBlocker } from "react-router-dom";
-import { useDispatch, useSelector } from "@/store/hooks";
-import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
+import { useNavigate, useBlocker } from "react-router-dom";
+import { useDispatch } from "@/store/hooks";
 import {
   handleStartRoom,
   handleCancelRoom,
 } from "@/feature/room/state/room.actions";
 import { leaveRoom } from "@/feature/room/state/room.thunk";
 import { useRoomSse } from "@/hooks/use-room-sse";
+import { useRoom } from "@/contexts/room.context";
 import { PageLayout } from "@/components/layout/page-layout";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
@@ -18,31 +18,24 @@ import { FloatingText } from "@/components/floating-text";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
 import { ROOM_WAITING_TTL_MS } from "@/constants";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
-import type {
-  RoomWithMembers,
-  RoomMemberDetail,
-} from "@magic-nugger-app/shared";
+import type { RoomMemberDetail } from "@magic-nugger-app/shared";
 import { Copy, Check } from "lucide-react";
 import { toastError, toastInfo } from "@/lib/toast";
 import { CartoonPill } from "@/components/ui/cartoon-pill";
 import { Button } from "@/components/ui/button";
 
 export function RoomLobbyPage() {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { roomId, roomData, setRoomData, isHost, currentPlayer, handleRoomCancelled, onSseError } = useRoom();
 
-  const currentPlayer = useSelector(selectCurrentPlayer);
-
-  const [roomData, setRoomData] = useState<RoomWithMembers | null>(null);
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  const isHost = currentPlayer?.id === roomData?.room.host_id;
   const allowNavRef = useRef(false);
 
   useRoomSse(
-    id ?? null,
+    roomId,
     {
       [ROOM_SSE_EVENTS.INIT]: (data) => setRoomData(data),
       [ROOM_SSE_EVENTS.MEMBER_JOINED]: (data) => {
@@ -80,25 +73,17 @@ export function RoomLobbyPage() {
       },
       [ROOM_SSE_EVENTS.ROOM_STARTED]: () => {
         allowNavRef.current = true;
-        navigate(`/game/room/${id}/play`);
+        navigate(`/game/room/${roomId}/play`);
       },
       [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
         allowNavRef.current = true;
-        toastInfo(
-          isHost
-            ? "The room has been destroyed"
-            : "The room has been destroyed by the host",
-        );
-        navigate("/game/room/new");
+        handleRoomCancelled();
       },
     },
     {
       onError: (status) => {
-        toastError(
-          status === 403 ? "No access to this room" : "Room connection failed",
-        );
         allowNavRef.current = true;
-        navigate("/game/room/new");
+        onSseError(status);
       },
     },
   );
@@ -110,9 +95,9 @@ export function RoomLobbyPage() {
   });
 
   useEffect(() => {
-    if (!id || !roomData) return;
+    if (!roomData) return;
     const handleBeforeUnload = () => {
-      fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${id}/leave`, {
+      fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/leave`, {
         method: "DELETE",
         credentials: "include",
         keepalive: true,
@@ -120,7 +105,7 @@ export function RoomLobbyPage() {
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [id, roomData]);
+  }, [roomId, roomData]);
 
   const handleCopy = async () => {
     if (!roomData?.room.invite_code) return;
@@ -130,9 +115,8 @@ export function RoomLobbyPage() {
   };
 
   const handleStart = async () => {
-    if (!id) return;
     setStarting(true);
-    await dispatch(handleStartRoom(id));
+    await dispatch(handleStartRoom(roomId));
     setStarting(false);
   };
 
@@ -143,23 +127,19 @@ export function RoomLobbyPage() {
   }, [roomData?.room.updated_at]);
 
   const handleTimerEnd = useCallback(() => {
-    if (isHost && id) {
-      dispatch(handleCancelRoom(id));
-    } else if (id) {
-      dispatch(leaveRoom(id));
+    if (isHost) {
+      dispatch(handleCancelRoom(roomId));
+    } else {
+      dispatch(leaveRoom(roomId));
     }
     toastError("Room is closed due to inactivity, create a new room");
     allowNavRef.current = true;
     navigate("/game/room/new");
-  }, [isHost, id]);
+  }, [isHost, roomId]);
 
-  const handleDestroyRoom = () => {
-    if (id) dispatch(handleCancelRoom(id));
-  };
+  const handleDestroyRoom = () => dispatch(handleCancelRoom(roomId));
 
-  const handleLeaveRoom = () => {
-    if (id) dispatch(leaveRoom(id));
-  };
+  const handleLeaveRoom = () => dispatch(leaveRoom(roomId));
 
   const handleConfirmLeave = async () => {
     allowNavRef.current = true;

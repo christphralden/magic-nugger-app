@@ -12,6 +12,7 @@ import { NewRoomPage } from "@/pages/room-new";
 import { RoomLobbyPage } from "@/pages/room-lobby";
 import { RoomFinishedPage } from "@/pages/room-finished";
 import { RoomSetupPage } from "@/pages/room-setup";
+import { RoomProvider } from "@/contexts/room.context";
 import {
   ProfilePageContainer,
   ProfileTab,
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
               { path: "new", element: <NewRoomPage /> },
               {
                 path: ":id",
+                element: <RoomProvider />,
                 children: [
                   { index: true, element: <RoomLobbyPage /> },
                   { path: "setup", element: <RoomSetupPage /> },

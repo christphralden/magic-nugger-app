@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "@/store/hooks";
-import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "@/store/hooks";
 import { handleSaveRoomQuestions } from "@/feature/room/state/room.actions";
 import { useRoomSse } from "@/hooks/use-room-sse";
+import { useRoom } from "@/contexts/room.context";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
 import { FloatingText } from "@/components/floating-text";
@@ -11,26 +11,21 @@ import { CartoonPill } from "@/components/ui/cartoon-pill";
 import { QuestionsForm } from "@/feature/room/components/questions-form";
 import type { QuestionsFormValues } from "@/feature/room/components/questions-form";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
-import { toastError, toastInfo } from "@/lib/toast";
-import type { RoomWithMembers } from "@magic-nugger-app/shared";
+import { toastError } from "@/lib/toast";
 
 export function RoomSetupPage() {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const currentPlayer = useSelector(selectCurrentPlayer);
+  const { roomId, setRoomData, currentPlayer, handleRoomCancelled, onSseError } = useRoom();
 
-  const [roomData, setRoomData] = useState<RoomWithMembers | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const isHost = currentPlayer?.id === roomData?.room.host_id;
-
   useRoomSse(
-    id ?? null,
+    roomId,
     {
       [ROOM_SSE_EVENTS.INIT]: (data) => {
         if (data.room.status !== "creation") {
-          navigate(`/game/room/${id}`);
+          navigate(`/game/room/${roomId}`);
           return;
         }
         if (data.room.host_id !== currentPlayer?.id) {
@@ -40,44 +35,17 @@ export function RoomSetupPage() {
         }
         setRoomData(data);
       },
-      [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
-        toastInfo(
-          isHost
-            ? "The room has been destroyed"
-            : "The room has been destroyed by the host",
-        );
-        navigate("/game/room/new");
-      },
+      [ROOM_SSE_EVENTS.ROOM_CANCELLED]: handleRoomCancelled,
     },
-    {
-      onError: (status) => {
-        toastError(
-          status === 403 ? "No access to this room" : "Room connection failed",
-        );
-        navigate("/game/room/new");
-      },
-    },
+    { onError: onSseError },
   );
 
   const handleSubmit = async (values: QuestionsFormValues) => {
-    if (!id) return;
     setSubmitting(true);
-    const room = await dispatch(handleSaveRoomQuestions(id, values.questions));
+    const room = await dispatch(handleSaveRoomQuestions(roomId, values.questions));
     setSubmitting(false);
-    if (room) navigate(`/game/room/${id}`);
+    if (room) navigate(`/game/room/${roomId}`);
   };
-
-  if (!roomData) {
-    return (
-      <PageLayout title="Setup">
-        <div className="w-full h-full flex justify-center items-center">
-          <Typography variant="heading">
-            <FloatingText text="Setting up room..." duration={1} />
-          </Typography>
-        </div>
-      </PageLayout>
-    );
-  }
 
   return (
     <PageLayout title="Setup">

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "@/store/hooks";
-import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
   selectRoomLeaderboard,
   clearRoomLeaderboard,
 } from "@/feature/room/state/room.slice";
 import { handleGetRoomLeaderboard } from "@/feature/room/state/room.actions";
 import { useRoomSse } from "@/hooks/use-room-sse";
+import { useRoom } from "@/contexts/room.context";
 import { PageLayout } from "@/components/layout/page-layout";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
@@ -24,28 +24,27 @@ import { FloatingText } from "@/components/floating-text";
 import { nameInitials, cn } from "@/lib/utils";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
 import type { RoomLeaderboardRow } from "@magic-nugger-app/shared";
-import { toastError, toastInfo } from "@/lib/toast";
+import { toastInfo } from "@/lib/toast";
 
 export function RoomFinishedPage() {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const currentPlayer = useSelector(selectCurrentPlayer);
+  const { roomId, currentPlayer, onSseError } = useRoom();
   const rows = useSelector(selectRoomLeaderboard);
 
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
-    dispatch(handleGetRoomLeaderboard(id!));
+    dispatch(handleGetRoomLeaderboard(roomId));
     return () => {
       dispatch(clearRoomLeaderboard());
     };
-  }, [id, dispatch]);
+  }, [roomId, dispatch]);
 
-  const refreshLeaderboard = () => dispatch(handleGetRoomLeaderboard(id!));
+  const refreshLeaderboard = () => dispatch(handleGetRoomLeaderboard(roomId));
 
   useRoomSse(
-    id ?? null,
+    roomId,
     {
       [ROOM_SSE_EVENTS.INIT]: (data) => {
         if (data.room.status === "completed") setIsCompleted(true);
@@ -67,14 +66,7 @@ export function RoomFinishedPage() {
         setIsCompleted(true);
       },
     },
-    {
-      onError: (status) => {
-        toastError(
-          status === 403 ? "No access to this room" : "Room connection failed",
-        );
-        navigate("/game/room/new");
-      },
-    },
+    { onError: onSseError },
   );
 
   return (

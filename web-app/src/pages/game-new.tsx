@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { FloatingText } from "@/components/floating-text";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
@@ -17,11 +17,10 @@ import { Unity } from "react-unity-webgl";
 
 import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
+import { useRoom } from "@/contexts/room.context";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
-import type { Question, RoomWithMembers } from "@magic-nugger-app/shared";
-import { toastError, toastInfo } from "@/lib/toast";
+import { toastError } from "@/lib/toast";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
-import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 
 function GameView() {
   const { provider, isLoaded } = useUnityBridge();
@@ -42,19 +41,17 @@ function GameView() {
   );
 }
 
-export function RoomGameView({ roomId }: { roomId: string }) {
+export function RoomGameView() {
   const navigate = useNavigate();
   const allowNavRef = useRef(false);
   const gameActiveRef = useRef(false);
 
-  const [roomData, setRoomData] = useState<RoomWithMembers | null>(null);
+  const { roomId, roomData, setRoomData, handleRoomCancelled, onSseError } = useRoom();
   const questions = roomData?.room.questions?.data;
-  const currentPlayer = useSelector(selectCurrentPlayer);
-  const isHost = currentPlayer?.id === roomData?.room.host_id;
 
   const { provider, isLoaded } = useUnityBridge({
     roomId,
-    questions: questions,
+    questions,
     onSessionFinished: () => {
       allowNavRef.current = true;
       navigate(`/game/room/${roomId}/finished`);
@@ -76,21 +73,13 @@ export function RoomGameView({ roomId }: { roomId: string }) {
       },
       [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
         allowNavRef.current = true;
-        toastInfo(
-          isHost
-            ? "The room has been destroyed"
-            : "The room has been destroyed by the host",
-        );
-        navigate("/game/room/new");
+        handleRoomCancelled();
       },
     },
     {
       onError: (status) => {
-        toastError(
-          status === 403 ? "No access to this room" : "Room connection failed",
-        );
         allowNavRef.current = true;
-        navigate("/game/room/new");
+        onSseError(status);
       },
     },
   );
@@ -176,7 +165,7 @@ export function NewGamePage() {
   }
 
   if (id) {
-    return <RoomGameView roomId={id} />;
+    return <RoomGameView />;
   }
 
   return <GameView />;
