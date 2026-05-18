@@ -25,6 +25,7 @@ export const LogEventSchema = z.enum([
   "admin:elo_adjusted",
   "admin:player_viewed",
   "admin:sessions_viewed",
+  "level",
   "room:created",
   "room:joined",
   "room:started",

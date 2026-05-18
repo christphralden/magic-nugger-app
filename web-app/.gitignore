@@ -18,3 +18,4 @@ coverage/
 
 # Misc
 *.tsbuildinfo
+/public/Calculon/

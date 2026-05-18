@@ -15,6 +15,9 @@
     "db:backup": "bash db/backup.sh",
     "db:restore": "bash db/restore.sh"
   },
+  "overrides": {
+    "zod": "^3.23.8"
+  },
   "devDependencies": {
     "pg": "^8.11.5"
   }

@@ -19,3 +19,7 @@ export function getUser(req: Request): Express.User {
   }
   return req.user;
 }
+
+export function isAdmin(req: Request): boolean {
+  return req.user?.role_permissions?.includes("*") ?? false;
+}

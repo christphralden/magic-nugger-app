@@ -1,6 +1,6 @@
 import { tx } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
-import { HttpCode, JSONBSchema } from "@magic-nugger-app/shared";
+import { HttpCode } from "@magic-nugger-app/shared";
 import type {
   EloHistoryReason,
   GameSession,
@@ -12,7 +12,6 @@ import { playerService } from "@/services/player.service.js";
 import { eloService } from "@/services/elo.service.js";
 import { roomService } from "@/services/room.service.js";
 import { GameSessionConfig } from "@/constants/game-session.js";
-import z from "zod";
 
 export const gameService = {
   async start({
@@ -53,19 +52,10 @@ export const gameService = {
         });
       }
 
-      const level = await levelService.getById(String(levelId));
-
-      const questionGenConfigRes = JSONBSchema(
-        z.object({ total_questions: z.number().optional() }).passthrough(),
-      ).safeParse(level.question_gen_config);
-
-      const maxAnswers = questionGenConfigRes.data?.data.total_questions ?? 0;
-
       const session = await gameSessionService.create({
         userId,
         levelId,
         currentElo,
-        maxAnswers,
         ip,
         userAgent,
         roomId,
@@ -97,16 +87,6 @@ export const gameService = {
 
       if (!session) {
         throw new AppError(HttpCode.NOT_FOUND, "Session not found");
-      }
-
-      if (
-        session.correct_count + session.incorrect_count >=
-        session.max_answers
-      ) {
-        throw new AppError(
-          HttpCode.NOT_MODIFIED,
-          "Session max answers reached",
-        );
       }
 
       const level = await levelService.getById(String(session.level_id));
@@ -159,16 +139,16 @@ export const gameService = {
     userId: string;
     currentElo: number;
     status: "completed" | "failed";
-  }): Promise<{ levelId: number }> {
+  }): Promise<{
+    levelId: number;
+    eloDelta: number;
+    newlyUnlockedNames: string[];
+  }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
       if (!session) {
         throw new AppError(HttpCode.NOT_FOUND, "Session not found");
       }
-
-      const nextLevelId = await levelService.getNextActive({
-        afterId: session.level_id,
-      });
 
       const eloDelta = status === "failed" ? 0 : (session.elo_delta ?? 0);
       const finalElo =
@@ -177,13 +157,18 @@ export const gameService = {
       const reason: EloHistoryReason =
         status === "completed" ? "session_completed" : "session_failed";
 
-      await Promise.all([
+      const [newlyUnlockedNames] = await Promise.all([
+        status === "completed"
+          ? levelService.unlockChildLevels({
+              playerId: userId,
+              levelId: session.level_id,
+            })
+          : Promise.resolve([]),
         gameSessionService.finalize({ sessionId, status, finalElo }),
         playerService.updateAfterSession({
           userId,
           eloDelta,
           status,
-          nextLevelId,
           totalAnswered: session.correct_count + session.incorrect_count,
           totalCorrect: session.correct_count,
           totalIncorrect: session.incorrect_count,
@@ -200,10 +185,10 @@ export const gameService = {
       ]);
 
       if (session.room_id) {
-        roomService.checkAndCompleteRoom(session.room_id).catch(() => {});
+        await roomService.checkAndCompleteRoom(session.room_id);
       }
 
-      return { levelId: session.level_id };
+      return { levelId: session.level_id, eloDelta, newlyUnlockedNames };
     });
   },
 

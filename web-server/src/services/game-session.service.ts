@@ -10,7 +10,7 @@ export const gameSessionService = {
     const { rows } = await getDb().query<GameSession>(
       `SELECT
         id, player_id, level_id, room_id, status, score,
-        max_answers, elo_before, elo_after, elo_delta, correct_count,
+        elo_before, elo_after, elo_delta, correct_count,
         incorrect_count, max_streak, current_streak, started_at, ended_at,
         client_ip, user_agent
       FROM game_sessions
@@ -31,7 +31,7 @@ export const gameSessionService = {
     const { rows } = await getDb().query<GameSession>(
       `SELECT
         id, player_id, level_id, room_id, status, score,
-        max_answers, elo_before, elo_after, elo_delta,
+        elo_before, elo_after, elo_delta,
         correct_count, incorrect_count, max_streak, current_streak,
         started_at, ended_at, client_ip, user_agent
       FROM game_sessions
@@ -48,7 +48,6 @@ export const gameSessionService = {
     userId,
     levelId,
     currentElo,
-    maxAnswers,
     ip,
     userAgent,
     roomId,
@@ -56,22 +55,21 @@ export const gameSessionService = {
     userId: string;
     levelId: number;
     currentElo: number;
-    maxAnswers: number;
     ip: string;
     userAgent: string | null;
     roomId?: string;
   }): Promise<GameSession> {
     const { rows } = await getDb().query<GameSession>(
       `INSERT INTO game_sessions
-        (player_id, level_id, elo_before, max_answers, client_ip, user_agent, room_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (player_id, level_id, elo_before, client_ip, user_agent, room_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING
         id, player_id, level_id, room_id, status, score,
-        max_answers, elo_before, elo_after, elo_delta, correct_count,
+        elo_before, elo_after, elo_delta, correct_count,
         incorrect_count, max_streak, current_streak, started_at, ended_at,
         client_ip, user_agent
       `,
-      [userId, levelId, currentElo, maxAnswers, ip, userAgent, roomId ?? null],
+      [userId, levelId, currentElo, ip, userAgent, roomId ?? null],
     );
     return rows[0];
   },

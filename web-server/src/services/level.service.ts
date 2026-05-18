@@ -1,6 +1,6 @@
 import { getDb } from "@/db/transaction-context.js";
 import { AppError } from "@/errors/app-error.js";
-import { HttpCode, LevelSchema } from "@magic-nugger-app/shared";
+import { HttpCode } from "@magic-nugger-app/shared";
 import type {
   Level,
   RequestCreateLevel,
@@ -9,82 +9,102 @@ import type {
 } from "@magic-nugger-app/shared";
 
 export const levelService = {
-  async getAll(): Promise<Level[]> {
+  async getAll(includeInactive = false): Promise<Level[]> {
     const { rows } = await getDb().query<Level>(
-      `SELECT 
-        id, name, description, order_index, elo_min,
+      `SELECT
+        id, name, description, order_index, child_levels, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
-        enemy_wave_config, question_gen_config, max_score, is_active,
-        created_at, updated_at 
-      FROM levels 
-      WHERE is_active = true 
+        enemy_wave_config, question_gen_config, is_active,
+        created_at, updated_at
+      FROM levels
+      WHERE (is_active = true OR $1::boolean)
       ORDER BY order_index
       `,
+      [includeInactive],
     );
-    rows.forEach((v) => {
-      console.log(LevelSchema.safeParse(v).error?.toString());
-    });
     return rows;
   },
 
-  async getById(id: string): Promise<Level> {
+  async getById(id: string, includeInactive = false): Promise<Level> {
     const { rows } = await getDb().query<Level>(
-      `SELECT 
-        id, name, description, order_index, elo_min,
+      `SELECT
+        id, name, description, order_index, child_levels, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
-        enemy_wave_config, question_gen_config, max_score, is_active,
-        created_at, updated_at 
-      FROM levels 
-      WHERE 
-        id = $1 
-        AND is_active = true
+        enemy_wave_config, question_gen_config, is_active,
+        created_at, updated_at
+      FROM levels
+      WHERE id = $1 AND (is_active = true OR $2::boolean)
       `,
-      [id],
+      [id, includeInactive],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
     return rows[0];
   },
 
-  async getNextActive({
-    afterId,
-  }: {
-    afterId: number;
-  }): Promise<number | null> {
-    const { rows } = await getDb().query<{ id: number }>(
-      `SELECT id FROM levels
-       WHERE order_index > (SELECT order_index FROM levels WHERE id = $1)
+  async getUnlockedByPlayer(playerId: string): Promise<string[]> {
+    const { rows } = await getDb().query<{ name: string }>(
+      `SELECT l.name FROM levels_unlocked lu
+       JOIN levels l ON l.id = lu.level_id
+       WHERE lu.player_id = $1
+         AND l.is_active = true
+
+       UNION
+
+       SELECT name FROM levels
+       WHERE order_index = 1
          AND is_active = true
-       ORDER BY order_index ASC
-       LIMIT 1
       `,
-      [afterId],
+      [playerId],
     );
-    return rows[0]?.id ?? null;
+    return rows.map((r) => r.name);
+  },
+
+  async unlockChildLevels({
+    playerId,
+    levelId,
+  }: {
+    playerId: string;
+    levelId: number;
+  }): Promise<string[]> {
+    const { rows } = await getDb().query<{ name: string }>(
+      `INSERT INTO levels_unlocked (player_id, level_id)
+       SELECT $1, l.id
+       FROM levels parent
+       JOIN levels l ON l.name = ANY(parent.child_levels)
+       WHERE parent.id = $2
+         AND parent.child_levels IS NOT NULL
+         AND l.is_active = true
+       ON CONFLICT DO NOTHING
+       RETURNING (SELECT name FROM levels WHERE id = level_id)
+      `,
+      [playerId, levelId],
+    );
+    return rows.map((r) => r.name);
   },
 
   async create(body: RequestCreateLevel): Promise<Level> {
     const { rows } = await getDb().query<Level>(
-      `INSERT INTO levels 
-        (name, description, order_index, elo_min, elo_gain_correct,
-        elo_loss_incorrect, time_limit_seconds, enemy_wave_config, question_gen_config, max_score)
+      `INSERT INTO levels
+        (name, description, order_index, child_levels, elo_min, elo_gain_correct,
+        elo_loss_incorrect, time_limit_seconds, enemy_wave_config, question_gen_config)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       RETURNING 
-        id, name, description, order_index, elo_min,
+       RETURNING
+        id, name, description, order_index, child_levels, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
-        enemy_wave_config, question_gen_config, max_score, is_active,
-        created_at, updated_at 
+        enemy_wave_config, question_gen_config, is_active,
+        created_at, updated_at
       `,
       [
         body.name,
         body.description ?? null,
         body.order_index,
+        body.child_levels ?? null,
         body.elo_min,
         body.elo_gain_correct,
         body.elo_loss_incorrect,
         body.time_limit_seconds ?? null,
         JSON.stringify(body.enemy_wave_config),
         JSON.stringify(body.question_gen_config),
-        body.max_score,
       ],
     );
     return rows[0];
@@ -96,19 +116,19 @@ export const levelService = {
         name = COALESCE($2, name),
         description = COALESCE($3, description),
         order_index = COALESCE($4, order_index),
-        elo_min = COALESCE($5, elo_min),
-        elo_gain_correct = COALESCE($6, elo_gain_correct),
-        elo_loss_incorrect = COALESCE($7, elo_loss_incorrect),
-        time_limit_seconds = COALESCE($8, time_limit_seconds),
-        enemy_wave_config = COALESCE($9, enemy_wave_config),
-        question_gen_config = COALESCE($10, question_gen_config),
-        max_score = COALESCE($11, max_score),
+        child_levels = COALESCE($5, child_levels),
+        elo_min = COALESCE($6, elo_min),
+        elo_gain_correct = COALESCE($7, elo_gain_correct),
+        elo_loss_incorrect = COALESCE($8, elo_loss_incorrect),
+        time_limit_seconds = COALESCE($9, time_limit_seconds),
+        enemy_wave_config = COALESCE($10, enemy_wave_config),
+        question_gen_config = COALESCE($11, question_gen_config),
         updated_at = now()
        WHERE id = $1
-       RETURNING 
-        id, name, description, order_index, elo_min,
+       RETURNING
+        id, name, description, order_index, child_levels, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
-        enemy_wave_config, question_gen_config, max_score, is_active,
+        enemy_wave_config, question_gen_config, is_active,
         created_at, updated_at
       `,
       [
@@ -116,6 +136,7 @@ export const levelService = {
         body.name ?? null,
         body.description ?? null,
         body.order_index ?? null,
+        body.child_levels ?? null,
         body.elo_min ?? null,
         body.elo_gain_correct ?? null,
         body.elo_loss_incorrect ?? null,
@@ -124,7 +145,6 @@ export const levelService = {
         body.question_gen_config
           ? JSON.stringify(body.question_gen_config)
           : null,
-        body.max_score ?? null,
       ],
     );
     if (!rows[0]) throw new AppError(HttpCode.NOT_FOUND, "Level not found");
@@ -149,10 +169,10 @@ export const levelService = {
         is_active = $2,
         updated_at = now()
        WHERE id = $1
-       RETURNING 
-        id, name, description, order_index, elo_min,
+       RETURNING
+        id, name, description, order_index, child_levels, elo_min,
         elo_gain_correct, elo_loss_incorrect, time_limit_seconds,
-        enemy_wave_config, question_gen_config, max_score, is_active,
+        enemy_wave_config, question_gen_config, is_active,
         created_at, updated_at
       `,
       [id, body.is_active],

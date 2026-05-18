@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { levelService } from "@/services/level.service";
-import { authenticate } from "@/middleware/authenticate";
+import { authenticate, getUser, isAdmin } from "@/middleware/authenticate";
 import { authorize } from "@/middleware/authorize";
 import { validate } from "@/middleware/validate";
 import {
@@ -9,14 +9,14 @@ import {
   RequestUpdateActiveLevelSchema,
   RequestUpdateLevelSchema,
 } from "@magic-nugger-app/shared";
-import type { ApiResponse, Level } from "@magic-nugger-app/shared";
+import type { ApiResponse, Level, ResponseUnlockedLevels } from "@magic-nugger-app/shared";
 
 export const levelsRouter = Router();
 
 levelsRouter.use(authenticate);
 
-levelsRouter.get("/", async (_req, res) => {
-  const levels = await levelService.getAll();
+levelsRouter.get("/", async (req, res) => {
+  const levels = await levelService.getAll(isAdmin(req));
 
   if (levels.length === 0) {
     return res.status(HttpCode.EMPTY).send();
@@ -29,8 +29,18 @@ levelsRouter.get("/", async (_req, res) => {
   } satisfies ApiResponse<Level[]>);
 });
 
+levelsRouter.get("/unlocked", async (req, res) => {
+  const user = getUser(req);
+  const names = await levelService.getUnlockedByPlayer(user.id);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: names,
+  } satisfies ApiResponse<ResponseUnlockedLevels>);
+});
+
 levelsRouter.get("/:id", async (req, res) => {
-  const level = await levelService.getById(req.params.id);
+  const level = await levelService.getById(req.params.id, isAdmin(req));
   res.json({
     code: HttpCode.OK,
     error: null,

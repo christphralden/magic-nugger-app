@@ -21,7 +21,6 @@ BEGIN
           oauth_id                 VARCHAR(255),
           password_hash            TEXT,
           current_elo              INTEGER     NOT NULL DEFAULT 0,
-          highest_level_unlocked   INTEGER     NOT NULL DEFAULT 1,
           total_questions_answered INTEGER     NOT NULL DEFAULT 0,
           total_correct            INTEGER     NOT NULL DEFAULT 0,
           total_incorrect          INTEGER     NOT NULL DEFAULT 0,

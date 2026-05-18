@@ -20,7 +20,6 @@ BEGIN
           status          VARCHAR(16) NOT NULL DEFAULT 'in_progress'
                           CHECK (status IN ('in_progress', 'completed', 'failed', 'abandoned')),
           score           INTEGER     NOT NULL DEFAULT 0,
-          max_answers     INTEGER     NOT NULL DEFAULT 0,
           elo_before      INTEGER     NOT NULL,
           elo_after       INTEGER,
           elo_delta       INTEGER,

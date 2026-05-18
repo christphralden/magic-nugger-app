@@ -1,9 +1,9 @@
 export type CursorPagination = {
-  cursor?: number;
+  cursor?: string;
   limit: number;
 };
 
 export type PaginatedData<T> = {
   items: T[];
-  next_cursor: number | null;
+  next_cursor: string | null;
 };

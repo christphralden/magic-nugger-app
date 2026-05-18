@@ -7,6 +7,7 @@
 - `PUT /:id` — update level
 - `PUT /active/:id` — activate or deactivate level
 - `DELETE /:id` — soft delete level
+- `GET /unlocked` — get unlocked levels for player
 
 ---
 
@@ -102,4 +103,16 @@ flowchart TD
     AZ -->|ok| SVC[levelService.delete levelId]
     SVC --> DB[query Level soft delete]
     DB --> R204[204 NoContent]
+```
+
+## GET /unlocked
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    START([GET /unlocked]) --> AUTH{authenticate}
+    AUTH -->|fail| E401[401 Unauthorized]
+    AUTH -->|ok| SVC[levelService.getUnlockedByPlayer userId]
+    SVC --> DB[query LevelsUnlocked]
+    DB --> R200[200 string[]]
 ```

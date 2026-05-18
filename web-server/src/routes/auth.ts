@@ -19,20 +19,17 @@ authRouter.post(
   "/register",
   validate(RequestCreatePlayerSchema),
   async (req, res) => {
-    const { username, email, password, display_name } = req.body;
+    const { username, email, password, display_name, age, grade, guardian_email } = req.body;
     const hash = await bcrypt.hash(password, 12);
 
     const { rows } = await getDb().query<ResponsePlayer>(
-      `INSERT INTO players 
-        (
-          username, 
-          email, 
-          display_name, 
-          password_hash
-        )
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, username, display_name, current_elo, highest_level_unlocked, avatar_url`,
-      [username, email, display_name ?? null, hash],
+      `INSERT INTO players
+        (username, email, display_name, password_hash, age, grade, guardian_email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING
+        id, username, display_name, current_elo, avatar_url,
+        age, grade, guardian_email`,
+      [username, email, display_name ?? null, hash, age ?? null, grade ?? null, guardian_email ?? null],
     );
 
     res.status(201).json({

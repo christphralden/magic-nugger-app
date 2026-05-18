@@ -43,7 +43,7 @@ sequenceDiagram
     participant PS as "<<service>> PlayerService"
     participant DB as "<<dataAccess>> Database"
 
-    C->>R: 1. updateProfile(display_name?, username?, avatar_url?)
+    C->>R: 1. updateProfile(display_name?, username?, avatar_url?, age?, grade?, guardian_email?)
     R->>R: 1.1. authenticate()
     R->>R: 1.2. authorize(player:update)
     alt unauthorized
@@ -74,7 +74,7 @@ sequenceDiagram
     participant PS as "<<service>> PlayerService"
     participant DB as "<<dataAccess>> Database"
 
-    C->>R: 1. adminUpdatePlayer(playerId, display_name?, username?, avatar_url?)
+    C->>R: 1. adminUpdatePlayer(playerId, display_name?, username?, avatar_url?, age?, grade?, guardian_email?)
     R->>R: 1.1. authenticate()
     R->>R: 1.2. authorize(admin:full)
     alt unauthorized

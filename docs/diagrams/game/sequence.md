@@ -55,7 +55,7 @@ sequenceDiagram
     LS->>DB: 1.3.4.1. query(Level)
     DB-->>LS: Level
     LS-->>GS: Level
-    GS->>GSS: 1.3.5. create(userId, levelId, currentElo, maxAnswers, ip, ua)
+    GS->>GSS: 1.3.5. create(userId, levelId, currentElo, ip, ua)
     GSS->>DB: 1.3.5.1. query(GameSession)
     DB-->>GSS: GameSession
     GSS-->>GS: GameSession
@@ -78,7 +78,7 @@ sequenceDiagram
     participant LS as "<<service>> LevelService"
     participant DB as "<<dataAccess>> Database"
 
-    loop until max_answers reached or session ended
+    loop until session ended
         C->>R: 1. submitAnswer(sessionId, is_correct, time_taken_ms?)
         R->>R: 1.1. authenticate()
         alt unauthenticated
@@ -96,10 +96,6 @@ sequenceDiagram
         alt not found or not in_progress
             GS-->>R: 404 NotFound
             R-->>C: 404 NotFound
-        end
-        alt max_answers reached
-            GS-->>R: 409 Conflict
-            R-->>C: 409 Conflict
         end
         GS->>LS: 1.3.2. getById(session.level_id)
         LS->>DB: 1.3.2.1. query(Level)
@@ -169,13 +165,17 @@ sequenceDiagram
         GS->>ES: 1.2.6. append(userId, sessionId, eloBefore, eloAfter, delta, session_completed)
         ES->>DB: 1.2.6.1. query(EloHistory)
         DB-->>ES: ok
+    and unlock child levels
+        GS->>GSS: 1.2.7. unlockLevels(userId, level.child_levels)
+        GSS->>DB: 1.2.7.1. query(LevelsUnlocked)
+        DB-->>GSS: ok
     end
     GS-->>R: {levelId}
     R->>LBS: 1.3. invalidateGlobal()
     R->>LBS: 1.4. invalidateByLevel(levelId)
     R->>LOG: 1.5. log(session:ended)
     R->>LOG: 1.6. log(elo:updated)
-    R-->>C: 200 null
+    R-->>C: 200 { new_levels_unlocked }
 ```
 
 ## POST /:id/fail
