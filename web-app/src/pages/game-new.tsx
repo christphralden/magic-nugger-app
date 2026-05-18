@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FloatingText } from "@/components/floating-text";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
+import { ConfirmLeaveDialog } from "@/components/ui/confirm-leave-dialog";
 import { useUnityBridge } from "@/hooks/use-unity-bridge";
 import { useDispatch, useSelector } from "@/store/hooks";
 import {
@@ -14,10 +15,11 @@ import {
 } from "@/feature/levels/state/levels.actions";
 import { Unity } from "react-unity-webgl";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
 import { toastError } from "@/lib/toast";
+import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 
 function GameView() {
   const { provider, isLoaded } = useUnityBridge();
@@ -40,24 +42,85 @@ function GameView() {
 
 export function RoomGameView({ roomId }: { roomId: string }) {
   const navigate = useNavigate();
-  const { register } = useRoomSse(roomId);
+  const allowNavRef = useRef(false);
+  const gameActiveRef = useRef(false);
 
   const { provider, isLoaded } = useUnityBridge({
     roomId,
-    onSessionFinished: () => navigate(`/game/room/${roomId}/finished`),
+    onSessionFinished: () => {
+      allowNavRef.current = true;
+      navigate(`/game/room/${roomId}/finished`);
+    },
   });
 
-  register(ROOM_SSE_EVENTS.INIT, (data) => {
-    if (data.room.status !== "in_progress") {
-      navigate(`/game/room/${roomId}`);
-    }
-    toastError("Game has not yet started");
-  });
+  useRoomSse(
+    roomId,
+    {
+      [ROOM_SSE_EVENTS.INIT]: (data) => {
+        if (data.room.status !== "in_progress") {
+          toastError("Game has not yet started");
+          allowNavRef.current = true;
+          navigate(`/game/room/${roomId}`);
+        } else {
+          gameActiveRef.current = true;
+        }
+      },
+      [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
+        allowNavRef.current = true;
+        navigate("/game/room/new");
+      },
+    },
+    {
+      onError: (status) => {
+        toastError(
+          status === 403 ? "No access to this room" : "Room connection failed",
+        );
+        allowNavRef.current = true;
+        navigate("/game/room/new");
+      },
+    },
+  );
 
-  register(ROOM_SSE_EVENTS.ROOM_CANCELLED, () => navigate("/home"));
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (allowNavRef.current) return false;
+    if (currentLocation.pathname === nextLocation.pathname) return false;
+    return gameActiveRef.current;
+  });
+  useEffect(() => {
+    if (!gameActiveRef.current) return;
+    const handleBeforeUnload = () => {
+      fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/leave`, {
+        method: "DELETE",
+        credentials: "include",
+        keepalive: true,
+      });
+    };
+    windows.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [roomId]);
 
   return (
     <PageLayout title="Game">
+      {blocker.state === "blocked" && (
+        <ConfirmLeaveDialog
+          title="Abandon game?"
+          description="Your session will be marked as abandoned and affect your ELO."
+          onConfirm={() => {
+            allowNavRef.current = true;
+            fetch(
+              `${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/leave`,
+              {
+                method: "DELETE",
+                credentials: "include",
+                keepalive: true,
+              },
+            );
+            blocker.proceed?.();
+          }}
+          onCancel={() => blocker.reset?.()}
+        />
+      )}
+
       {!isLoaded && (
         <div className="absolute w-full h-full flex justify-center items-center">
           <Typography variant="heading">

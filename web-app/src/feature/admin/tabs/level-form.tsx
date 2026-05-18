@@ -78,9 +78,11 @@ export function LevelFields({
 }) {
   const { items: levels } = useSelector(selectAdminLevels);
   const currentName = form.watch("name");
+  const currentOrderIndex = form.watch("order_index");
   const availableLevelNames = levels
-    .map((l) => l.name)
-    .filter((n) => n !== currentName);
+    .filter((l) => l.name !== currentName && l.order_index > currentOrderIndex)
+    .map((l) => l.name);
+
   return (
     <Form {...form}>
       <div className="flex flex-col gap-3 [&_label]:font-body [&_p]:font-body">

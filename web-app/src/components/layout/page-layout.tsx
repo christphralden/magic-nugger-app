@@ -5,7 +5,6 @@ import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { MagicNuggerLogo } from "../brand/magic-nugger-logo";
 import { IconStreak } from "../decor/streak";
-import { GlyphBackground } from "../decor/glyph-background";
 import { Typography } from "../ui/typography";
 import { cn, nameInitials } from "@/lib/utils";
 

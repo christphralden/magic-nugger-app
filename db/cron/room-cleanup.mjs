@@ -17,7 +17,15 @@ async function cancelStaleWaitingRooms(client) {
      RETURNING id`,
     [WAITING_TIMEOUT_MS],
   );
-  return rows.map((r) => r.id);
+  const ids = rows.map((r) => r.id);
+  if (ids.length > 0) {
+    await client.query(
+      `UPDATE room_members SET deleted_at = now()
+       WHERE room_id = ANY($1) AND deleted_at IS NULL`,
+      [ids],
+    );
+  }
+  return ids;
 }
 
 async function completeStaleInProgressRooms(client, start) {
@@ -77,6 +85,15 @@ async function completeStaleInProgressRooms(client, start) {
          RETURNING id`,
         [roomIds],
       );
+
+      const completedIds = completed.map((r) => r.id);
+      if (completedIds.length > 0) {
+        await client.query(
+          `UPDATE room_members SET deleted_at = now()
+           WHERE room_id = ANY($1) AND deleted_at IS NULL`,
+          [completedIds],
+        );
+      }
 
       await client.query("COMMIT");
       totalAbandoned.push(...abandoned.map((r) => r.id));

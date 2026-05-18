@@ -3,11 +3,11 @@ import { authenticate, getUser } from "@/middleware/authenticate.js";
 import { authorize } from "@/middleware/authorize.js";
 import { validate } from "@/middleware/validate.js";
 import { roomService } from "@/services/room.service.js";
+import { gameService } from "@/services/game.service.js";
 import { roomEventBus } from "@/services/room-event-bus.js";
 import { loggingService } from "@/services/logging.service.js";
 import {
   RequestCreateRoomSchema,
-  RequestCreateClassroomRoomSchema,
   RequestJoinRoomSchema,
   HttpCode,
   ROOM_SSE_EVENTS,
@@ -34,27 +34,6 @@ roomsRouter.post(
       level: "info",
       userId: user.id,
       metadata: { room_id: room.id, type: "pvp" },
-    });
-    res.status(HttpCode.CREATED).json({
-      code: HttpCode.CREATED,
-      error: null,
-      data: room,
-    } satisfies ApiResponse<Room>);
-  },
-);
-
-roomsRouter.post(
-  "/classroom",
-  authorize("room:create", "classroom:create"),
-  validate(RequestCreateClassroomRoomSchema),
-  async (req, res) => {
-    const user = getUser(req);
-    const room = await roomService.createClassroomRoom(user.id, req.body);
-    loggingService.log({
-      event: "room:created",
-      level: "info",
-      userId: user.id,
-      metadata: { room_id: room.id, type: "classroom", classroom_id: req.body.classroom_id },
     });
     res.status(HttpCode.CREATED).json({
       code: HttpCode.CREATED,
@@ -192,12 +171,24 @@ roomsRouter.post(
 
 roomsRouter.delete("/:id/leave", async (req, res) => {
   const user = getUser(req);
+
+  const memberDetail = await roomService.getMemberDetail(req.params.id, user.id);
+  if (memberDetail?.game_session_id) {
+    await gameService.abandon({ sessionId: memberDetail.game_session_id });
+    const roomCompleted = await roomService.checkAndCompleteRoom(req.params.id);
+    if (roomCompleted) {
+      roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
+        ended_at: new Date().toISOString(),
+      });
+    }
+  }
+
   const { removed, roomStatus } = await roomService.leave(req.params.id, user.id);
 
   if (removed) {
     roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.MEMBER_LEFT, { player_id: user.id });
 
-    if (roomStatus === "in_progress") {
+    if (roomStatus === "in_progress" && !memberDetail?.game_session_id) {
       const roomCompleted = await roomService.checkAndCompleteRoom(req.params.id);
       if (roomCompleted) {
         roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_COMPLETED, {

@@ -8,7 +8,6 @@ import type {
   LeaderboardPeriod,
   GlobalLeaderboardRow,
   LevelLeaderboardRow,
-  ClassroomLeaderboardRow,
   RoomLeaderboardRow,
 } from "@magic-nugger-app/shared";
 import { loggingService } from "./logging.service";
@@ -132,64 +131,6 @@ export const leaderboardService = {
     return result;
   },
 
-  async getByClassroom(
-    classroomId: string,
-    pagination: CursorPagination,
-    period: LeaderboardPeriod,
-  ): Promise<PaginatedData<ClassroomLeaderboardRow>> {
-    const key = buildCacheKey({
-      table: "leaderboard",
-      identity: { classroomId, scope: "classroom", period },
-      pagination,
-    });
-    const cached = leaderboardCache.get(key);
-    if (cached) {
-      console.log(`[cache] hit ${key}`);
-      return cached as PaginatedData<ClassroomLeaderboardRow>;
-    }
-    console.log(`[cache] miss ${key}`);
-    loggingService.log({
-      event: "cache:miss",
-      level: "info",
-      description: key,
-    });
-
-    const [cursorElo, cursorPlayerId] = parseCompoundCursor(pagination.cursor);
-    const { rows } = await getDb().query<ClassroomLeaderboardRow>(
-      `SELECT
-         cm.player_id, p.username, p.display_name, p.avatar_url, cm.classroom_elo,
-         COALESCE(MAX(gs.max_streak), 0) AS max_streak
-       FROM classroom_members cm
-       JOIN players p ON p.id = cm.player_id
-       LEFT JOIN game_sessions gs ON gs.player_id = cm.player_id
-         AND gs.status = 'completed'
-         AND ($4::timestamptz IS NULL OR gs.ended_at >= $4)
-       WHERE cm.classroom_id = $1
-         AND ($2::int IS NULL OR cm.classroom_elo < $2 OR (cm.classroom_elo = $2 AND cm.player_id > $3))
-       GROUP BY cm.player_id, p.username, p.display_name, cm.classroom_elo
-       ORDER BY cm.classroom_elo DESC, cm.player_id ASC
-       LIMIT $5`,
-      [
-        classroomId,
-        cursorElo,
-        cursorPlayerId,
-        periodToStartDate(period),
-        pagination.limit,
-      ],
-    );
-    const last = rows[rows.length - 1];
-    const next_cursor =
-      rows.length === pagination.limit
-        ? `${last.classroom_elo}:${last.player_id}`
-        : null;
-    const result: PaginatedData<ClassroomLeaderboardRow> = {
-      items: rows,
-      next_cursor,
-    };
-    leaderboardCache.set(key, result);
-    return result;
-  },
-
   async getByRoom(roomId: string): Promise<RoomLeaderboardRow[]> {
     const { rows } = await getDb().query<RoomLeaderboardRow>(
       `SELECT
@@ -208,7 +149,7 @@ export const leaderboardService = {
        FROM room_members rm
        JOIN players p ON p.id = rm.player_id
        LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
-       WHERE rm.room_id = $1
+       WHERE rm.room_id = $1 AND rm.deleted_at IS NULL
        ORDER BY
          CASE WHEN gs.status IN ('completed', 'failed') THEN 0 ELSE 1 END,
          gs.score DESC NULLS LAST,

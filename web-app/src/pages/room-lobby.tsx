@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
@@ -12,10 +12,12 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
 import { Timer } from "@/components/ui/timer";
+import { ConfirmLeaveDialog } from "@/components/ui/confirm-leave-dialog";
 import { PlayerTile, EmptySlot } from "@/feature/room/components/player-tile";
 import { FloatingText } from "@/components/floating-text";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
 import { ROOM_WAITING_TTL_MS } from "@/constants";
+import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 import type {
   RoomWithMembers,
   RoomMemberDetail,
@@ -29,7 +31,6 @@ export function RoomLobbyPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { register } = useRoomSse(id ?? null);
 
   const currentPlayer = useSelector(selectCurrentPlayer);
 
@@ -38,55 +39,88 @@ export function RoomLobbyPage() {
   const [starting, setStarting] = useState(false);
 
   const isHost = currentPlayer?.id === roomData?.room.host_id;
-  const gameStartedRef = useRef(false);
-  const isHostRef = useRef(isHost);
+  const allowNavRef = useRef(false);
 
-  register(ROOM_SSE_EVENTS.INIT, (data) => setRoomData(data));
-  register(ROOM_SSE_EVENTS.MEMBER_JOINED, (data) => {
-    setRoomData((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      if (prev.members.some((m) => m.player_id === data.player_id)) return prev;
-      return {
-        ...prev,
-        members: [...prev.members, data as RoomMemberDetail],
-      };
-    });
-    if (data.player_id !== currentPlayer?.id) {
-      toastInfo(`${data.display_name || data.username} has joined`);
-    }
-  });
-  register(ROOM_SSE_EVENTS.MEMBER_LEFT, (data) => {
-    const member = members.find((m) => m.player_id === data.player_id);
-    if (member && member.player_id !== currentPlayer?.id) {
-      toastInfo(`${member.display_name || member.username} has left`);
-    } else {
-      toastInfo("You have left the room");
-      navigate("/game");
-    }
-    setRoomData((prev) =>
-      prev
-        ? {
+  useRoomSse(
+    id ?? null,
+    {
+      [ROOM_SSE_EVENTS.INIT]: (data) => setRoomData(data),
+      [ROOM_SSE_EVENTS.MEMBER_JOINED]: (data) => {
+        setRoomData((prev) => {
+          if (!prev) return prev;
+          if (prev.members.some((m) => m.player_id === data.player_id))
+            return prev;
+          return {
+            ...prev,
+            members: [...prev.members, data as RoomMemberDetail],
+          };
+        });
+        if (data.player_id !== currentPlayer?.id) {
+          toastInfo(`${data.display_name || data.username} has joined`);
+        }
+      },
+      [ROOM_SSE_EVENTS.MEMBER_LEFT]: (data) => {
+        setRoomData((prev) => {
+          if (!prev) return prev;
+          const member = prev.members.find(
+            (m) => m.player_id === data.player_id,
+          );
+          if (member && member.player_id !== currentPlayer?.id) {
+            toastInfo(`${member.display_name || member.username} has left`);
+          } else if (member?.player_id === currentPlayer?.id) {
+            toastInfo("You have left the room");
+            allowNavRef.current = true;
+            navigate("/game");
+          }
+          return {
             ...prev,
             members: prev.members.filter((m) => m.player_id !== data.player_id),
-          }
-        : prev,
-    );
-  });
-  register(ROOM_SSE_EVENTS.ROOM_STARTED, () => {
-    gameStartedRef.current = true;
-    navigate(`/game/room/${id}/play`);
-  });
-  register(ROOM_SSE_EVENTS.ROOM_CANCELLED, () => {
-    if (isHost) {
-      toastError("The room has been destroyed");
-    } else {
-      toastError("The room has been destroyed by the host");
-    }
+          };
+        });
+      },
+      [ROOM_SSE_EVENTS.ROOM_STARTED]: () => {
+        allowNavRef.current = true;
+        navigate(`/game/room/${id}/play`);
+      },
+      [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
+        allowNavRef.current = true;
+        toastInfo(
+          isHost
+            ? "The room has been destroyed"
+            : "The room has been destroyed by the host",
+        );
+        navigate("/game/room/new");
+      },
+    },
+    {
+      onError: (status) => {
+        toastError(
+          status === 403 ? "No access to this room" : "Room connection failed",
+        );
+        allowNavRef.current = true;
+        navigate("/game/room/new");
+      },
+    },
+  );
 
-    navigate("/game/room/new");
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (allowNavRef.current) return false;
+    if (currentLocation.pathname === nextLocation.pathname) return false;
+    return roomData !== null;
   });
+
+  useEffect(() => {
+    if (!id || !roomData) return;
+    const handleBeforeUnload = () => {
+      fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${id}/leave`, {
+        method: "DELETE",
+        credentials: "include",
+        keepalive: true,
+      });
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [id, roomData]);
 
   const handleCopy = async () => {
     if (!roomData?.room.invite_code) return;
@@ -108,29 +142,29 @@ export function RoomLobbyPage() {
   }, [roomData?.room.created_at]);
 
   const handleTimerEnd = useCallback(() => {
-    if (isHostRef.current && id) dispatch(handleCancelRoom(id));
-    toastError("Room is closed due to inactivity, create a new room");
-    navigate("/game/room/new");
-    return;
-  }, []);
-
-  const handleDestroyRoom = () => {
-    if (id) {
+    if (isHost && id) {
       dispatch(handleCancelRoom(id));
-    }
-  };
-  const handleLeaveRoom = () => {
-    if (id) {
+    } else if (id) {
       dispatch(leaveRoom(id));
     }
+    toastError("Room is closed due to inactivity, create a new room");
+    allowNavRef.current = true;
+    navigate("/game/room/new");
+  }, [isHost, id]);
+
+  const handleDestroyRoom = () => {
+    if (id) dispatch(handleCancelRoom(id));
   };
-  useEffect(() => {
-    return () => {
-      // if (gameStartedRef.current || !roomIdRef.current) return;
-      // if (isHostRef.current) ;
-      // else dispatch(leaveRoom(roomIdRef.current));
-    };
-  }, []);
+
+  const handleLeaveRoom = () => {
+    if (id) dispatch(leaveRoom(id));
+  };
+
+  const handleConfirmLeave = async () => {
+    allowNavRef.current = true;
+    handleLeaveRoom();
+    blocker.proceed?.();
+  };
 
   if (!roomData) {
     return (
@@ -149,6 +183,15 @@ export function RoomLobbyPage() {
 
   return (
     <PageLayout title="Lobby">
+      {blocker.state === "blocked" && (
+        <ConfirmLeaveDialog
+          title="Leave room?"
+          description="You will be removed from the lobby."
+          onConfirm={handleConfirmLeave}
+          onCancel={() => blocker.reset?.()}
+        />
+      )}
+
       <div className="flex flex-col items-center gap-6 relative z-[1] py-4">
         <CartoonPill className="bg-gold hover:animate-nudge">
           Waiting room
@@ -225,7 +268,7 @@ export function RoomLobbyPage() {
           <div className="flex gap-4">
             {isHost && (
               <CartoonButton
-                variant={"secondary"}
+                variant="secondary"
                 onClick={handleDestroyRoom}
                 disabled={starting}
                 size="lg"
@@ -248,7 +291,7 @@ export function RoomLobbyPage() {
             {!isHost && (
               <CartoonButton
                 onClick={handleLeaveRoom}
-                disabled={starting || members.length < 2}
+                disabled={starting}
                 size="lg"
                 className="w-full"
               >

@@ -1,8 +1,24 @@
 import { createParser } from "eventsource-parser";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
-export function useSse<T extends Record<string, unknown>>(url: string | null) {
-  const handlersRef = useRef(new Map<string, (data: unknown) => void>());
+type SseHandlers<T> = Partial<{
+  [K in keyof T & string]: (data: T[K]) => void;
+}>;
+
+type SseOptions = {
+  onError?: (status: number) => void;
+};
+
+export function useSse<T extends Record<string, unknown>>(
+  url: string | null,
+  handlers: SseHandlers<T>,
+  options?: SseOptions,
+): void {
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
+
+  const onErrorRef = useRef(options?.onError);
+  onErrorRef.current = options?.onError;
 
   useEffect(() => {
     if (!url) return;
@@ -16,7 +32,13 @@ export function useSse<T extends Record<string, unknown>>(url: string | null) {
           signal: abortController.signal,
           headers: { Accept: "text/event-stream" },
         });
-        if (!response.ok || !response.body) return;
+
+        if (!response.ok) {
+          onErrorRef.current?.(response.status);
+          return;
+        }
+
+        if (!response.body) return;
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -25,7 +47,8 @@ export function useSse<T extends Record<string, unknown>>(url: string | null) {
             if (!event.event) return;
             try {
               const data = JSON.parse(event.data);
-              handlersRef.current.get(event.event)?.(data);
+              const handler = handlersRef.current[event.event as keyof T & string];
+              handler?.(data);
             } catch {}
           },
         });
@@ -43,18 +66,4 @@ export function useSse<T extends Record<string, unknown>>(url: string | null) {
     connect();
     return () => abortController.abort();
   }, [url]);
-
-  const register = useCallback(
-    <K extends keyof T & string>(event: K, handler: (data: T[K]) => void) => {
-      console.log("run");
-      handlersRef.current.set(event, handler as (data: unknown) => void);
-    },
-    [],
-  );
-
-  const unregister = useCallback((event: string) => {
-    handlersRef.current.delete(event);
-  }, []);
-
-  return { register, unregister };
 }

@@ -14,7 +14,10 @@ export const handleCreateRoom =
   (body: RequestCreateRoom) =>
   async (dispatch: AppDispatch): Promise<Room | null> => {
     const result = await dispatch(createRoom(body));
-    if (isFulfilled(createRoom)(result)) return result.payload;
+    if (isFulfilled(createRoom)(result)) {
+      toastInfo("Room created!");
+      return result.payload;
+    }
     toastError((result.payload as string) ?? "Failed to create room");
     return null;
   };
@@ -23,7 +26,10 @@ export const handleJoinRoom =
   (invite_code: string) =>
   async (dispatch: AppDispatch): Promise<Room | null> => {
     const result = await dispatch(joinRoom({ invite_code }));
-    if (isFulfilled(joinRoom)(result)) return result.payload;
+    if (isFulfilled(joinRoom)(result)) {
+      toastInfo("Joined room!");
+      return result.payload;
+    }
     toastError((result.payload as string) ?? "Invalid or expired invite code");
     return null;
   };
@@ -32,9 +38,11 @@ export const handleStartRoom =
   (roomId: string) =>
   async (dispatch: AppDispatch): Promise<void> => {
     const result = await dispatch(startRoom(roomId));
-    if (!isFulfilled(startRoom)(result)) {
-      toastError((result.payload as string) ?? "Failed to start room");
+    if (isFulfilled(startRoom)(result)) {
+      toastInfo("Starting game!");
+      return;
     }
+    toastError((result.payload as string) ?? "Failed to start room");
   };
 
 export const handleCancelRoom =
@@ -42,7 +50,7 @@ export const handleCancelRoom =
   async (dispatch: AppDispatch): Promise<void> => {
     const result = await dispatch(cancelRoom(roomId));
     if (!isFulfilled(cancelRoom)(result)) {
-      toastError("Failed to destory room");
+      toastError("Failed to destroy room");
     }
   };
 

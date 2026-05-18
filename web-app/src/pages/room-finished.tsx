@@ -23,11 +23,8 @@ import {
 import { FloatingText } from "@/components/floating-text";
 import { nameInitials, cn } from "@/lib/utils";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
-import type {
-  RoomLeaderboardRow,
-  RoomWithMembers,
-} from "@magic-nugger-app/shared";
-import { toastInfo } from "@/lib/toast";
+import type { RoomLeaderboardRow } from "@magic-nugger-app/shared";
+import { toastError, toastInfo } from "@/lib/toast";
 
 export function RoomFinishedPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +33,6 @@ export function RoomFinishedPage() {
   const currentPlayer = useSelector(selectCurrentPlayer);
   const rows = useSelector(selectRoomLeaderboard);
 
-  const [roomData, setRoomData] = useState<RoomWithMembers | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
@@ -46,40 +42,40 @@ export function RoomFinishedPage() {
     };
   }, [id, dispatch]);
 
-  const { register } = useRoomSse(id ?? null);
+  const refreshLeaderboard = () => dispatch(handleGetRoomLeaderboard(id!));
 
-  const refreshLeaderboard = () => {
-    dispatch(handleGetRoomLeaderboard(id!));
-  };
-
-  register(ROOM_SSE_EVENTS.INIT, (data) => {
-    setRoomData(data);
-    if (data.room.status === "completed") {
-      setIsCompleted(true);
-    }
-  });
-  register(ROOM_SSE_EVENTS.MEMBER_LEFT, (data) => {
-    const member = roomData?.members.find(
-      (m) => m.player_id === data.player_id,
-    );
-    if (member && member.player_id !== currentPlayer?.id) {
-      toastInfo(`${member.display_name || member.username} has left`);
-    }
-    setRoomData((prev) =>
-      prev
-        ? {
-            ...prev,
-            members: prev.members.filter((m) => m.player_id !== data.player_id),
-          }
-        : prev,
-    );
-    refreshLeaderboard();
-  });
-  register(ROOM_SSE_EVENTS.SESSION_UPDATE, () => refreshLeaderboard());
-  register(ROOM_SSE_EVENTS.ROOM_COMPLETED, () => {
-    refreshLeaderboard();
-    setIsCompleted(true);
-  });
+  useRoomSse(
+    id ?? null,
+    {
+      [ROOM_SSE_EVENTS.INIT]: (data) => {
+        if (data.room.status === "completed") setIsCompleted(true);
+      },
+      [ROOM_SSE_EVENTS.MEMBER_LEFT]: (data) => {
+        if (data.player_id !== currentPlayer?.id) {
+          const player = rows.find((r) => r.player_id === data.player_id);
+          if (player)
+            toastInfo(`${player.display_name || player.username} has left`);
+        }
+        refreshLeaderboard();
+      },
+      [ROOM_SSE_EVENTS.SESSION_UPDATE]: (data) => {
+        if (data.session_status === "completed") setIsCompleted(true);
+        refreshLeaderboard();
+      },
+      [ROOM_SSE_EVENTS.ROOM_COMPLETED]: () => {
+        refreshLeaderboard();
+        setIsCompleted(true);
+      },
+    },
+    {
+      onError: (status) => {
+        toastError(
+          status === 403 ? "No access to this room" : "Room connection failed",
+        );
+        navigate("/game/room/new");
+      },
+    },
+  );
 
   return (
     <PageLayout title="Results">

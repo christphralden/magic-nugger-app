@@ -17,11 +17,6 @@ export type LevelLeaderboardRow = BaseLeaderboardRow & {
   max_streak: number;
 };
 
-export type ClassroomLeaderboardRow = BaseLeaderboardRow & {
-  classroom_elo: number;
-  max_streak: number;
-};
-
 export type RoomLeaderboardRow = BaseLeaderboardRow & {
   game_session_id: string | null;
   score: number | null;

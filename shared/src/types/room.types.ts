@@ -8,13 +8,12 @@ export const RoomStatusSchema = z.enum([
 ]);
 export type RoomStatus = z.infer<typeof RoomStatusSchema>;
 
-export const RoomTypeSchema = z.enum(["classroom", "pvp"]);
+export const RoomTypeSchema = z.enum(["pvp"]);
 export type RoomType = z.infer<typeof RoomTypeSchema>;
 
 export const RoomSchema = z.object({
   id: z.string().uuid(),
   host_id: z.string().uuid(),
-  classroom_id: z.string().uuid().nullable(),
   level_id: z.number().int(),
   type: RoomTypeSchema,
   status: RoomStatusSchema,
@@ -32,6 +31,7 @@ export const RoomMemberSchema = z.object({
   player_id: z.string().uuid(),
   game_session_id: z.string().uuid().nullable(),
   joined_at: z.string().datetime(),
+  deleted_at: z.string().datetime().nullable(),
 });
 export type RoomMember = z.infer<typeof RoomMemberSchema>;
 
@@ -40,15 +40,6 @@ export const RequestCreateRoomSchema = z.object({
   max_players: z.number().int().min(2).max(50).optional(),
 });
 export type RequestCreateRoom = z.infer<typeof RequestCreateRoomSchema>;
-
-export const RequestCreateClassroomRoomSchema = z.object({
-  level_id: z.number().int(),
-  classroom_id: z.string().uuid(),
-  max_players: z.number().int().min(2).max(50).optional(),
-});
-export type RequestCreateClassroomRoom = z.infer<
-  typeof RequestCreateClassroomRoomSchema
->;
 
 export const RequestJoinRoomSchema = z.object({
   invite_code: z.string().min(1).max(16),

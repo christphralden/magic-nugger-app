@@ -6,13 +6,11 @@ import {
 } from "@/constants";
 import { isFulfilled } from "@reduxjs/toolkit";
 import {
-  abandonGameSession,
   createGameSession,
   endGameSession,
   failGameSession,
   submitAnswer,
 } from "@/feature/game/state/game.thunk";
-import { leaveRoom } from "@/feature/room/state/room.thunk";
 import { getMe } from "@/feature/auth/state/auth.thunk";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
@@ -37,7 +35,6 @@ export function useUnityBridge(
   const unlockedNames = useSelector(selectUnlockedLevelNames);
   const levels = useSelector(selectLevels);
 
-  const roomIdRef = useRef<string | undefined>(options.roomId);
   const sessionIdRef = useRef<string | null>(null);
   const lastAnswerAtRef = useRef<number | null>(null);
   const {
@@ -130,18 +127,6 @@ export function useUnityBridge(
     },
     [dispatch, sendMessage, options.onSessionFinished],
   );
-
-  useEffect(() => {
-    return () => {
-      if (roomIdRef.current) {
-        dispatch(leaveRoom(roomIdRef.current));
-      }
-      if (sessionIdRef.current) {
-        dispatch(abandonGameSession({ sessionId: sessionIdRef.current }));
-        sessionIdRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     addEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);

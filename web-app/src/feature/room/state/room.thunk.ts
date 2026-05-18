@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
+import { toastError } from "@/lib/toast";
 import type {
   ApiResponse,
   Room,
@@ -62,7 +63,10 @@ export const leaveRoom = createAsyncThunk<void, string>(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/leave`,
       { method: "DELETE", credentials: "include" },
     );
-    if (!response.ok) return rejectWithValue(null);
+    if (!response.ok) {
+      toastError("Failed to leave room");
+      return rejectWithValue(null);
+    }
   },
 );
 
