@@ -94,18 +94,33 @@ export const roomService = {
         id, host_id, classroom_id, level_id, type, status, invite_code,
         max_players, started_at, ended_at, created_at, updated_at
        FROM rooms
-       WHERE invite_code = $1 AND status = 'waiting'`,
+       WHERE invite_code = $1`,
       [inviteCode],
     );
     if (!rows[0]) {
-      throw new AppError(HttpCode.NOT_FOUND, "Invalid invite code or room not open");
+      throw new AppError(HttpCode.NOT_FOUND, "Invalid invite code");
     }
     const room = rows[0];
+
+    if (room.status === "cancelled" || room.status === "completed") {
+      throw new AppError(
+        HttpCode.NOT_FOUND,
+        "Room has already ended, you can create a new one",
+      );
+    }
+
+    if (room.status === "in_progress") {
+      throw new AppError(
+        HttpCode.CONFLICT,
+        "Room has already started, join a different room or create a new one",
+      );
+    }
 
     const { rows: countRows } = await getDb().query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM room_members WHERE room_id = $1`,
       [room.id],
     );
+
     if (Number(countRows[0].count) >= room.max_players) {
       throw new AppError(HttpCode.CONFLICT, "Room is full");
     }
@@ -213,38 +228,6 @@ export const roomService = {
     );
   },
 
-  async cancel(roomId: string, requesterId: string): Promise<void> {
-    const { rows: check } = await getDb().query<{
-      host_id: string;
-      classroom_id: string | null;
-    }>(
-      `SELECT host_id, classroom_id FROM rooms WHERE id = $1`,
-      [roomId],
-    );
-    if (!check[0]) throw new AppError(HttpCode.NOT_FOUND, "Room not found");
-
-    const isHost = check[0].host_id === requesterId;
-
-    if (!isHost && check[0].classroom_id) {
-      const { rows: teacherRows } = await getDb().query<{ teacher_id: string }>(
-        `SELECT teacher_id FROM classrooms WHERE id = $1`,
-        [check[0].classroom_id],
-      );
-      if (!teacherRows[0] || teacherRows[0].teacher_id !== requesterId) {
-        throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
-      }
-    } else if (!isHost) {
-      throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
-    }
-
-    await getDb().query(
-      `UPDATE rooms
-       SET status = 'cancelled', ended_at = now(), updated_at = now()
-       WHERE id = $1 AND status IN ('waiting', 'in_progress')`,
-      [roomId],
-    );
-  },
-
   async linkMemberSession({
     roomId,
     playerId,
@@ -262,7 +245,7 @@ export const roomService = {
     );
   },
 
-  async checkAndCompleteRoom(roomId: string): Promise<void> {
+  async checkAndCompleteRoom(roomId: string): Promise<boolean> {
     const { rows } = await getDb().query<{ count: string }>(
       `SELECT COUNT(*) AS count
        FROM room_members rm
@@ -272,13 +255,99 @@ export const roomService = {
       [roomId],
     );
     if (Number(rows[0].count) === 0) {
-      await getDb().query(
+      const { rowCount } = await getDb().query(
         `UPDATE rooms
          SET status = 'completed', ended_at = now(), updated_at = now()
          WHERE id = $1 AND status = 'in_progress'`,
         [roomId],
       );
+      return (rowCount ?? 0) > 0;
     }
+    return false;
   },
 
+  async getMemberDetail(
+    roomId: string,
+    playerId: string,
+  ): Promise<RoomMemberDetail | null> {
+    const { rows } = await getDb().query<RoomMemberDetail>(
+      `SELECT
+         rm.player_id,
+         p.username,
+         p.display_name,
+         p.avatar_url,
+         rm.game_session_id,
+         gs.status AS session_status,
+         rm.joined_at
+       FROM room_members rm
+       JOIN players p ON p.id = rm.player_id
+       LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
+       WHERE rm.room_id = $1 AND rm.player_id = $2`,
+      [roomId, playerId],
+    );
+    return rows[0] ?? null;
+  },
+
+  async isMember(roomId: string, playerId: string): Promise<boolean> {
+    const { rows } = await getDb().query(
+      `SELECT 1 FROM room_members WHERE room_id = $1 AND player_id = $2`,
+      [roomId, playerId],
+    );
+    return rows.length > 0;
+  },
+
+  async leave(
+    roomId: string,
+    playerId: string,
+  ): Promise<{ removed: boolean; roomStatus: string | null }> {
+    const { rows } = await getDb().query<{
+      status: string;
+      game_session_id: string | null;
+    }>(
+      `SELECT r.status, rm.game_session_id
+       FROM room_members rm
+       JOIN rooms r ON r.id = rm.room_id
+       WHERE rm.room_id = $1 AND rm.player_id = $2`,
+      [roomId, playerId],
+    );
+    if (!rows[0]) return { removed: false, roomStatus: null };
+
+    const { status, game_session_id } = rows[0];
+    if (game_session_id !== null) return { removed: false, roomStatus: status };
+
+    const { rowCount } = await getDb().query(
+      `DELETE FROM room_members WHERE room_id = $1 AND player_id = $2 AND game_session_id IS NULL`,
+      [roomId, playerId],
+    );
+    return { removed: (rowCount ?? 0) > 0, roomStatus: status };
+  },
+
+  async cancel(roomId: string, playerId: string): Promise<void> {
+    const { rows: check } = await getDb().query<{
+      host_id: string;
+      classroom_id: string | null;
+    }>(`SELECT host_id, classroom_id FROM rooms WHERE id = $1`, [roomId]);
+    if (!check[0]) throw new AppError(HttpCode.NOT_FOUND, "Room not found");
+
+    const isHost = check[0].host_id === playerId;
+
+    if (!isHost && check[0].classroom_id) {
+      const { rows: teacherRows } = await getDb().query<{ teacher_id: string }>(
+        `SELECT teacher_id FROM classrooms WHERE id = $1`,
+        [check[0].classroom_id],
+      );
+      if (!teacherRows[0] || teacherRows[0].teacher_id !== playerId) {
+        throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
+      }
+    } else if (!isHost) {
+      throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
+    }
+
+    await getDb().query(
+      `UPDATE rooms
+       SET status = 'cancelled', ended_at = now(), updated_at = now()
+       WHERE id = $1 AND status IN ('waiting', 'in_progress')`,
+      [roomId],
+    );
+  },
 };

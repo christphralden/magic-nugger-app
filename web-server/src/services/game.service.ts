@@ -143,6 +143,8 @@ export const gameService = {
     levelId: number;
     eloDelta: number;
     newlyUnlockedNames: string[];
+    roomId: string | null;
+    roomCompleted: boolean;
   }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
@@ -184,15 +186,26 @@ export const gameService = {
         }),
       ]);
 
+      let roomCompleted = false;
       if (session.room_id) {
-        await roomService.checkAndCompleteRoom(session.room_id);
+        roomCompleted = await roomService.checkAndCompleteRoom(session.room_id);
       }
 
-      return { levelId: session.level_id, eloDelta, newlyUnlockedNames };
+      return {
+        levelId: session.level_id,
+        eloDelta,
+        newlyUnlockedNames,
+        roomId: session.room_id ?? null,
+        roomCompleted,
+      };
     });
   },
 
-  async abandon({ sessionId }: { sessionId: string }): Promise<void> {
-    await gameSessionService.abandon({ sessionId });
+  async abandon({ sessionId }: { sessionId: string }): Promise<{ roomId: string | null }> {
+    return tx(async () => {
+      const session = await gameSessionService.getActiveById({ sessionId });
+      await gameSessionService.abandon({ sessionId });
+      return { roomId: session?.room_id ?? null };
+    });
   },
 };

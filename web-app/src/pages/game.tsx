@@ -1,60 +1,39 @@
-import { useEffect } from "react";
-import { FloatingText } from "@/components/floating-text";
+import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/layout/page-layout";
+import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
-import { useUnityBridge } from "@/hooks/use-unity-bridge";
-import { useDispatch, useSelector } from "@/store/hooks";
-import {
-  selectLevelsStatus,
-  selectUnlockedLevelsStatus,
-} from "@/feature/levels/state/levels.slice";
-import {
-  handleGetLevels,
-  handleGetUnlockedLevels,
-} from "@/feature/levels/state/levels.actions";
+import { FloatingText } from "@/components/floating-text";
 
-function GameView() {
-  const { Unity, provider, isLoaded } = useUnityBridge();
+export function GamePage() {
+  const navigate = useNavigate();
 
   return (
     <PageLayout title="Game">
-      {!isLoaded && (
-        <div className="absolute w-full h-full flex justify-center items-center">
-          <Typography variant={"heading"}>
-            <FloatingText text="Loading your nuggers..." duration={1} />
+      <div className="flex flex-col items-center justify-center h-full gap-8 relative">
+        <div className="text-center  absolute top-36 h-full w-full z-[0]">
+          <Typography variant="heading">
+            <FloatingText text="Ready to play?" />
           </Typography>
         </div>
-      )}
-      <div className="flex justify-center w-full h-full items-center">
-        <Unity unityProvider={provider} className="w-full h-full" />
+        <div className="flex flex-col gap-2 w-full max-w-xs justify-center z-[1] items-center ">
+          <CartoonButton
+            className="w-full mb-1"
+            size="lg"
+            onClick={() => navigate("/game/new")}
+          >
+            Play solo
+          </CartoonButton>
+          <Typography variant="secondary">OR</Typography>
+          <CartoonButton
+            className="w-full"
+            variant="secondary"
+            size="lg"
+            onClick={() => navigate("/game/room/new")}
+          >
+            Play with friends
+          </CartoonButton>
+        </div>
       </div>
     </PageLayout>
   );
-}
-
-export function GamePage() {
-  const dispatch = useDispatch();
-  const levelsStatus = useSelector(selectLevelsStatus);
-  const unlockedStatus = useSelector(selectUnlockedLevelsStatus);
-
-  useEffect(() => {
-    dispatch(handleGetLevels());
-    dispatch(handleGetUnlockedLevels());
-  }, [dispatch]);
-
-  const ready = levelsStatus === "succeeded" && unlockedStatus === "succeeded";
-
-  if (!ready) {
-    return (
-      <PageLayout title="Game">
-        <div className="w-full h-full flex justify-center items-center">
-          <Typography variant={"heading"}>
-            <FloatingText text="Loading your nuggers..." duration={1} />
-          </Typography>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  return <GameView />;
 }

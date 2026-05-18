@@ -14,3 +14,4 @@ export * from "./types/pagination.types";
 export * from "./types/json.types";
 export * from "./types/leaderboard.types";
 export * from "./types/room.types";
+export * from "./types/room-sse.types";

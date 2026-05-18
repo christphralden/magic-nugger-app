@@ -11,7 +11,7 @@ interface GlobalRowProps {
 }
 
 export function GlobalRow({ row, rank, currentPlayerId }: GlobalRowProps) {
-  const isMe = row.id === currentPlayerId;
+  const isMe = row.player_id === currentPlayerId;
   const name = isMe ? "Me" : row.display_name || row.username;
   return (
     <TableRow>

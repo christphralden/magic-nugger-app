@@ -4,12 +4,15 @@ import {
   UNITY_SEND_METHOD,
   UNITY_SUBSCRIBED_EVENT,
 } from "@/constants";
+import { isFulfilled } from "@reduxjs/toolkit";
 import {
+  abandonGameSession,
   createGameSession,
   endGameSession,
   failGameSession,
   submitAnswer,
 } from "@/feature/game/state/game.thunk";
+import { leaveRoom } from "@/feature/room/state/room.thunk";
 import { getMe } from "@/feature/auth/state/auth.thunk";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
@@ -20,12 +23,21 @@ import { useDispatch, useSelector } from "@/store/hooks";
 import { useCallback, useEffect, useRef } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 
-export function useUnityBridge() {
+export function useUnityBridge(
+  options: {
+    roomId?: string;
+    onSessionFinished?: (result: {
+      elo_gained: number;
+      new_levels_unlocked: string[];
+    }) => void;
+  } = {},
+) {
   const dispatch = useDispatch();
   const currentPlayer = useSelector(selectCurrentPlayer);
   const unlockedNames = useSelector(selectUnlockedLevelNames);
   const levels = useSelector(selectLevels);
 
+  const roomIdRef = useRef<string | undefined>(options.roomId);
   const sessionIdRef = useRef<string | null>(null);
   const lastAnswerAtRef = useRef<number | null>(null);
   const {
@@ -57,28 +69,33 @@ export function useUnityBridge() {
     (levelName: unknown) => {
       const level = levels.find((l) => l.name === levelName);
       if (!level) {
-        console.error(`[useUnityBridge] Level "${levelName}" not found in DB. Ensure Unity LevelData.levelName matches the DB level name.`);
+        console.error(
+          `[useUnityBridge] Level "${levelName}" not found in DB. Ensure Unity LevelData.levelName matches the DB level name.`,
+        );
         return;
       }
       const startSession = async () => {
         const result = await dispatch(
-          createGameSession({ level_id: level.id }),
+          createGameSession({ level_id: level.id, room_id: options.roomId }),
         );
-        if (createGameSession.fulfilled.match(result)) {
+        if (isFulfilled(createGameSession)(result)) {
           sessionIdRef.current = result.payload.id;
           lastAnswerAtRef.current = Date.now();
         }
       };
       startSession();
     },
-    [dispatch, levels],
+    [dispatch, levels, options.roomId],
   );
 
   const handleAnswer = useCallback(
     (correct: unknown) => {
       if (!sessionIdRef.current) return;
       const now = Date.now();
-      const time_taken_ms = lastAnswerAtRef.current !== null ? now - lastAnswerAtRef.current : undefined;
+      const time_taken_ms =
+        lastAnswerAtRef.current !== null
+          ? now - lastAnswerAtRef.current
+          : undefined;
       lastAnswerAtRef.current = now;
       dispatch(
         submitAnswer({
@@ -99,22 +116,32 @@ export function useUnityBridge() {
       const finishSession = async () => {
         const thunk = alive ? endGameSession : failGameSession;
         const result = await dispatch(thunk({ sessionId }));
-        if (
-          endGameSession.fulfilled.match(result) ||
-          failGameSession.fulfilled.match(result)
-        ) {
+        if (isFulfilled(thunk)(result)) {
           sendMessage(
             UNITY_GAME_OBJECT,
             UNITY_SEND_METHOD.FINALIZED,
             JSON.stringify(result.payload),
           );
           dispatch(getMe());
+          options.onSessionFinished?.(result.payload);
         }
       };
       finishSession();
     },
-    [dispatch, sendMessage],
+    [dispatch, sendMessage, options.onSessionFinished],
   );
+
+  useEffect(() => {
+    return () => {
+      if (roomIdRef.current) {
+        dispatch(leaveRoom(roomIdRef.current));
+      }
+      if (sessionIdRef.current) {
+        dispatch(abandonGameSession({ sessionId: sessionIdRef.current }));
+        sessionIdRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     addEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);

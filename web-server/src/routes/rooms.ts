@@ -3,12 +3,14 @@ import { authenticate, getUser } from "@/middleware/authenticate.js";
 import { authorize } from "@/middleware/authorize.js";
 import { validate } from "@/middleware/validate.js";
 import { roomService } from "@/services/room.service.js";
+import { roomEventBus } from "@/services/room-event-bus.js";
 import { loggingService } from "@/services/logging.service.js";
 import {
   RequestCreateRoomSchema,
   RequestCreateClassroomRoomSchema,
   RequestJoinRoomSchema,
   HttpCode,
+  ROOM_SSE_EVENTS,
 } from "@magic-nugger-app/shared";
 import type {
   ApiResponse,
@@ -75,6 +77,12 @@ roomsRouter.post(
       userId: user.id,
       metadata: { room_id: room.id },
     });
+
+    const memberDetail = await roomService.getMemberDetail(room.id, user.id);
+    if (memberDetail) {
+      roomEventBus.publish(room.id, ROOM_SSE_EVENTS.MEMBER_JOINED, memberDetail);
+    }
+
     res.json({
       code: HttpCode.OK,
       error: null,
@@ -91,6 +99,41 @@ roomsRouter.get("/", async (req, res) => {
     error: null,
     data: rooms,
   } satisfies ApiResponse<Room[]>);
+});
+
+roomsRouter.get("/:id/events", async (req, res) => {
+  const user = getUser(req);
+
+  const isMember = await roomService.isMember(req.params.id, user.id);
+  if (!isMember) {
+    return res.status(HttpCode.FORBIDDEN).json({
+      code: HttpCode.FORBIDDEN,
+      error: "Forbidden",
+      data: null,
+    } satisfies ApiResponse<null>);
+  }
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  roomEventBus.subscribe(req.params.id, res);
+
+  const snapshot = await roomService.getWithMembers(req.params.id);
+  res.write(`event: ${ROOM_SSE_EVENTS.INIT}\ndata: ${JSON.stringify(snapshot)}\n\n`);
+
+  const hb = setInterval(() => {
+    try {
+      res.write(": ping\n\n");
+    } catch {}
+  }, 20_000);
+
+  req.on("close", () => {
+    clearInterval(hb);
+    roomEventBus.unsubscribe(req.params.id, res);
+  });
 });
 
 roomsRouter.get("/:id", async (req, res) => {
@@ -114,6 +157,11 @@ roomsRouter.post(
       userId: user.id,
       metadata: { room_id: room.id },
     });
+
+    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_STARTED, {
+      started_at: room.started_at,
+    });
+
     res.json({
       code: HttpCode.OK,
       error: null,
@@ -142,6 +190,30 @@ roomsRouter.post(
   },
 );
 
+roomsRouter.delete("/:id/leave", async (req, res) => {
+  const user = getUser(req);
+  const { removed, roomStatus } = await roomService.leave(req.params.id, user.id);
+
+  if (removed) {
+    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.MEMBER_LEFT, { player_id: user.id });
+
+    if (roomStatus === "in_progress") {
+      const roomCompleted = await roomService.checkAndCompleteRoom(req.params.id);
+      if (roomCompleted) {
+        roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
+          ended_at: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: null,
+  } satisfies ApiResponse<null>);
+});
+
 roomsRouter.delete(
   "/:id",
   authorize("room:cancel"),
@@ -154,6 +226,9 @@ roomsRouter.delete(
       userId: user.id,
       metadata: { room_id: req.params.id },
     });
+
+    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_CANCELLED, {});
+
     res.json({
       code: HttpCode.OK,
       error: null,

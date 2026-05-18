@@ -24,6 +24,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "eventsource-parser": "^3.0.8",
     "lucide-react": "^1.14.0",
     "motion": "^12.38.0",
     "react": "^18.3.1",

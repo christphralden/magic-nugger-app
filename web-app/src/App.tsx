@@ -7,6 +7,10 @@ import { RegisterPage } from "@/pages/register";
 import { HomePageContainer } from "@/pages/home";
 import { LevelSelectPage } from "@/pages/level-select";
 import { GamePage } from "@/pages/game";
+import { NewGamePage } from "@/pages/game-new";
+import { NewRoomPage } from "@/pages/room-new";
+import { RoomLobbyPage } from "@/pages/room-lobby";
+import { RoomFinishedPage } from "@/pages/room-finished";
 import {
   ProfilePageContainer,
   ProfileTab,
@@ -28,21 +32,35 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/logout" element={<LogoutPage />} />
-
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
       <Route element={<Authenticated redirectTo="/login" />}>
         <Route path="/home" element={<HomePageContainer />} />
+
         <Route path="/settings" element={<ProfilePageContainer />}>
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<ProfileTab />} />
           <Route path="statistics" element={<StatisticsTab />} />
         </Route>
+
         <Route path="/levels" element={<LevelSelectPage />} />
-        <Route path="/game" element={<GamePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/classroom" element={<ClassroomPage />} />
+
+        <Route path="/game">
+          <Route index element={<GamePage />} />
+          <Route path="new" element={<NewGamePage />} />
+          <Route path="room">
+            <Route path="new" element={<NewRoomPage />} />
+            <Route path=":id">
+              <Route index element={<RoomLobbyPage />} />
+              <Route path="play" element={<NewGamePage />} />
+              <Route path="finished" element={<RoomFinishedPage />} />
+            </Route>
+          </Route>
+        </Route>
+
         <Route element={<AdminOnly redirectTo="/home" />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />

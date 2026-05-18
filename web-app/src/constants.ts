@@ -1,4 +1,5 @@
 export const LEADERBOARD_PAGINATION_LIMIT = 3;
+export const ROOM_WAITING_TTL_MS = 5 * 60 * 1000;
 export const ADMIN_PAGINATION_LIMIT = 10;
 export const PATH_TO_UNITY = "/Calculon/Build";
 

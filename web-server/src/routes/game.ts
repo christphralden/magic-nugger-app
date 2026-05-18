@@ -6,10 +6,13 @@ import {
   RequestCreateGameSessionSchema,
   RequestAnswerSchema,
   HttpCode,
+  ROOM_SSE_EVENTS,
 } from "@magic-nugger-app/shared";
 import { gameService } from "@/services/game.service.js";
 import { leaderboardService } from "@/services/leaderboard.service.js";
 import { loggingService } from "@/services/logging.service.js";
+import { roomEventBus } from "@/services/room-event-bus.js";
+import { roomService } from "@/services/room.service.js";
 import type {
   ApiResponse,
   GameSession,
@@ -79,7 +82,7 @@ gameRouter.post(
 
 gameRouter.post("/:id/end", async (req, res) => {
   const user = getUser(req);
-  const { levelId, eloDelta, newlyUnlockedNames } = await gameService.end({
+  const { levelId, eloDelta, newlyUnlockedNames, roomId, roomCompleted } = await gameService.end({
     sessionId: req.params.id,
     userId: user.id,
     currentElo: user.current_elo,
@@ -99,6 +102,17 @@ gameRouter.post("/:id/end", async (req, res) => {
     userId: user.id,
     metadata: { session_id: req.params.id, reason: "session_completed" },
   });
+  if (roomId) {
+    roomEventBus.publish(roomId, ROOM_SSE_EVENTS.SESSION_UPDATE, {
+      player_id: user.id,
+      session_status: "completed",
+    });
+    if (roomCompleted) {
+      roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
+        ended_at: new Date().toISOString(),
+      });
+    }
+  }
   res.json({
     code: HttpCode.OK,
     error: null,
@@ -108,7 +122,7 @@ gameRouter.post("/:id/end", async (req, res) => {
 
 gameRouter.post("/:id/fail", async (req, res) => {
   const user = getUser(req);
-  const { levelId, eloDelta } = await gameService.end({
+  const { levelId, eloDelta, roomId, roomCompleted } = await gameService.end({
     sessionId: req.params.id,
     userId: user.id,
     currentElo: user.current_elo,
@@ -128,6 +142,17 @@ gameRouter.post("/:id/fail", async (req, res) => {
     userId: user.id,
     metadata: { session_id: req.params.id, reason: "session_failed" },
   });
+  if (roomId) {
+    roomEventBus.publish(roomId, ROOM_SSE_EVENTS.SESSION_UPDATE, {
+      player_id: user.id,
+      session_status: "failed",
+    });
+    if (roomCompleted) {
+      roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
+        ended_at: new Date().toISOString(),
+      });
+    }
+  }
   res.json({
     code: HttpCode.OK,
     error: null,
@@ -136,12 +161,25 @@ gameRouter.post("/:id/fail", async (req, res) => {
 });
 
 gameRouter.post("/:id/abandon", async (req, res) => {
-  await gameService.abandon({ sessionId: req.params.id });
+  const user = getUser(req);
+  const { roomId } = await gameService.abandon({ sessionId: req.params.id });
   loggingService.log({
     event: "session:abandoned",
     level: "info",
     metadata: { session_id: req.params.id },
   });
+  if (roomId) {
+    roomEventBus.publish(roomId, ROOM_SSE_EVENTS.SESSION_UPDATE, {
+      player_id: user.id,
+      session_status: "abandoned",
+    });
+    const roomCompleted = await roomService.checkAndCompleteRoom(roomId);
+    if (roomCompleted) {
+      roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
+        ended_at: new Date().toISOString(),
+      });
+    }
+  }
   res.json({
     code: HttpCode.OK,
     error: null,

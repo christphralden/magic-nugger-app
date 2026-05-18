@@ -2,14 +2,17 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 import type { ApiResponse, GameSession, ResponseAnswer } from "@magic-nugger-app/shared";
 
-export const createGameSession = createAsyncThunk<GameSession, { level_id: number }>(
+export const createGameSession = createAsyncThunk<
+  GameSession,
+  { level_id: number; room_id?: string }
+>(
   "game/createSession",
-  async ({ level_id }, { rejectWithValue }) => {
+  async ({ level_id, room_id }, { rejectWithValue }) => {
     const response = await fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/game`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ level_id }),
+      body: JSON.stringify({ level_id, ...(room_id ? { room_id } : {}) }),
     });
     const data = (await response.json()) as ApiResponse<GameSession>;
     if (!response.ok || (data.code !== 200 && data.code !== 201))
@@ -78,5 +81,21 @@ export const failGameSession = createAsyncThunk<
       (await response.json()) as ApiResponse<{ elo_gained: number; new_levels_unlocked: string[] }>;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
     return data.data;
+  },
+);
+
+export const abandonGameSession = createAsyncThunk<void, { sessionId: string }>(
+  "game/abandonSession",
+  async ({ sessionId }, { rejectWithValue }) => {
+    const response = await fetch(
+      `${WEB_SERVER_URL}/${API_VERSION_BASE}/game/${sessionId}/abandon`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    const data = (await response.json()) as ApiResponse<null>;
+    if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
   },
 );
