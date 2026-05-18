@@ -6,7 +6,7 @@ import {
   cancelRoom,
   getRoomLeaderboard,
 } from "./room.thunk";
-import { toastError } from "@/lib/toast";
+import { toastError, toastInfo } from "@/lib/toast";
 import { isFulfilled } from "@reduxjs/toolkit";
 import type { RequestCreateRoom, Room } from "@magic-nugger-app/shared";
 
@@ -40,10 +40,9 @@ export const handleStartRoom =
 export const handleCancelRoom =
   (roomId: string) =>
   async (dispatch: AppDispatch): Promise<void> => {
-    console.log("run cancel room", roomId);
     const result = await dispatch(cancelRoom(roomId));
     if (!isFulfilled(cancelRoom)(result)) {
-      toastError("Failed to cancel room");
+      toastError("Failed to destory room");
     }
   };
 

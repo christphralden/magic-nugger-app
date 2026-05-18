@@ -8,10 +8,12 @@ import {
 } from "@/feature/room/state/room.actions";
 import { PageLayout } from "@/components/layout/page-layout";
 import { CartoonButton } from "@/components/ui/cartoon-button";
-import { CartoonInput } from "@/components/ui/cartoon-input";
+import { CodeSlots } from "@/components/ui/code-slots";
+import { OrDivider } from "@/components/ui/or-divider";
 import { Typography } from "@/components/ui/typography";
 import { toastError } from "@/lib/toast";
 import { FloatingText } from "@/components/floating-text";
+import { Plus } from "lucide-react";
 
 export function NewRoomPage() {
   const dispatch = useDispatch();
@@ -52,40 +54,39 @@ export function NewRoomPage() {
   return (
     <PageLayout title="Rooms">
       <div className="flex flex-col items-center justify-center h-full gap-8 relative">
-        <div className="text-center absolute top-36 h-full w-full z-[0]">
+        <div className="text-center absolute top-36 h-full w-full z-[0] flex flex-col gap-4">
           <Typography variant="heading">
             <FloatingText text="Ready to play?" />
           </Typography>
+          <Typography variant="secondary" className="text-center">
+            Spin up a new room, or jump into a friend's with their code.
+          </Typography>
         </div>
-        <div className="flex flex-col items-center w-full max-w-xs gap-2 z-[1]">
+        <div className="flex flex-col items-center w-full max-w-md gap-6 z-[1]">
           <CartoonButton
-            variant={"primary"}
-            size={"lg"}
+            variant="primary"
+            size="lg"
             onClick={handleCreate}
             disabled={creating}
-            className="w-full mb-1"
+            className="w-full mb-2"
           >
+            <Plus className="size-5 stroke-[5px]" />
             {creating ? "Creating..." : "Create Room"}
           </CartoonButton>
 
-          <Typography variant="secondary">OR</Typography>
+          <OrDivider />
 
-          <div className="flex flex-col gap-1">
-            <Typography variant="label" className="text-ink-soft">
+          <div className="flex flex-col items-center gap-2 w-full">
+            <Typography variant="label" as="p">
               Invite code
             </Typography>
-            <CartoonInput
-              placeholder="e.g. A1B2C3D4"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              maxLength={8}
-            />
+            <CodeSlots value={inviteCode} onChange={setInviteCode} />
             <CartoonButton
               variant="secondary"
-              size={"lg"}
+              size="lg"
               onClick={handleJoin}
               disabled={joining}
-              className="w-full"
+              className="w-full mt-4"
             >
               {joining ? "Joining..." : "Join Room"}
             </CartoonButton>

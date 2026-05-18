@@ -12,7 +12,7 @@ export const typographyVariants = cva("", {
       primary:
         "font-display font-bold leading-[0.95] tracking-[-0.015em] text-ink text-4xl",
       secondary:
-        "font-display font-bold leading-[0.95] tracking-[-0.015em] text-ink text-xl",
+        "font-display font-semibold leading-[0.95] tracking-[-0.015em] text-ink text-xl",
       body: "font-body font-semibold md:text-base text-sm leading-relaxed",
       caption: "font-body font-semibold text-sm",
       label: "font-display font-semibold md:text-base text-sm tracking-wide",

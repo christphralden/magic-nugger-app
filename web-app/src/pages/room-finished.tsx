@@ -69,9 +69,7 @@ export function RoomFinishedPage() {
       prev
         ? {
             ...prev,
-            members: prev.members.filter(
-              (m) => m.player_id !== (data as { player_id: string }).player_id,
-            ),
+            members: prev.members.filter((m) => m.player_id !== data.player_id),
           }
         : prev,
     );

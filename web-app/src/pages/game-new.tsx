@@ -17,6 +17,7 @@ import { Unity } from "react-unity-webgl";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
+import { toastError } from "@/lib/toast";
 
 function GameView() {
   const { provider, isLoaded } = useUnityBridge();
@@ -50,6 +51,7 @@ export function RoomGameView({ roomId }: { roomId: string }) {
     if (data.room.status !== "in_progress") {
       navigate(`/game/room/${roomId}`);
     }
+    toastError("Game has not yet started");
   });
 
   register(ROOM_SSE_EVENTS.ROOM_CANCELLED, () => navigate("/home"));

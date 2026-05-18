@@ -66,7 +66,7 @@ export function LevelSelectPage() {
               <div
                 key={level.id}
                 className={cn(
-                  "bg-paper border-[3px] border-border rounded-md shadow-cartoon p-6",
+                  "bg-paper border-[3px] border-border rounded-lg shadow-cartoon p-6",
                   !isAccessible && "opacity-50 pointer-events-none",
                 )}
               >

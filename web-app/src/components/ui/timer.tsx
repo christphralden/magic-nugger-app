@@ -39,9 +39,9 @@ export const Timer = ({
 
   return (
     <div className="flex items-center gap-1 text-ink-soft">
-      <TimerIcon className="size-3.5" />
+      <TimerIcon className="size-4" />
       <Typography
-        variant="caption"
+        variant="body"
         className={timeLeft < 60_000 ? "text-red-500" : "text-ink-soft"}
       >
         {formatCountdown(timeLeft)}
