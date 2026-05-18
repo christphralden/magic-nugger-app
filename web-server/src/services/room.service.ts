@@ -7,6 +7,7 @@ import type {
   RoomMemberDetail,
   RequestCreateRoom,
   Question,
+  RoomStatus,
 } from "@magic-nugger-app/shared";
 import { v4 as uuidv4 } from "uuid";
 
@@ -35,6 +36,22 @@ export const roomService = {
     });
   },
 
+  async getLastPendingCreation(playerId: string): Promise<Room | null> {
+    const status: RoomStatus = "creation";
+
+    const { rows } = await getDb().query<Room>(
+      `SELECT id, host_id, level_id, type, status, invite_code,
+          max_players, questions, started_at, ended_at, created_at, updated_at
+      FROM rooms
+      WHERE host_id = $1 AND status = $2
+      ORDER BY created_at DESC
+      `,
+      [playerId, status],
+    );
+    const room = rows[0];
+    return room;
+  },
+
   async join(playerId: string, inviteCode: string): Promise<Room> {
     return tx(async () => {
       const { rows } = await getDb().query<Room>(
@@ -58,10 +75,7 @@ export const roomService = {
       }
 
       if (room.status === "creation") {
-        throw new AppError(
-          HttpCode.CONFLICT,
-          "Room is still being set up",
-        );
+        throw new AppError(HttpCode.CONFLICT, "Room is still being set up");
       }
 
       if (room.status === "in_progress") {
@@ -170,7 +184,11 @@ export const roomService = {
     );
   },
 
-  async saveQuestions(roomId: string, hostId: string, questions: Question[]): Promise<Room> {
+  async saveQuestions(
+    roomId: string,
+    hostId: string,
+    questions: Question[],
+  ): Promise<Room> {
     const { rows: check } = await getDb().query<{ host_id: string }>(
       `SELECT host_id FROM rooms WHERE id = $1`,
       [roomId],

@@ -29,6 +29,16 @@ roomsRouter.post(
   validate(RequestCreateRoomSchema),
   async (req, res) => {
     const user = getUser(req);
+    const pendingRoom = await roomService.getLastPendingCreation(user.id);
+
+    if (pendingRoom) {
+      return res.status(HttpCode.OK).json({
+        code: HttpCode.OK,
+        error: null,
+        data: pendingRoom,
+      } satisfies ApiResponse<Room>);
+    }
+
     const room = await roomService.create(user.id, req.body);
     loggingService.log({
       event: "room:created",
@@ -148,7 +158,11 @@ roomsRouter.put(
   validate(RequestSaveQuestionsSchema),
   async (req, res) => {
     const user = getUser(req);
-    const room = await roomService.saveQuestions(req.params.id, user.id, req.body.questions);
+    const room = await roomService.saveQuestions(
+      req.params.id,
+      user.id,
+      req.body.questions,
+    );
     res.json({
       code: HttpCode.OK,
       error: null,
