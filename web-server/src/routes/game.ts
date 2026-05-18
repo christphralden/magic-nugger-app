@@ -82,12 +82,13 @@ gameRouter.post(
 
 gameRouter.post("/:id/end", async (req, res) => {
   const user = getUser(req);
-  const { levelId, eloDelta, newlyUnlockedNames, roomId, roomCompleted } = await gameService.end({
-    sessionId: req.params.id,
-    userId: user.id,
-    currentElo: user.current_elo,
-    status: "completed",
-  });
+  const { levelId, eloDelta, newlyUnlockedNames, roomId, roomCompleted } =
+    await gameService.end({
+      sessionId: req.params.id,
+      userId: user.id,
+      currentElo: user.current_elo,
+      status: "completed",
+    });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
   loggingService.log({
@@ -117,7 +118,10 @@ gameRouter.post("/:id/end", async (req, res) => {
     code: HttpCode.OK,
     error: null,
     data: { elo_gained: eloDelta, new_levels_unlocked: newlyUnlockedNames },
-  } satisfies ApiResponse<{ elo_gained: number; new_levels_unlocked: string[] }>);
+  } satisfies ApiResponse<{
+    elo_gained: number;
+    new_levels_unlocked: string[];
+  }>);
 });
 
 gameRouter.post("/:id/fail", async (req, res) => {
@@ -157,7 +161,10 @@ gameRouter.post("/:id/fail", async (req, res) => {
     code: HttpCode.OK,
     error: null,
     data: { elo_gained: eloDelta, new_levels_unlocked: [] },
-  } satisfies ApiResponse<{ elo_gained: number; new_levels_unlocked: string[] }>);
+  } satisfies ApiResponse<{
+    elo_gained: number;
+    new_levels_unlocked: string[];
+  }>);
 });
 
 gameRouter.post("/:id/abandon", async (req, res) => {
@@ -173,7 +180,7 @@ gameRouter.post("/:id/abandon", async (req, res) => {
       player_id: user.id,
       session_status: "abandoned",
     });
-    const roomCompleted = await roomService.checkAndCompleteRoom(roomId);
+    const roomCompleted = await roomService.reconcileRoom(roomId);
     if (roomCompleted) {
       roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
         ended_at: new Date().toISOString(),

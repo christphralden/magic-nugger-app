@@ -188,7 +188,7 @@ export const gameService = {
 
       let roomCompleted = false;
       if (session.room_id) {
-        roomCompleted = await roomService.checkAndCompleteRoom(session.room_id);
+        roomCompleted = await roomService.reconcileRoom(session.room_id);
       }
 
       return {
@@ -201,7 +201,11 @@ export const gameService = {
     });
   },
 
-  async abandon({ sessionId }: { sessionId: string }): Promise<{ roomId: string | null }> {
+  async abandon({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<{ roomId: string | null }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
       await gameSessionService.abandon({ sessionId });

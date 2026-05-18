@@ -119,23 +119,6 @@ export const roomService = {
     return { room, members: rows };
   },
 
-  async getActiveForPlayer(playerId: string): Promise<Room[]> {
-    const { rows } = await getDb().query<Room>(
-      `SELECT
-        r.id, r.host_id, r.level_id, r.type, r.status,
-        r.invite_code, r.max_players, r.started_at, r.ended_at,
-        r.created_at, r.updated_at
-       FROM rooms r
-       JOIN room_members rm ON rm.room_id = r.id
-       WHERE rm.player_id = $1
-         AND rm.deleted_at IS NULL
-         AND r.status IN ('waiting', 'in_progress')
-       ORDER BY r.created_at DESC`,
-      [playerId],
-    );
-    return rows;
-  },
-
   async start(roomId: string, hostId: string): Promise<Room> {
     const { rows: check } = await getDb().query<{ host_id: string }>(
       `SELECT host_id FROM rooms WHERE id = $1`,
@@ -196,7 +179,7 @@ export const roomService = {
     );
   },
 
-  async checkAndCompleteRoom(roomId: string): Promise<boolean> {
+  async reconcileRoom(roomId: string): Promise<boolean> {
     const { rows } = await getDb().query<{ count: string }>(
       `SELECT COUNT(*) AS count
        FROM room_members rm

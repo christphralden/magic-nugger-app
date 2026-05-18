@@ -59,7 +59,11 @@ roomsRouter.post(
 
     const memberDetail = await roomService.getMemberDetail(room.id, user.id);
     if (memberDetail) {
-      roomEventBus.publish(room.id, ROOM_SSE_EVENTS.MEMBER_JOINED, memberDetail);
+      roomEventBus.publish(
+        room.id,
+        ROOM_SSE_EVENTS.MEMBER_JOINED,
+        memberDetail,
+      );
     }
 
     res.json({
@@ -69,16 +73,6 @@ roomsRouter.post(
     } satisfies ApiResponse<Room>);
   },
 );
-
-roomsRouter.get("/", async (req, res) => {
-  const user = getUser(req);
-  const rooms = await roomService.getActiveForPlayer(user.id);
-  res.json({
-    code: HttpCode.OK,
-    error: null,
-    data: rooms,
-  } satisfies ApiResponse<Room[]>);
-});
 
 roomsRouter.get("/:id/events", async (req, res) => {
   const user = getUser(req);
@@ -101,7 +95,9 @@ roomsRouter.get("/:id/events", async (req, res) => {
   roomEventBus.subscribe(req.params.id, res);
 
   const snapshot = await roomService.getWithMembers(req.params.id);
-  res.write(`event: ${ROOM_SSE_EVENTS.INIT}\ndata: ${JSON.stringify(snapshot)}\n\n`);
+  res.write(
+    `event: ${ROOM_SSE_EVENTS.INIT}\ndata: ${JSON.stringify(snapshot)}\n\n`,
+  );
 
   const hb = setInterval(() => {
     try {
@@ -124,58 +120,37 @@ roomsRouter.get("/:id", async (req, res) => {
   } satisfies ApiResponse<RoomWithMembers>);
 });
 
-roomsRouter.post(
-  "/:id/start",
-  authorize("room:start"),
-  async (req, res) => {
-    const user = getUser(req);
-    const room = await roomService.start(req.params.id, user.id);
-    loggingService.log({
-      event: "room:started",
-      level: "info",
-      userId: user.id,
-      metadata: { room_id: room.id },
-    });
+roomsRouter.post("/:id/start", authorize("room:start"), async (req, res) => {
+  const user = getUser(req);
+  const room = await roomService.start(req.params.id, user.id);
+  loggingService.log({
+    event: "room:started",
+    level: "info",
+    userId: user.id,
+    metadata: { room_id: room.id },
+  });
 
-    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_STARTED, {
-      started_at: room.started_at,
-    });
+  roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_STARTED, {
+    started_at: room.started_at,
+  });
 
-    res.json({
-      code: HttpCode.OK,
-      error: null,
-      data: room,
-    } satisfies ApiResponse<Room>);
-  },
-);
-
-roomsRouter.post(
-  "/:id/end",
-  authorize("room:end"),
-  async (req, res) => {
-    const user = getUser(req);
-    await roomService.end(req.params.id, user.id);
-    loggingService.log({
-      event: "room:ended",
-      level: "info",
-      userId: user.id,
-      metadata: { room_id: req.params.id },
-    });
-    res.json({
-      code: HttpCode.OK,
-      error: null,
-      data: null,
-    } satisfies ApiResponse<null>);
-  },
-);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: room,
+  } satisfies ApiResponse<Room>);
+});
 
 roomsRouter.delete("/:id/leave", async (req, res) => {
   const user = getUser(req);
 
-  const memberDetail = await roomService.getMemberDetail(req.params.id, user.id);
+  const memberDetail = await roomService.getMemberDetail(
+    req.params.id,
+    user.id,
+  );
   if (memberDetail?.game_session_id) {
     await gameService.abandon({ sessionId: memberDetail.game_session_id });
-    const roomCompleted = await roomService.checkAndCompleteRoom(req.params.id);
+    const roomCompleted = await roomService.reconcileRoom(req.params.id);
     if (roomCompleted) {
       roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
         ended_at: new Date().toISOString(),
@@ -183,13 +158,18 @@ roomsRouter.delete("/:id/leave", async (req, res) => {
     }
   }
 
-  const { removed, roomStatus } = await roomService.leave(req.params.id, user.id);
+  const { removed, roomStatus } = await roomService.leave(
+    req.params.id,
+    user.id,
+  );
 
   if (removed) {
-    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.MEMBER_LEFT, { player_id: user.id });
+    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.MEMBER_LEFT, {
+      player_id: user.id,
+    });
 
     if (roomStatus === "in_progress" && !memberDetail?.game_session_id) {
-      const roomCompleted = await roomService.checkAndCompleteRoom(req.params.id);
+      const roomCompleted = await roomService.reconcileRoom(req.params.id);
       if (roomCompleted) {
         roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
           ended_at: new Date().toISOString(),
@@ -205,25 +185,21 @@ roomsRouter.delete("/:id/leave", async (req, res) => {
   } satisfies ApiResponse<null>);
 });
 
-roomsRouter.delete(
-  "/:id",
-  authorize("room:cancel"),
-  async (req, res) => {
-    const user = getUser(req);
-    await roomService.cancel(req.params.id, user.id);
-    loggingService.log({
-      event: "room:cancelled",
-      level: "info",
-      userId: user.id,
-      metadata: { room_id: req.params.id },
-    });
+roomsRouter.delete("/:id", authorize("room:cancel"), async (req, res) => {
+  const user = getUser(req);
+  await roomService.cancel(req.params.id, user.id);
+  loggingService.log({
+    event: "room:cancelled",
+    level: "info",
+    userId: user.id,
+    metadata: { room_id: req.params.id },
+  });
 
-    roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_CANCELLED, {});
+  roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_CANCELLED, {});
 
-    res.json({
-      code: HttpCode.OK,
-      error: null,
-      data: null,
-    } satisfies ApiResponse<null>);
-  },
-);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: null,
+  } satisfies ApiResponse<null>);
+});
