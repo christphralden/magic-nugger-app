@@ -175,6 +175,7 @@ function InfoStep() {
                 </div>
                 <FormControl>
                   <CartoonInput
+                    autoComplete="current-password"
                     type={showPassword ? "text" : "password"}
                     placeholder="at least 6 magic letters"
                     rightSlot={

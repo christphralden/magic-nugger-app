@@ -21,7 +21,6 @@ import type {
 } from "@magic-nugger-app/shared";
 import {
   resetAdminSessions,
-  resetAdminPlayers,
   setSessionFilters,
 } from "./admin.slice";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -99,8 +98,6 @@ export const handlePatchPlayerRoleAdmin =
     const result = await dispatch(patchPlayerRoleAdmin({ id, role }));
     if (patchPlayerRoleAdmin.fulfilled.match(result)) {
       toastSuccess("Role updated");
-      dispatch(resetAdminPlayers());
-      await dispatch(getPlayersAdmin({}));
       return true;
     }
     toastError((result.payload as string) ?? "Failed to update role");

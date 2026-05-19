@@ -11,15 +11,17 @@ import { cn, nameInitials } from "@/lib/utils";
 interface PageLayoutProps {
   title: string;
   children: ReactNode;
+  headless?: boolean;
 }
 
 const NAV_LINKS = [
   { to: "/home", label: "Home" },
   { to: "/levels", label: "Levels" },
+  { to: "/game", label: "Game" },
   { to: "/leaderboard", label: "Leaderboard" },
 ];
 
-export function PageLayout({ title, children }: PageLayoutProps) {
+export function PageLayout({ title, children, headless }: PageLayoutProps) {
   const player = useSelector(selectCurrentPlayer);
 
   const location = useLocation();
@@ -41,21 +43,25 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         </section>
 
         <nav className="flex items-center gap-6 w-full max-w-64 justify-center">
-          {NAV_LINKS.map(({ to, label }) => (
-            <Link key={to} to={to}>
-              <Typography
-                variant="label"
-                className={cn(
-                  "transition-colors",
-                  location.pathname === to
-                    ? "text-coral"
-                    : "text-ink-soft hover:text-ink",
-                )}
-              >
-                {label}
-              </Typography>
-            </Link>
-          ))}
+          {NAV_LINKS.map(({ to, label }) => {
+            const isActive =
+              to === "/game"
+                ? location.pathname.startsWith("/game")
+                : location.pathname === to;
+            return (
+              <Link key={to} to={to}>
+                <Typography
+                  variant="label"
+                  className={cn(
+                    "transition-colors",
+                    isActive ? "text-coral" : "text-ink-soft hover:text-ink",
+                  )}
+                >
+                  {label}
+                </Typography>
+              </Link>
+            );
+          })}
           {player?.role_name === "admin" && (
             <Link to="/admin">
               <Typography
@@ -90,7 +96,12 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           </Link>
         </section>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto px-4 py-8 md:px-8">
+      <div
+        className={cn(
+          headless ? "" : "px-4 py-8 md:px-8 ",
+          "flex-1 min-h-0 overflow-auto relative",
+        )}
+      >
         {children}
       </div>
     </div>

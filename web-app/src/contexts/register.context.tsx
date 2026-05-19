@@ -103,7 +103,7 @@ export function RegisterProvider({ children }: { children: ReactNode }) {
     );
     if (!result) return;
     if (registerPlayer.fulfilled.match(result)) {
-      navigate("/home");
+      navigate("/login");
     } else {
       toastError((result.payload as string) ?? "Registration failed");
       setStep(1);

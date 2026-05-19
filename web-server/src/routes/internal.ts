@@ -1,4 +1,5 @@
 import { leaderboardCache } from "@/cache/leaderboard.cache";
+import { levelsCache } from "@/cache/levels.cache";
 import { internal } from "@/middleware/internal";
 import { ApiResponse, HttpCode } from "@magic-nugger-app/shared";
 import { Router } from "express";
@@ -24,12 +25,13 @@ internalRouter.post("/memory", async (_req, res) => {
   } satisfies ApiResponse<any>);
 });
 
-internalRouter.post("/cache/leaderboard", async (_req, res) => {
+internalRouter.post("/cache", async (_req, res) => {
   res.json({
     code: HttpCode.OK,
     error: null,
     data: {
-      cache: leaderboardCache.serialize(),
+      leaderboard: leaderboardCache.serialize(),
+      level: levelsCache.serialize(),
     },
   } satisfies ApiResponse<any>);
 });

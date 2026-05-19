@@ -6,7 +6,7 @@ import {
   type PaginatedData,
   type GlobalLeaderboardRow,
   type LevelLeaderboardRow,
-  type ClassroomLeaderboardRow,
+  type RoomLeaderboardRow,
   HttpCode,
 } from "@magic-nugger-app/shared";
 import { parsePagination } from "@/utils/pagination";
@@ -35,15 +35,13 @@ leaderboardRouter.get("/levels/:id", async (req, res) => {
   >);
 });
 
-leaderboardRouter.get("/classrooms/:id", async (req, res) => {
-  const data = await leaderboardService.getByClassroom(
-    req.params.id,
-    parsePagination(req.query),
-    parsePeriod(req.query),
-  );
-  res.json({ code: HttpCode.OK, error: null, data } satisfies ApiResponse<
-    PaginatedData<ClassroomLeaderboardRow>
-  >);
+leaderboardRouter.get("/rooms/:id", async (req, res) => {
+  const data = await leaderboardService.getByRoom(req.params.id);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data,
+  } satisfies ApiResponse<RoomLeaderboardRow[]>);
 });
 
 leaderboardRouter.delete(

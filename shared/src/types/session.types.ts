@@ -12,6 +12,7 @@ export const GameSessionSchema = z.object({
   id: z.string().uuid(),
   player_id: z.string().uuid(),
   level_id: z.number().int(),
+  room_id: z.string().uuid().nullable(),
   status: GameSessionStatusSchema,
   score: z.number().int().min(0),
   elo_before: z.number().int(),
@@ -40,6 +41,7 @@ export type GameSessionAnswer = z.infer<typeof GameSessionAnswerSchema>;
 
 export const RequestCreateGameSessionSchema = z.object({
   level_id: z.number().int(),
+  room_id: z.string().uuid().optional(),
 });
 export type RequestCreateGameSession = z.infer<
   typeof RequestCreateGameSessionSchema

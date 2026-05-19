@@ -61,6 +61,7 @@ function SettingsNavButton({
   return (
     <CartoonButton
       className="rounded-xl justify-start"
+      size={"sm"}
       variant={match ? "select" : "ghost"}
       onClick={() => navigate(to)}
     >

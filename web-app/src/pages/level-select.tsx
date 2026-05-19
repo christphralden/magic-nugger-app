@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "@/store/hooks";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
-  selectLevels,
+  selectActiveLevels,
   selectLevelsStatus,
   selectUnlockedLevelNames,
 } from "@/feature/levels/state/levels.slice";
@@ -24,7 +24,7 @@ export function LevelSelectPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const currentPlayer = useSelector(selectCurrentPlayer);
-  const levels = useSelector(selectLevels);
+  const levels = useSelector(selectActiveLevels);
   const levelsStatus = useSelector(selectLevelsStatus);
   const unlockedNames = useSelector(selectUnlockedLevelNames);
 
@@ -34,10 +34,6 @@ export function LevelSelectPage() {
   }, [dispatch]);
 
   if (!currentPlayer) return null;
-
-  const activeLevels = levels
-    .filter((l) => l.is_active)
-    .sort((a, b) => a.order_index - b.order_index);
 
   return (
     <PageLayout title="Levels">
@@ -54,7 +50,7 @@ export function LevelSelectPage() {
           </div>
         )}
 
-        {levelsStatus !== "loading" && activeLevels.length === 0 && (
+        {levelsStatus !== "loading" && levels.length === 0 && (
           <div className="w-full justify-center text-center">
             <Typography variant={"primary"}>
               <FloatingText text={"No levels available yet :("} duration={1} />
@@ -63,14 +59,14 @@ export function LevelSelectPage() {
         )}
 
         <div className="flex flex-col gap-6">
-          {activeLevels.map((level) => {
+          {levels.map((level) => {
             const isAccessible = unlockedNames.includes(level.name);
 
             return (
               <div
                 key={level.id}
                 className={cn(
-                  "bg-paper border-[3px] border-border rounded-md shadow-cartoon p-6",
+                  "bg-paper border-[3px] border-border rounded-lg shadow-cartoon p-6",
                   !isAccessible && "opacity-50 pointer-events-none",
                 )}
               >
@@ -96,7 +92,6 @@ export function LevelSelectPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <CartoonButton
                       variant="secondary"
-                      size="default"
                       onClick={() =>
                         navigate(`/leaderboard?tab=level&level=${level.id}`)
                       }
@@ -105,7 +100,6 @@ export function LevelSelectPage() {
                     </CartoonButton>
                     <CartoonButton
                       variant="primary"
-                      size="default"
                       onClick={() => navigate(`/game?level=${level.id}`)}
                     >
                       Play!

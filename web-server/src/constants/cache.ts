@@ -3,4 +3,6 @@ export const CacheConfig = {
   LEADERBOARD_MAX_SIZE: 200,
   DEFAULT_PAGE_SIZE: 20,
   MAX_PAGE_SIZE: 100,
+  LEVEL_TTL_MS: 6.048e8,
+  LEVEL_MAX_SIZE: 500,
 } as const;

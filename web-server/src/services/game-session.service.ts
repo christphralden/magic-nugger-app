@@ -8,14 +8,14 @@ export const gameSessionService = {
     userId: string;
   }): Promise<GameSession | null> {
     const { rows } = await getDb().query<GameSession>(
-      `SELECT 
-        id, player_id, level_id, status, score,
-        elo_before, elo_after, elo_delta, correct_count, 
+      `SELECT
+        id, player_id, level_id, room_id, status, score,
+        elo_before, elo_after, elo_delta, correct_count,
         incorrect_count, max_streak, current_streak, started_at, ended_at,
-        client_ip, user_agent 
+        client_ip, user_agent
       FROM game_sessions
-      WHERE 
-        player_id = $1 
+      WHERE
+        player_id = $1
         AND status = 'in_progress'
       ORDER BY started_at DESC LIMIT 1`,
       [userId],
@@ -29,14 +29,14 @@ export const gameSessionService = {
     sessionId: string;
   }): Promise<GameSession | null> {
     const { rows } = await getDb().query<GameSession>(
-      `SELECT 
-        id, player_id, level_id, status, score,
-        elo_before, elo_after, elo_delta, 
+      `SELECT
+        id, player_id, level_id, room_id, status, score,
+        elo_before, elo_after, elo_delta,
         correct_count, incorrect_count, max_streak, current_streak,
-        started_at, ended_at, client_ip, user_agent  
-      FROM game_sessions 
-      WHERE 
-        id = $1 
+        started_at, ended_at, client_ip, user_agent
+      FROM game_sessions
+      WHERE
+        id = $1
         AND status = 'in_progress'
       `,
       [sessionId],
@@ -50,26 +50,52 @@ export const gameSessionService = {
     currentElo,
     ip,
     userAgent,
+    roomId,
   }: {
     userId: string;
     levelId: number;
     currentElo: number;
     ip: string;
     userAgent: string | null;
+    roomId?: string;
   }): Promise<GameSession> {
     const { rows } = await getDb().query<GameSession>(
-      `INSERT INTO game_sessions 
-        (player_id, level_id, elo_before, client_ip, user_agent)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING 
-        id, player_id, level_id, status, score,
-        elo_before, elo_after, elo_delta, correct_count, 
+      `INSERT INTO game_sessions
+        (player_id, level_id, elo_before, client_ip, user_agent, room_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING
+        id, player_id, level_id, room_id, status, score,
+        elo_before, elo_after, elo_delta, correct_count,
         incorrect_count, max_streak, current_streak, started_at, ended_at,
         client_ip, user_agent
       `,
-      [userId, levelId, currentElo, ip, userAgent],
+      [userId, levelId, currentElo, ip, userAgent, roomId ?? null],
     );
     return rows[0];
+  },
+
+  async getByPlayerAndRoom({
+    userId,
+    roomId,
+  }: {
+    userId: string;
+    roomId: string;
+  }): Promise<GameSession | null> {
+    const { rows } = await getDb().query<GameSession>(
+      `SELECT
+        id, player_id, level_id, room_id, status, score,
+        elo_before, elo_after, elo_delta, correct_count,
+        incorrect_count, max_streak, current_streak, started_at, ended_at,
+        client_ip, user_agent
+      FROM game_sessions
+      WHERE
+        player_id = $1
+        AND room_id = $2
+        AND status IN ('completed', 'failed', 'abandoned')
+      ORDER BY started_at DESC LIMIT 1`,
+      [userId, roomId],
+    );
+    return rows[0] ?? null;
   },
 
   async abandon({ sessionId }: { sessionId: string }): Promise<void> {

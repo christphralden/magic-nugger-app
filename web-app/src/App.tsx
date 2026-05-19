@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Authenticated } from "@/components/guards/authenticated";
 import { AdminOnly } from "@/components/guards/admin-only";
 import { LandingPage } from "@/pages/landing";
@@ -7,9 +7,19 @@ import { RegisterPage } from "@/pages/register";
 import { HomePageContainer } from "@/pages/home";
 import { LevelSelectPage } from "@/pages/level-select";
 import { GamePage } from "@/pages/game";
-import { ProfilePageContainer, ProfileTab, StatisticsTab } from "@/pages/profile";
+import { GamePlayPage } from "@/pages/game-play";
+import { RoomPage } from "@/pages/room";
+import { RoomHostPage } from "@/pages/room-host";
+import { RoomLobbyPage } from "@/pages/room-lobby";
+import { RoomFinishedPage } from "@/pages/room-finished";
+import { RoomSetupPage } from "@/pages/room-setup";
+import { RoomProvider } from "@/contexts/room.context";
+import {
+  ProfilePageContainer,
+  ProfileTab,
+  StatisticsTab,
+} from "@/pages/profile";
 import { LeaderboardPage } from "@/pages/leaderboard";
-import { ClassroomPage } from "@/pages/classroom";
 import { LogoutPage } from "@/pages/logout";
 import { AdminLayout } from "@/pages/admin";
 import { DashboardTab } from "@/feature/admin/tabs/dashboard";
@@ -19,42 +29,73 @@ import { LevelsTab } from "@/feature/admin/tabs/levels";
 import { CreateLevelTab } from "@/feature/admin/tabs/create-level";
 import { SystemTab } from "@/feature/admin/tabs/system";
 
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/logout" element={<LogoutPage />} />
+export const router = createBrowserRouter([
+  { path: "/", element: <LandingPage /> },
+  { path: "/logout", element: <LogoutPage /> },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
 
-      <Route element={<Authenticated redirectTo="/home" ifAuthenticated />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-      </Route>
+  {
+    element: <Authenticated redirectTo="/login" />,
+    children: [
+      { path: "/home", element: <HomePageContainer /> },
 
-      <Route element={<Authenticated redirectTo="/login" />}>
-        <Route path="/home" element={<HomePageContainer />} />
-        <Route path="/settings" element={<ProfilePageContainer />}>
-          <Route index element={<Navigate to="profile" replace />} />
-          <Route path="profile" element={<ProfileTab />} />
-          <Route path="statistics" element={<StatisticsTab />} />
-        </Route>
-        <Route path="/levels" element={<LevelSelectPage />} />
-        <Route path="/game" element={<GamePage />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/classroom" element={<ClassroomPage />} />
-        <Route element={<AdminOnly redirectTo="/home" />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardTab />} />
-            <Route path="players" element={<PlayersTab />} />
-            <Route path="sessions" element={<SessionsTab />} />
-            <Route path="levels" element={<LevelsTab />} />
-            <Route path="levels/create" element={<CreateLevelTab />} />
-            <Route path="system" element={<SystemTab />} />
-          </Route>
-        </Route>
-      </Route>
-    </Routes>
-  );
-}
+      {
+        path: "/settings",
+        element: <ProfilePageContainer />,
+        children: [
+          { index: true, element: <Navigate to="profile" replace /> },
+          { path: "profile", element: <ProfileTab /> },
+          { path: "statistics", element: <StatisticsTab /> },
+        ],
+      },
 
-export default App;
+      { path: "/levels", element: <LevelSelectPage /> },
+      { path: "/leaderboard", element: <LeaderboardPage /> },
+
+      {
+        path: "/game",
+        children: [
+          { index: true, element: <GamePage /> },
+          { path: "play", element: <GamePlayPage /> },
+          {
+            path: "room",
+            children: [
+              { index: true, element: <RoomPage /> },
+              { path: "host", element: <RoomHostPage /> },
+              {
+                path: ":id",
+                element: <RoomProvider />,
+                children: [
+                  { index: true, element: <RoomLobbyPage /> },
+                  { path: "setup", element: <RoomSetupPage /> },
+                  { path: "play", element: <GamePlayPage /> },
+                  { path: "finished", element: <RoomFinishedPage /> },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        element: <AdminOnly redirectTo="/home" />,
+        children: [
+          {
+            path: "/admin",
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <Navigate to="dashboard" replace /> },
+              { path: "dashboard", element: <DashboardTab /> },
+              { path: "players", element: <PlayersTab /> },
+              { path: "sessions", element: <SessionsTab /> },
+              { path: "levels", element: <LevelsTab /> },
+              { path: "levels/create", element: <CreateLevelTab /> },
+              { path: "system", element: <SystemTab /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]);

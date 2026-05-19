@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { getLevels, getUnlockedLevels } from "./levels.thunk";
 import { endGameSession } from "@/feature/game/state/game.thunk";
 import type { AsyncStatus, Level } from "@magic-nugger-app/shared";
@@ -44,12 +44,21 @@ const levelsSlice = createSlice({
       .addCase(endGameSession.fulfilled, (state, action) => {
         const incoming = action.payload.new_levels_unlocked;
         if (incoming.length > 0) {
-          state.unlockedNames = [...new Set([...state.unlockedNames, ...incoming])];
+          state.unlockedNames = [
+            ...new Set([...state.unlockedNames, ...incoming]),
+          ];
         }
       });
   },
   selectors: {
     selectLevels: (state) => state.items,
+    selectActiveLevels: createSelector(
+      (state: LevelsState) => state.items,
+      (items) =>
+        items
+          .filter((l) => l.is_active)
+          .sort((a, b) => a.order_index - b.order_index),
+    ),
     selectLevelsStatus: (state) => state.status,
     selectUnlockedLevelNames: (state) => state.unlockedNames,
     selectUnlockedLevelsStatus: (state) => state.unlockedStatus,
@@ -58,6 +67,7 @@ const levelsSlice = createSlice({
 
 export const {
   selectLevels,
+  selectActiveLevels,
   selectLevelsStatus,
   selectUnlockedLevelNames,
   selectUnlockedLevelsStatus,

@@ -29,6 +29,7 @@ export const loggingService = {
           metadata ? JSON.stringify(metadata) : null,
         ],
       );
+      console.log(`[logging][${event}] ${description || ""}`, metadata);
     } catch (error) {
       console.error("[logging] failed to log: ", formatError(error));
     }
