@@ -29,7 +29,8 @@ import { toastInfo } from "@/lib/toast";
 export function RoomFinishedPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { roomId, currentPlayer, onSseError } = useRoom();
+  const { roomId, roomData, setRoomData, currentPlayer, onSseError } =
+    useRoom();
   const rows = useSelector(selectRoomLeaderboard);
 
   const [isCompleted, setIsCompleted] = useState(false);
@@ -50,10 +51,22 @@ export function RoomFinishedPage() {
         if (data.room.status === "completed") setIsCompleted(true);
       },
       [ROOM_SSE_EVENTS.MEMBER_LEFT]: (data) => {
-        if (data.player_id !== currentPlayer?.id) {
-          const player = rows.find((r) => r.player_id === data.player_id);
-          if (player)
-            toastInfo(`${player.display_name || player.username} has left`);
+        const isMe = data.player_id === currentPlayer?.id;
+        const member = roomData?.members.find(
+          (m) => m.player_id === data.player_id,
+        );
+        setRoomData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            members: prev.members.filter((m) => m.player_id !== data.player_id),
+          };
+        });
+        if (isMe) {
+          toastInfo("You have left the room");
+          navigate("/game");
+        } else if (member) {
+          toastInfo(`${member.display_name || member.username} has left`);
         }
         refreshLeaderboard();
       },

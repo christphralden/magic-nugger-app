@@ -31,7 +31,7 @@ export function CartoonDropdown({
       <DropdownMenuTrigger
         className={cn(
           typographyVariants({ variant: "body" }),
-          "w-full bg-white border-[3px] border-border rounded-cartoon-sm p-4 h-auto",
+          "w-full bg-white border-[3px] border-border rounded-md p-4 h-auto",
           "flex items-center justify-between gap-2",
           "outline-none transition-all duration-[120ms]",
           "focus:ring-0 focus:ring-offset-0 focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]",
@@ -41,7 +41,7 @@ export function CartoonDropdown({
         {trigger}
         <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-white border-[3px] border-border rounded-md shadow-cartoon overflow-hidden mt-1 w-[var(--radix-dropdown-menu-trigger-width)]">
+      <DropdownMenuContent className="bg-white border-[3px] border-border rounded-md shadow-cartoon-sm overflow-hidden mt-1 w-[var(--radix-dropdown-menu-trigger-width)]">
         {items.map((item) => (
           <DropdownMenuItem
             key={item.label}

@@ -42,12 +42,12 @@ export function RoomProvider() {
     toastInfo(
       isHost ? "The room has been destroyed" : "The room has been destroyed by the host",
     );
-    navigate("/game/room/new");
+    navigate("/game/room");
   };
 
   const onSseError = (status: number) => {
     toastError(status === 403 ? "No access to this room" : "Room connection failed");
-    navigate("/game/room/new");
+    navigate("/game/room");
   };
 
   return (

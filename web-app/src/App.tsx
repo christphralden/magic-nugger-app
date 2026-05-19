@@ -7,8 +7,9 @@ import { RegisterPage } from "@/pages/register";
 import { HomePageContainer } from "@/pages/home";
 import { LevelSelectPage } from "@/pages/level-select";
 import { GamePage } from "@/pages/game";
-import { NewGamePage } from "@/pages/game-new";
-import { NewRoomPage } from "@/pages/room-new";
+import { GamePlayPage } from "@/pages/game-play";
+import { RoomPage } from "@/pages/room";
+import { RoomHostPage } from "@/pages/room-host";
 import { RoomLobbyPage } from "@/pages/room-lobby";
 import { RoomFinishedPage } from "@/pages/room-finished";
 import { RoomSetupPage } from "@/pages/room-setup";
@@ -56,18 +57,19 @@ export const router = createBrowserRouter([
         path: "/game",
         children: [
           { index: true, element: <GamePage /> },
-          { path: "new", element: <NewGamePage /> },
+          { path: "play", element: <GamePlayPage /> },
           {
             path: "room",
             children: [
-              { path: "new", element: <NewRoomPage /> },
+              { index: true, element: <RoomPage /> },
+              { path: "host", element: <RoomHostPage /> },
               {
                 path: ":id",
                 element: <RoomProvider />,
                 children: [
                   { index: true, element: <RoomLobbyPage /> },
                   { path: "setup", element: <RoomSetupPage /> },
-                  { path: "play", element: <NewGamePage /> },
+                  { path: "play", element: <GamePlayPage /> },
                   { path: "finished", element: <RoomFinishedPage /> },
                 ],
               },

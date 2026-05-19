@@ -10,10 +10,10 @@ type Props = {
 
 export function ConfirmLeaveDialog({ title, description, onConfirm, onCancel }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-paper border-[3px] border-border rounded-2xl shadow-cartoon-lg p-8 w-full max-w-sm flex flex-col gap-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 backdrop-blur-sm">
+      <div className="bg-paper border-[3px] border-border rounded-xl shadow-cartoon-lg p-8 w-full max-w-sm flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <Typography variant="heading">{title}</Typography>
+          <Typography variant="primary">{title}</Typography>
           <Typography variant="secondary" className="text-ink-soft">
             {description}
           </Typography>

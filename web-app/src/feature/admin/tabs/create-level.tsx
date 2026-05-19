@@ -1,9 +1,8 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch } from "@/store/hooks";
-import { handleCreateLevelAdmin, handleGetLevelsAdmin } from "@/feature/admin/state/admin.actions";
+import { handleCreateLevelAdmin } from "@/feature/admin/state/admin.actions";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
 import {
@@ -17,10 +16,6 @@ import {
 export function CreateLevelTab() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    dispatch(handleGetLevelsAdmin());
-  }, [dispatch]);
 
   const form = useForm<LevelFormValues>({
     resolver: zodResolver(levelSchema),

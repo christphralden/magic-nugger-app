@@ -23,21 +23,22 @@ export const roomsRouter = Router();
 
 roomsRouter.use(authenticate);
 
+roomsRouter.get("/", async (req, res) => {
+  const user = getUser(req);
+  const rooms = await roomService.getActiveForPlayer(user.id);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: rooms,
+  } satisfies ApiResponse<Room[]>);
+});
+
 roomsRouter.post(
   "/",
   authorize("room:create"),
   validate(RequestCreateRoomSchema),
   async (req, res) => {
     const user = getUser(req);
-    const pendingRoom = await roomService.getLastPendingCreation(user.id);
-
-    if (pendingRoom) {
-      return res.status(HttpCode.OK).json({
-        code: HttpCode.OK,
-        error: null,
-        data: pendingRoom,
-      } satisfies ApiResponse<Room>);
-    }
 
     const room = await roomService.create(user.id, req.body);
     loggingService.log({
@@ -131,6 +132,27 @@ roomsRouter.get("/:id", async (req, res) => {
   } satisfies ApiResponse<RoomWithMembers>);
 });
 
+roomsRouter.post("/:id/open", authorize("room:start"), async (req, res) => {
+  const user = getUser(req);
+  const room = await roomService.openRoom(req.params.id, user.id);
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: room,
+  } satisfies ApiResponse<Room>);
+});
+
+roomsRouter.post("/:id/close", authorize("room:start"), async (req, res) => {
+  const user = getUser(req);
+  const room = await roomService.closeRoom(req.params.id, user.id);
+  roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.ROOM_CLOSED, {});
+  res.json({
+    code: HttpCode.OK,
+    error: null,
+    data: room,
+  } satisfies ApiResponse<Room>);
+});
+
 roomsRouter.post("/:id/start", authorize("room:start"), async (req, res) => {
   const user = getUser(req);
   const room = await roomService.start(req.params.id, user.id);
@@ -192,6 +214,14 @@ roomsRouter.delete("/:id/leave", async (req, res) => {
     req.params.id,
     user.id,
   );
+
+  if (!removed) {
+    return res.status(HttpCode.NOT_FOUND).json({
+      code: HttpCode.NOT_FOUND,
+      error: "Not a member of this room",
+      data: null,
+    } satisfies ApiResponse<null>);
+  }
 
   if (removed) {
     roomEventBus.publish(req.params.id, ROOM_SSE_EVENTS.MEMBER_LEFT, {

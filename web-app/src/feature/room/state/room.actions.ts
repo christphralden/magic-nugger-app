@@ -6,10 +6,17 @@ import {
   cancelRoom,
   getRoomLeaderboard,
   saveRoomQuestions,
+  openRoom,
+  closeRoom,
+  getRooms,
 } from "./room.thunk";
 import { toastError, toastInfo } from "@/lib/toast";
 import { isFulfilled } from "@reduxjs/toolkit";
-import type { RequestCreateRoom, Room, Question } from "@magic-nugger-app/shared";
+import type {
+  RequestCreateRoom,
+  Room,
+  Question,
+} from "@magic-nugger-app/shared";
 
 export const handleCreateRoom =
   (body: RequestCreateRoom) =>
@@ -24,9 +31,9 @@ export const handleCreateRoom =
   };
 
 export const handleJoinRoom =
-  (invite_code: string) =>
+  (inviteCode: string) =>
   async (dispatch: AppDispatch): Promise<Room | null> => {
-    const result = await dispatch(joinRoom({ invite_code }));
+    const result = await dispatch(joinRoom({ inviteCode: inviteCode }));
     if (isFulfilled(joinRoom)(result)) {
       toastInfo("Joined room!");
       return result.payload;
@@ -63,6 +70,34 @@ export const handleSaveRoomQuestions =
       return result.payload;
     }
     toastError((result.payload as string) ?? "Failed to save questions");
+    return null;
+  };
+
+export const handleOpenRoom =
+  (roomId: string) =>
+  async (dispatch: AppDispatch): Promise<Room | null> => {
+    const result = await dispatch(openRoom(roomId));
+    if (isFulfilled(openRoom)(result)) return result.payload;
+    toastError((result.payload as string) ?? "Failed to open room");
+    return null;
+  };
+
+export const handleCloseRoom =
+  (roomId: string) =>
+  async (dispatch: AppDispatch): Promise<Room | null> => {
+    const result = await dispatch(closeRoom(roomId));
+    if (isFulfilled(closeRoom)(result)) return result.payload;
+    toastError((result.payload as string) ?? "Failed to close room");
+    return null;
+  };
+
+export const handleGetRooms =
+  () =>
+  async (dispatch: AppDispatch): Promise<Room[] | null> => {
+    const result = await dispatch(getRooms());
+    if (isFulfilled(getRooms)(result)) return result.payload;
+
+    toastError((result.payload as string) ?? "Failed to fetch rooms");
     return null;
   };
 

@@ -22,9 +22,9 @@ const alertVariants = cva(
 
 const ALERT_ICONS = {
   info: <Sparkle size={28} className="shrink-0 text-gold" />,
-  error: <AlertErrorIcon size={28} className="shrink-0 text-red-400" />,
-  warning: <AlertWarningIcon size={28} className="shrink-0 text-amber-500" />,
-  success: <Sparkle size={28} className="shrink-0 text-green-500" />,
+  error: <AlertErrorIcon size={28} className="shrink-0 text-coral" />,
+  warning: <AlertWarningIcon size={28} className="shrink-0 text-gold-deep" />,
+  success: <Sparkle size={28} className="shrink-0 text-green" />,
 } as const;
 
 interface AlertProps

@@ -8,6 +8,7 @@ export const ROOM_SSE_EVENTS = {
   SESSION_UPDATE: "session_update",
   ROOM_COMPLETED: "room_completed",
   ROOM_CANCELLED: "room_cancelled",
+  ROOM_CLOSED: "room_closed",
 } as const;
 
 export type RoomSSEEventKey = (typeof ROOM_SSE_EVENTS)[keyof typeof ROOM_SSE_EVENTS];
@@ -20,6 +21,7 @@ export type RoomSSEPayloads = {
   session_update: { player_id: string; session_status: string };
   room_completed: { ended_at: string };
   room_cancelled: Record<string, never>;
+  room_closed: Record<string, never>;
 };
 
 export type RoomSSEEvent = {

@@ -10,7 +10,7 @@ export function CartoonPill({
   return (
     <span
       className={cn(
-        "cursor-pointer inline-flex items-center gap-1.5 border-[2.5px] border-border rounded-full px-[14px] py-1.5 font-display font-semibold text-[14px] shadow-cartoon-sm",
+        "cursor-pointer inline-flex items-center gap-1.5 border-[2.5px] border-border rounded-full px-[14px] py-1.5 font-display font-semibold text-sm shadow-cartoon-sm",
         className,
       )}
     >

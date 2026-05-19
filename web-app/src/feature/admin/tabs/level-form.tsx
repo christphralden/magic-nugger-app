@@ -220,7 +220,7 @@ export function LevelFields({
               </div>
               <FormControl>
                 <textarea
-                  className="w-full rounded-lg border-border border-[3px] p-2 font-mono min-h-[80px] resize-y focus:outline-none"
+                  className="w-full rounded-lg border-border border-[3px] p-2 font-mono min-h-[80px] resize-y focus:outline-none shadow-cartoon-sm"
                   {...field}
                 />
               </FormControl>
@@ -238,7 +238,7 @@ export function LevelFields({
               </div>
               <FormControl>
                 <textarea
-                  className="w-full rounded-lg border-border border-[3px] p-2 font-mono min-h-[80px] resize-y focus:outline-none"
+                  className="w-full rounded-lg border-border border-[3px] p-2 font-mono min-h-[80px] resize-y focus:outline-none shadow-cartoon-sm"
                   {...field}
                 />
               </FormControl>

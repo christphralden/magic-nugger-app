@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Typography } from "./typography";
 import { Timer as TimerIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function formatCountdown(ms: number): string {
   const totalSecs = Math.max(0, Math.ceil(ms / 1000));
@@ -38,11 +39,16 @@ export const Timer = ({
   if (timeLeft == null) return null;
 
   return (
-    <div className="flex items-center gap-1 text-ink-soft">
-      <TimerIcon className="size-4" />
+    <div className="flex items-center text-ink-soft justify-between w-[3.15rem]">
+      <TimerIcon
+        className={cn(
+          timeLeft < 60_000 ? "text-coral" : "text-ink-soft",
+          "size-4 stroke-[3px]",
+        )}
+      />
       <Typography
-        variant="body"
-        className={timeLeft < 60_000 ? "text-red-500" : "text-ink-soft"}
+        variant="label"
+        className={timeLeft < 60_000 ? "text-coral" : "text-ink-soft"}
       >
         {formatCountdown(timeLeft)}
       </Typography>

@@ -36,20 +36,21 @@ export const roomService = {
     });
   },
 
-  async getLastPendingCreation(playerId: string): Promise<Room | null> {
-    const status: RoomStatus = "creation";
-
+  async getActiveForPlayer(playerId: string): Promise<Room[]> {
     const { rows } = await getDb().query<Room>(
-      `SELECT id, host_id, level_id, type, status, invite_code,
-          max_players, questions, started_at, ended_at, created_at, updated_at
-      FROM rooms
-      WHERE host_id = $1 AND status = $2
-      ORDER BY created_at DESC
-      `,
-      [playerId, status],
+      `SELECT
+        r.id, r.host_id, r.level_id, r.type, r.status,
+        r.invite_code, r.max_players, r.started_at, r.ended_at,
+        r.created_at, r.updated_at, r.questions
+       FROM rooms r
+       JOIN room_members rm ON rm.room_id = r.id
+       WHERE rm.player_id = $1
+         AND rm.deleted_at IS NULL
+         AND r.status IN ('creation', 'waiting', 'in_progress')
+       ORDER BY r.created_at DESC`,
+      [playerId],
     );
-    const room = rows[0];
-    return room;
+    return rows;
   },
 
   async join(playerId: string, inviteCode: string): Promise<Room> {
@@ -166,24 +167,6 @@ export const roomService = {
     return rows[0];
   },
 
-  async end(roomId: string, hostId: string): Promise<void> {
-    const { rows: check } = await getDb().query<{ host_id: string }>(
-      `SELECT host_id FROM rooms WHERE id = $1`,
-      [roomId],
-    );
-    if (!check[0]) throw new AppError(HttpCode.NOT_FOUND, "Room not found");
-    if (check[0].host_id !== hostId) {
-      throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
-    }
-
-    await getDb().query(
-      `UPDATE rooms
-       SET status = 'completed', ended_at = now(), updated_at = now()
-       WHERE id = $1 AND status = 'in_progress'`,
-      [roomId],
-    );
-  },
-
   async saveQuestions(
     roomId: string,
     hostId: string,
@@ -200,7 +183,7 @@ export const roomService = {
 
     const { rows } = await getDb().query<Room>(
       `UPDATE rooms
-       SET questions = $2::jsonb, status = 'waiting', updated_at = now()
+       SET questions = $2::jsonb, updated_at = now()
        WHERE id = $1 AND status = 'creation'
        RETURNING
         id, host_id, level_id, type, status, invite_code,
@@ -211,6 +194,65 @@ export const roomService = {
       throw new AppError(HttpCode.CONFLICT, "Room is not in creation state");
     }
     return rows[0];
+  },
+
+  async openRoom(roomId: string, hostId: string): Promise<Room> {
+    const { rows: check } = await getDb().query<{ host_id: string }>(
+      `SELECT host_id FROM rooms WHERE id = $1`,
+      [roomId],
+    );
+    if (!check[0]) throw new AppError(HttpCode.NOT_FOUND, "Room not found");
+    if (check[0].host_id !== hostId) {
+      throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
+    }
+
+    const { rows } = await getDb().query<Room>(
+      `UPDATE rooms
+       SET status = 'waiting', updated_at = now()
+       WHERE id = $1 AND status = 'creation'
+       RETURNING
+        id, host_id, level_id, type, status, invite_code,
+        max_players, questions, started_at, ended_at, created_at, updated_at`,
+      [roomId],
+    );
+    if (!rows[0]) {
+      throw new AppError(HttpCode.CONFLICT, "Room is not in creation state");
+    }
+    return rows[0];
+  },
+
+  async closeRoom(roomId: string, hostId: string): Promise<Room> {
+    return tx(async () => {
+      const { rows: check } = await getDb().query<{ host_id: string }>(
+        `SELECT host_id FROM rooms WHERE id = $1`,
+        [roomId],
+      );
+      if (!check[0]) throw new AppError(HttpCode.NOT_FOUND, "Room not found");
+      if (check[0].host_id !== hostId) {
+        throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
+      }
+
+      const { rows } = await getDb().query<Room>(
+        `UPDATE rooms
+         SET status = 'creation', updated_at = now()
+         WHERE id = $1 AND status = 'waiting'
+         RETURNING
+          id, host_id, level_id, type, status, invite_code,
+          max_players, questions, started_at, ended_at, created_at, updated_at`,
+        [roomId],
+      );
+      if (!rows[0]) {
+        throw new AppError(HttpCode.CONFLICT, "Room is not in waiting state");
+      }
+
+      await getDb().query(
+        `UPDATE room_members SET deleted_at = now()
+         WHERE room_id = $1 AND player_id != $2 AND deleted_at IS NULL`,
+        [roomId, hostId],
+      );
+
+      return rows[0];
+    });
   },
 
   async linkMemberSession({
@@ -319,7 +361,7 @@ export const roomService = {
       await getDb().query(
         `UPDATE rooms
          SET status = 'cancelled', ended_at = now(), updated_at = now()
-         WHERE id = $1 AND status IN ('waiting', 'in_progress')`,
+         WHERE id = $1 AND status IN ('creation', 'waiting', 'in_progress')`,
         [roomId],
       );
 

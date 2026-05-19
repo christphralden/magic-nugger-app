@@ -16,7 +16,7 @@ function Slot({ index }: { index: number }) {
   return (
     <div
       className={cn(
-        "relative w-10 h-14 border-[3px] border-ink rounded-xl shadow-cartoon-sm flex items-center justify-center font-display font-bold text-2xl text-ink",
+        "relative w-12 h-14 border-[3px] border-ink rounded-xl shadow-cartoon-sm flex items-center justify-center font-display font-bold text-2xl text-ink",
         slot.char !== null ? "bg-cream-2" : "bg-paper",
       )}
     >

@@ -46,7 +46,8 @@ export function RoomGameView() {
   const allowNavRef = useRef(false);
   const gameActiveRef = useRef(false);
 
-  const { roomId, roomData, setRoomData, handleRoomCancelled, onSseError } = useRoom();
+  const { roomId, roomData, setRoomData, handleRoomCancelled, onSseError } =
+    useRoom();
   const questions = roomData?.room.questions?.data;
 
   const { provider, isLoaded } = useUnityBridge({
@@ -91,8 +92,8 @@ export function RoomGameView() {
   });
 
   useEffect(() => {
-    if (!gameActiveRef.current) return;
     const handleBeforeUnload = () => {
+      if (!gameActiveRef.current) return;
       fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/leave`, {
         method: "DELETE",
         credentials: "include",
@@ -139,7 +140,7 @@ export function RoomGameView() {
   );
 }
 
-export function NewGamePage() {
+export function GamePlayPage() {
   const { id } = useParams<{ id: string | undefined }>();
   const dispatch = useDispatch();
   const levelsStatus = useSelector(selectLevelsStatus);

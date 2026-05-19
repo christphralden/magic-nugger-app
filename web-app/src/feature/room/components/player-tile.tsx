@@ -46,11 +46,13 @@ export function EmptySlot({ idx }: EmptySlotProps) {
   return (
     <div className="border-[3px] border-dashed border-border rounded-lg opacity-55 flex flex-col items-center justify-center gap-2 px-2 py-6 min-h-[132px]">
       <div className="size-12 rounded-full border-[3px] border-dashed border-ink-soft flex items-center justify-center">
-        <Typography variant="subheading" as="span">
+        <Typography variant="subheading" as="span" className="text-ink-soft">
           +
         </Typography>
       </div>
-      <Typography variant="caption">Player {idx}</Typography>
+      <Typography variant="label" className="text-ink-soft">
+        Player {idx}
+      </Typography>
     </div>
   );
 }

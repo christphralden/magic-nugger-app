@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useBlocker } from "react-router-dom";
 import { useDispatch } from "@/store/hooks";
 import {
   handleStartRoom,
   handleCancelRoom,
+  handleCloseRoom,
 } from "@/feature/room/state/room.actions";
 import { leaveRoom } from "@/feature/room/state/room.thunk";
 import { useRoomSse } from "@/hooks/use-room-sse";
@@ -11,23 +12,29 @@ import { useRoom } from "@/contexts/room.context";
 import { PageLayout } from "@/components/layout/page-layout";
 import { CartoonButton } from "@/components/ui/cartoon-button";
 import { Typography } from "@/components/ui/typography";
-import { Timer } from "@/components/ui/timer";
 import { ConfirmLeaveDialog } from "@/components/ui/confirm-leave-dialog";
 import { PlayerTile, EmptySlot } from "@/feature/room/components/player-tile";
 import { FloatingText } from "@/components/floating-text";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
-import { ROOM_WAITING_TTL_MS } from "@/constants";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 import type { RoomMemberDetail } from "@magic-nugger-app/shared";
-import { Copy, Check } from "lucide-react";
-import { toastError, toastInfo } from "@/lib/toast";
+import { Copy, Check, ArrowLeft } from "lucide-react";
+import { toastInfo } from "@/lib/toast";
 import { CartoonPill } from "@/components/ui/cartoon-pill";
 import { Button } from "@/components/ui/button";
 
 export function RoomLobbyPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { roomId, roomData, setRoomData, isHost, currentPlayer, handleRoomCancelled, onSseError } = useRoom();
+  const {
+    roomId,
+    roomData,
+    setRoomData,
+    isHost,
+    currentPlayer,
+    handleRoomCancelled,
+    onSseError,
+  } = useRoom();
 
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -53,23 +60,24 @@ export function RoomLobbyPage() {
         }
       },
       [ROOM_SSE_EVENTS.MEMBER_LEFT]: (data) => {
+        const isMe = data.player_id === currentPlayer?.id;
+        const member = roomData?.members.find(
+          (m) => m.player_id === data.player_id,
+        );
         setRoomData((prev) => {
           if (!prev) return prev;
-          const member = prev.members.find(
-            (m) => m.player_id === data.player_id,
-          );
-          if (member && member.player_id !== currentPlayer?.id) {
-            toastInfo(`${member.display_name || member.username} has left`);
-          } else if (member?.player_id === currentPlayer?.id) {
-            toastInfo("You have left the room");
-            allowNavRef.current = true;
-            navigate("/game");
-          }
           return {
             ...prev,
             members: prev.members.filter((m) => m.player_id !== data.player_id),
           };
         });
+        if (isMe) {
+          toastInfo("You have left the room");
+          allowNavRef.current = true;
+          navigate("/game");
+        } else if (member) {
+          toastInfo(`${member.display_name || member.username} has left`);
+        }
       },
       [ROOM_SSE_EVENTS.ROOM_STARTED]: () => {
         allowNavRef.current = true;
@@ -78,6 +86,15 @@ export function RoomLobbyPage() {
       [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
         allowNavRef.current = true;
         handleRoomCancelled();
+      },
+      [ROOM_SSE_EVENTS.ROOM_CLOSED]: () => {
+        allowNavRef.current = true;
+        if (isHost) {
+          navigate(`/game/room/${roomId}/setup`);
+        } else {
+          toastInfo("Host is editing questions");
+          navigate("/game/room");
+        }
       },
     },
     {
@@ -90,13 +107,15 @@ export function RoomLobbyPage() {
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     if (allowNavRef.current) return false;
+    if (isHost) return false;
     if (currentLocation.pathname === nextLocation.pathname) return false;
     return roomData !== null;
   });
 
   useEffect(() => {
-    if (!roomData) return;
     const handleBeforeUnload = () => {
+      if (!roomData) return;
+      if (isHost) return;
       fetch(`${WEB_SERVER_URL}/${API_VERSION_BASE}/rooms/${roomId}/leave`, {
         method: "DELETE",
         credentials: "include",
@@ -105,11 +124,12 @@ export function RoomLobbyPage() {
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [roomId, roomData]);
+  }, [roomId, roomData, isHost]);
 
   const handleCopy = async () => {
     if (!roomData?.room.invite_code) return;
     await navigator.clipboard.writeText(roomData.room.invite_code);
+    toastInfo("Invite code copied");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -120,26 +140,11 @@ export function RoomLobbyPage() {
     setStarting(false);
   };
 
-  // updated_at = when questions were saved (only write to rooms during waiting phase)
-  const timerEnd: number | null = useMemo(() => {
-    if (!roomData?.room.updated_at) return null;
-    return new Date(roomData.room.updated_at).getTime() + ROOM_WAITING_TTL_MS;
-  }, [roomData?.room.updated_at]);
-
-  const handleTimerEnd = useCallback(() => {
-    if (isHost) {
-      dispatch(handleCancelRoom(roomId));
-    } else {
-      dispatch(leaveRoom(roomId));
-    }
-    toastError("Room is closed due to inactivity, create a new room");
-    allowNavRef.current = true;
-    navigate("/game/room/new");
-  }, [isHost, roomId]);
-
   const handleDestroyRoom = () => dispatch(handleCancelRoom(roomId));
 
   const handleLeaveRoom = () => dispatch(leaveRoom(roomId));
+
+  const handleEditQuestions = () => dispatch(handleCloseRoom(roomId));
 
   const handleConfirmLeave = async () => {
     allowNavRef.current = true;
@@ -173,112 +178,128 @@ export function RoomLobbyPage() {
         />
       )}
 
-      <div className="flex flex-col items-center gap-6 relative z-[1] py-4">
-        <CartoonPill className="bg-gold hover:animate-nudge">
-          Waiting room
-        </CartoonPill>
-        <div className="flex flex-col items-center gap-2 text-center gap-4">
-          <Typography variant="heading">
-            <FloatingText
-              text={
-                isHost ? "Gather your crew" : "Waiting for host to start..."
-              }
-              duration={2}
-            />
-          </Typography>
-          <Typography variant="secondary" className="text-ink-soft">
-            Share the invite code. Game starts when the host hits play.
-          </Typography>
-        </div>
+      <div className="flex flex-col items-center relative z-[1]">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/game/room/host")}
+          className="self-start"
+        >
+          <ArrowLeft className="size-4 stroke-[3px]" />
+          <Typography variant="label">Back</Typography>
+        </Button>
+        <div className="flex flex-col items-center gap-6 max-w-6xl w-full h-full">
+          <CartoonPill className="bg-gold hover:animate-nudge">
+            Waiting room
+          </CartoonPill>
+          <div className="flex flex-col items-center gap-2 text-center gap-4">
+            <Typography variant="heading">
+              <FloatingText
+                text={
+                  isHost ? "Gather your crew" : "Waiting for host to start..."
+                }
+                duration={2}
+              />
+            </Typography>
+            <Typography variant="secondary">
+              Share the invite code. Game starts when the host hits play.
+            </Typography>
+          </div>
 
-        <div className="bg-paper border-[3px] border-border rounded-2xl shadow-cartoon-lg p-7 w-full max-w-3xl flex flex-col gap-6">
-          <div className="flex items-start justify-between gap-5 flex-wrap">
-            <div className="flex flex-col gap-2 flex-1 min-w-[280px]">
-              <div className="flex items-center justify-between">
+          <div className="bg-paper border-[3px] border-border rounded-2xl shadow-cartoon-lg p-7 w-full max-w-3xl flex flex-col gap-6">
+            <div className="flex items-start justify-between gap-5 flex-wrap">
+              <div className="flex flex-col gap-2 flex-1 min-w-[280px]">
                 <Typography variant="secondary" as="span">
                   Invite code
                 </Typography>
-                <Timer end={timerEnd} onEnd={handleTimerEnd} />
-              </div>
-              <Button
-                onClick={handleCopy}
-                className="flex items-center justify-between gap-3 bg-cream border-[3px] border-border rounded-xl px-4 py-8 hover:bg-cream hover:brightness-95 transition-all cursor-pointer shadow-cartoon-sm"
-              >
-                <Typography variant="primary" className="tracking-[0.25em]">
-                  {room.invite_code}
+                <CartoonButton
+                  onClick={handleCopy}
+                  size="lg"
+                  variant="select"
+                  className="flex items-center justify-between"
+                >
+                  <Typography variant="primary" className="tracking-[0.25em]">
+                    {room.invite_code}
+                  </Typography>
+                  <div className="bg-white border-[2.5px] border-ink rounded-xl p-2 shadow-cartoon-sm shrink-0">
+                    {copied ? (
+                      <Check className="size-4 text-ink stroke-[4px]" />
+                    ) : (
+                      <Copy className="size-4 text-ink stroke-[3px] " />
+                    )}
+                  </div>
+                </CartoonButton>
+                <Typography variant="label" className="text-ink-soft">
+                  Share this code with friends to join
                 </Typography>
-                <div className="bg-white border-[2.5px] border-ink rounded-xl p-2 shadow-cartoon-sm shrink-0">
-                  {copied ? (
-                    <Check className="size-4 text-teal-deep" />
-                  ) : (
-                    <Copy className="size-4 text-ink" />
-                  )}
-                </div>
-              </Button>
-              <Typography variant="label" className="text-ink-soft">
-                Share this code with friends to join
-              </Typography>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="flex items-baseline justify-between">
-              <Typography variant="secondary">Players</Typography>
-              <Typography variant="secondary" as="span">
-                <span className="text-coral">{members.length}</span>
-                {" / "}
-                {room.max_players}
-              </Typography>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              {members.map((member) => (
-                <PlayerTile
-                  key={member.player_id}
-                  member={member}
-                  isHost={member.player_id === room.host_id}
-                  isMe={member.player_id === currentPlayer?.id}
-                />
-              ))}
-              {Array.from({ length: emptySlots }).map((_, i) => (
-                <EmptySlot key={i} idx={members.length + i + 1} />
-              ))}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-baseline justify-between">
+                <Typography variant="secondary">Players</Typography>
+                <Typography variant="secondary" as="span">
+                  <span className="text-coral">{members.length}</span>
+                  {" / "}
+                  {room.max_players}
+                </Typography>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                {members.map((member) => (
+                  <PlayerTile
+                    key={member.player_id}
+                    member={member}
+                    isHost={member.player_id === room.host_id}
+                    isMe={member.player_id === currentPlayer?.id}
+                  />
+                ))}
+                {Array.from({ length: emptySlots }).map((_, i) => (
+                  <EmptySlot key={i} idx={members.length + i + 1} />
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="flex gap-4">
-            {isHost && (
-              <CartoonButton
-                variant="secondary"
-                onClick={handleDestroyRoom}
-                disabled={starting}
-                size="lg"
-                className="w-full"
-              >
-                Destroy room
-              </CartoonButton>
-            )}
-            {isHost && (
-              <CartoonButton
-                onClick={handleStart}
-                disabled={starting || members.length < 2}
-                size="lg"
-                className="w-full"
-              >
-                {starting ? "Starting..." : "Start game"}
-              </CartoonButton>
-            )}
+            <div className="flex gap-4">
+              {isHost && (
+                <CartoonButton
+                  variant="secondary"
+                  onClick={handleDestroyRoom}
+                  disabled={starting}
+                  className="w-full"
+                >
+                  Destroy room
+                </CartoonButton>
+              )}
+              {isHost && (
+                <CartoonButton
+                  variant="secondary"
+                  onClick={handleEditQuestions}
+                  disabled={starting}
+                  className="w-full"
+                >
+                  Edit questions
+                </CartoonButton>
+              )}
+              {isHost && (
+                <CartoonButton
+                  onClick={handleStart}
+                  disabled={starting || members.length < 2}
+                  className="w-full"
+                >
+                  {starting ? "Starting..." : "Start game"}
+                </CartoonButton>
+              )}
 
-            {!isHost && (
-              <CartoonButton
-                onClick={handleLeaveRoom}
-                disabled={starting}
-                size="lg"
-                className="w-full"
-              >
-                Leave room
-              </CartoonButton>
-            )}
+              {!isHost && (
+                <CartoonButton
+                  onClick={handleLeaveRoom}
+                  disabled={starting}
+                  className="w-full"
+                >
+                  Leave room
+                </CartoonButton>
+              )}
+            </div>
           </div>
         </div>
       </div>
