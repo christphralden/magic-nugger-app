@@ -77,7 +77,9 @@ export function RoomSetupPage() {
     );
     setSubmitting(false);
     if (room) {
-      toastInfo("Questions saved");
+      toastInfo(
+        "Questions saved, you can reopen the room by clicking the button again",
+      );
       setQuestionsSaved(true);
       return true;
     }

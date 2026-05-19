@@ -10,6 +10,7 @@ function AdminNavButton({ to, children }: { to: string; children: ReactNode }) {
   return (
     <CartoonButton
       className="rounded-xl font-body justify-start"
+      size={"sm"}
       variant={match ? "select" : "ghost"}
       onClick={() => navigate(to)}
     >

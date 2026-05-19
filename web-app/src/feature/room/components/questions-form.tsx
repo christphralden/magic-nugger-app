@@ -107,6 +107,7 @@ export function QuestionsForm({
 
   const isDisabled =
     (!isDirty && !hasExistingQuestions) || submitting || opening;
+
   const buttonLabel = isDirty
     ? submitting
       ? "Saving..."
@@ -114,6 +115,7 @@ export function QuestionsForm({
     : opening
       ? "Opening..."
       : "Open Room";
+
   const handleAction = isDirty ? form.handleSubmit(handleSave) : onOpenRoom;
 
   return (
@@ -144,7 +146,7 @@ export function QuestionsForm({
             variant="ghost"
             size="sm"
             onClick={handleAppend}
-            className="w-full"
+            className="w-fit mx-auto"
           >
             <Plus className="size-4 stroke-[4px]" />
             Add new problem

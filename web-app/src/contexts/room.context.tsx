@@ -39,14 +39,14 @@ export function RoomProvider() {
   const isHost = currentPlayer?.id === roomData?.room.host_id;
 
   const handleRoomCancelled = () => {
-    toastInfo(
-      isHost ? "The room has been destroyed" : "The room has been destroyed by the host",
-    );
+    toastInfo("The room ceased to exist");
     navigate("/game/room");
   };
 
   const onSseError = (status: number) => {
-    toastError(status === 403 ? "No access to this room" : "Room connection failed");
+    toastError(
+      status === 403 ? "No access to this room" : "Room connection failed",
+    );
     navigate("/game/room");
   };
 

@@ -319,7 +319,7 @@ export const roomService = {
        FROM room_members rm
        JOIN rooms r ON r.id = rm.room_id
        WHERE rm.room_id = $1 AND rm.player_id = $2
-         AND (rm.deleted_at IS NULL OR (r.started_at IS NOT NULL AND rm.deleted_at > r.started_at))`,
+         AND (rm.deleted_at IS NULL OR r.host_id = $2 OR (r.started_at IS NOT NULL AND rm.deleted_at > r.started_at))`,
       [roomId, playerId],
     );
     return rows.length > 0;

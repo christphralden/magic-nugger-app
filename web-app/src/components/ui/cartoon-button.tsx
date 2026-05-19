@@ -10,7 +10,8 @@ const cartoonButtonVariants = cva(
         primary: "bg-coral hover:bg-coral text-white",
         secondary: "bg-white hover:bg-white text-ink",
         select: "bg-cream hover:bg-cream-2 text-ink",
-        ghost: "border-transparent bg-transparent text-ink active:translate-y-0 hover:bg-white",
+        ghost:
+          "border-transparent bg-transparent text-ink active:translate-y-0 hover:bg-accent hover:text-accent-foreground hover:brightness-[100%]",
       },
       size: {
         sm: "px-4 py-4 text-base rounded-xl shadow-cartoon-sm",

@@ -7,7 +7,7 @@ export const typographyVariants = cva("", {
     variant: {
       logo: "font-display font-bold text-xl lg:text-3xl text-ink",
       heading:
-        "font-display font-bold text-6xl lg:text-8xl tracking-[-0.015em] leading-[0.95em]",
+        "font-display font-bold text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-[-0.015em] leading-[0.95em]",
       subheading: "font-display font-semibold text-2xl leading-snug",
       primary:
         "font-display font-bold leading-[0.95] tracking-[-0.015em] text-ink text-2xl lg:text-4xl",

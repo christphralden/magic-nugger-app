@@ -19,6 +19,27 @@ import type {
   RoomWithMembers,
 } from "@magic-nugger-app/shared";
 
+async function handleDisconnect(roomId: string, playerId: string) {
+  const memberDetail = await roomService.getMemberDetail(roomId, playerId);
+  const { removed, roomStatus } = await roomService.leave(roomId, playerId);
+
+  if (!removed) return;
+  roomEventBus.publish(roomId, ROOM_SSE_EVENTS.MEMBER_LEFT, {
+    player_id: playerId,
+  });
+
+  if (roomStatus !== "in_progress") return;
+  if (!memberDetail?.game_session_id) return;
+
+  await gameService.abandon({ sessionId: memberDetail.game_session_id });
+  const completed = await roomService.reconcileRoom(roomId);
+  if (!completed) return;
+
+  roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
+    ended_at: new Date().toISOString(),
+  });
+}
+
 export const roomsRouter = Router();
 
 roomsRouter.use(authenticate);
@@ -128,6 +149,7 @@ roomsRouter.get("/:id/events", async (req, res) => {
   req.on("close", () => {
     clearInterval(hb);
     roomEventBus.unsubscribe(req.params.id, res);
+    // handleDisconnect(req.params.id, user.id);
   });
 });
 
