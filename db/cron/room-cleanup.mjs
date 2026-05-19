@@ -1,34 +1,36 @@
 #!/usr/bin/env node
 import { Client } from "pg";
 
-const WAITING_TIMEOUT_MS = parseInt(process.env.ROOM_WAITING_TIMEOUT_MS ?? "300000", 10);
-const IN_PROGRESS_TIMEOUT_MS = parseInt(process.env.ROOM_IN_PROGRESS_TIMEOUT_MS ?? "600000", 10);
+const IN_PROGRESS_TIMEOUT_MS = parseInt(process.env.ROOM_IN_PROGRESS_TIMEOUT_MS ?? "1800000", 10);
 const BATCH_SIZE = parseInt(process.env.ROOM_CLEANUP_BATCH_SIZE ?? "50", 10);
 const source = process.stdout.isTTY ? "manual" : "cron";
 const host = process.env.POSTGRES_HOST ?? "localhost";
 const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
 
-async function cancelStaleWaitingRooms(client) {
+async function reconcileCompletedRooms(client) {
   const { rows } = await client.query(
-    `UPDATE rooms
-     SET status = 'cancelled', ended_at = now(), updated_at = now()
-     WHERE status = 'waiting'
-       AND created_at < now() - ($1 || ' milliseconds')::interval
+    `WITH completable AS (
+       SELECT r.id
+       FROM rooms r
+       WHERE r.status = 'in_progress'
+         AND NOT EXISTS (
+           SELECT 1
+           FROM room_members rm
+           LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
+           WHERE rm.room_id = r.id
+             AND rm.deleted_at IS NULL
+             AND (rm.game_session_id IS NULL OR gs.status = 'in_progress')
+         )
+     )
+     UPDATE rooms
+     SET status = 'completed', ended_at = now(), updated_at = now()
+     WHERE id IN (SELECT id FROM completable)
      RETURNING id`,
-    [WAITING_TIMEOUT_MS],
   );
-  const ids = rows.map((r) => r.id);
-  if (ids.length > 0) {
-    await client.query(
-      `UPDATE room_members SET deleted_at = now()
-       WHERE room_id = ANY($1) AND deleted_at IS NULL`,
-      [ids],
-    );
-  }
-  return ids;
+  return rows.map((r) => r.id);
 }
 
-async function completeStaleInProgressRooms(client, start) {
+async function completeStaleInProgressRooms(client) {
   const completedRoomIds = [];
   const totalAbandoned = [];
 
@@ -86,15 +88,6 @@ async function completeStaleInProgressRooms(client, start) {
         [roomIds],
       );
 
-      const completedIds = completed.map((r) => r.id);
-      if (completedIds.length > 0) {
-        await client.query(
-          `UPDATE room_members SET deleted_at = now()
-           WHERE room_id = ANY($1) AND deleted_at IS NULL`,
-          [completedIds],
-        );
-      }
-
       await client.query("COMMIT");
       totalAbandoned.push(...abandoned.map((r) => r.id));
       completedRoomIds.push(...completed.map((r) => r.id));
@@ -114,13 +107,13 @@ async function main() {
   await client.connect();
   const start = Date.now();
   try {
-    const cancelledIds = await cancelStaleWaitingRooms(client);
-    const { completedRoomIds, abandonedSessionCount } = await completeStaleInProgressRooms(client, start);
+    const reconciledIds = await reconcileCompletedRooms(client);
+    const { completedRoomIds, abandonedSessionCount } = await completeStaleInProgressRooms(client);
 
     const summary = {
       source,
-      cancelled_waiting: cancelledIds.length,
-      cancelled_ids: cancelledIds,
+      completed_member_done: reconciledIds.length,
+      completed_member_done_ids: reconciledIds,
       completed_in_progress: completedRoomIds.length,
       completed_ids: completedRoomIds,
       sessions_abandoned: abandonedSessionCount,
@@ -132,8 +125,8 @@ async function main() {
       ["cron:room-cleanup", "info", JSON.stringify(summary)],
     );
 
-    if (cancelledIds.length > 0) {
-      console.log(`[room-cleanup] cancelled ${cancelledIds.length} stale waiting room(s)`);
+    if (reconciledIds.length > 0) {
+      console.log(`[room-cleanup] completed ${reconciledIds.length} room(s) where all members finished`);
     }
     if (completedRoomIds.length > 0) {
       console.log(`[room-cleanup] completed ${completedRoomIds.length} stuck in-progress room(s), abandoned ${abandonedSessionCount} session(s)`);
