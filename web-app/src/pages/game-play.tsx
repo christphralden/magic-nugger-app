@@ -63,13 +63,31 @@ export function RoomGameView() {
     roomId,
     {
       [ROOM_SSE_EVENTS.INIT]: (data) => {
-        if (data.room.status !== "in_progress") {
-          toastError("Game has not yet started");
-          allowNavRef.current = true;
-          navigate(`/game/room/${roomId}`);
-        } else {
-          gameActiveRef.current = true;
-          setRoomData(data);
+        switch (data.room.status) {
+          case "creation":
+            allowNavRef.current = true;
+            toastError("Room is still being set up");
+            navigate(`..`);
+            break;
+          case "waiting":
+            allowNavRef.current = true;
+            toastError("Room has not yet started");
+            navigate(`/game/room/${roomId}`);
+            break;
+          case "in_progress":
+            gameActiveRef.current = true;
+            setRoomData(data);
+            break;
+          case "completed":
+            allowNavRef.current = true;
+            toastError("Game has already completed");
+            navigate(`/game/room/${roomId}/finished`);
+            break;
+          case "cancelled":
+            allowNavRef.current = true;
+            toastError("Game ceased to exist");
+            navigate("..");
+            break;
         }
       },
       [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {

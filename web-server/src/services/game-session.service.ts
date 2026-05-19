@@ -74,6 +74,30 @@ export const gameSessionService = {
     return rows[0];
   },
 
+  async getByPlayerAndRoom({
+    userId,
+    roomId,
+  }: {
+    userId: string;
+    roomId: string;
+  }): Promise<GameSession | null> {
+    const { rows } = await getDb().query<GameSession>(
+      `SELECT
+        id, player_id, level_id, room_id, status, score,
+        elo_before, elo_after, elo_delta, correct_count,
+        incorrect_count, max_streak, current_streak, started_at, ended_at,
+        client_ip, user_agent
+      FROM game_sessions
+      WHERE
+        player_id = $1
+        AND room_id = $2
+        AND status IN ('completed', 'failed', 'abandoned')
+      ORDER BY started_at DESC LIMIT 1`,
+      [userId, roomId],
+    );
+    return rows[0] ?? null;
+  },
+
   async abandon({ sessionId }: { sessionId: string }): Promise<void> {
     await getDb().query(
       `UPDATE game_sessions

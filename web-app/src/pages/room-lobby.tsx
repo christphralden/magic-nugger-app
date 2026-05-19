@@ -19,7 +19,7 @@ import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 import type { RoomMemberDetail } from "@magic-nugger-app/shared";
 import { Copy, Check, ArrowLeft } from "lucide-react";
-import { toastInfo } from "@/lib/toast";
+import { toastError, toastInfo } from "@/lib/toast";
 import { CartoonPill } from "@/components/ui/cartoon-pill";
 import { Button } from "@/components/ui/button";
 
@@ -44,7 +44,29 @@ export function RoomLobbyPage() {
   useRoomSse(
     roomId,
     {
-      [ROOM_SSE_EVENTS.INIT]: (data) => setRoomData(data),
+      [ROOM_SSE_EVENTS.INIT]: (data) => {
+        switch (data.room.status) {
+          case "creation":
+            toastError("Room is still being set up");
+            navigate(`..`);
+            break;
+          case "waiting":
+            setRoomData(data);
+            break;
+          case "in_progress":
+            toastError("Game has already started");
+            navigate(`/game/room/${roomId}/finished`);
+            break;
+          case "completed":
+            toastError("Game has already completed");
+            navigate(`/game/room/${roomId}/finished`);
+            break;
+          case "cancelled":
+            toastError("Room ceased to exist");
+            navigate("..");
+            break;
+        }
+      },
       [ROOM_SSE_EVENTS.MEMBER_JOINED]: (data) => {
         setRoomData((prev) => {
           if (!prev) return prev;

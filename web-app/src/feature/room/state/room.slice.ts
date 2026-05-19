@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import { createRoom, joinRoom, startRoom, getRoomLeaderboard } from "./room.thunk";
 import type { AsyncStatus, RoomLeaderboardRow } from "@magic-nugger-app/shared";
 
@@ -23,6 +24,28 @@ const roomSlice = createSlice({
     clearRoomLeaderboard: (state) => {
       state.leaderboard = [];
       state.leaderboardStatus = "idle";
+    },
+    updateLeaderboardRow: (
+      state,
+      action: PayloadAction<Partial<RoomLeaderboardRow> & { player_id: string }>,
+    ) => {
+      const idx = state.leaderboard.findIndex(
+        (r) => r.player_id === action.payload.player_id,
+      );
+      if (idx === -1) return;
+      state.leaderboard[idx] = { ...state.leaderboard[idx], ...action.payload };
+      state.leaderboard.sort((a, b) => {
+        const aFinal =
+          a.session_status === "completed" || a.session_status === "failed"
+            ? 0
+            : 1;
+        const bFinal =
+          b.session_status === "completed" || b.session_status === "failed"
+            ? 0
+            : 1;
+        if (aFinal !== bFinal) return aFinal - bFinal;
+        return (b.score ?? -1) - (a.score ?? -1);
+      });
     },
   },
   extraReducers: (builder) => {
@@ -74,7 +97,7 @@ const roomSlice = createSlice({
   },
 });
 
-export const { clearRoomLeaderboard } = roomSlice.actions;
+export const { clearRoomLeaderboard, updateLeaderboardRow } = roomSlice.actions;
 export const {
   selectRoomLeaderboard,
   selectRoomLeaderboardStatus,

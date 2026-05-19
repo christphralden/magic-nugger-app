@@ -25,7 +25,7 @@ roomsRouter.use(authenticate);
 
 roomsRouter.get("/", async (req, res) => {
   const user = getUser(req);
-  const rooms = await roomService.getActiveForPlayer(user.id);
+  const rooms = await roomService.getByPlayer(user.id);
   res.json({
     code: HttpCode.OK,
     error: null,
@@ -93,10 +93,12 @@ roomsRouter.get("/:id/events", async (req, res) => {
   if (!isMember) {
     return res.status(HttpCode.FORBIDDEN).json({
       code: HttpCode.FORBIDDEN,
-      error: "Forbidden",
+      error: "You dont have access to this room",
       data: null,
     } satisfies ApiResponse<null>);
   }
+
+  const snapshot = await roomService.getWithMembers(req.params.id);
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache, no-transform");
@@ -106,7 +108,6 @@ roomsRouter.get("/:id/events", async (req, res) => {
 
   roomEventBus.subscribe(req.params.id, res);
 
-  const snapshot = await roomService.getWithMembers(req.params.id);
   res.write(
     `event: ${ROOM_SSE_EVENTS.INIT}\ndata: ${JSON.stringify(snapshot)}\n\n`,
   );
@@ -114,7 +115,14 @@ roomsRouter.get("/:id/events", async (req, res) => {
   const hb = setInterval(() => {
     try {
       res.write(": ping\n\n");
-    } catch {}
+    } catch {
+      loggingService.log({
+        event: "sse",
+        level: "error",
+        description: "ping corruption",
+        userId: user.id,
+      });
+    }
   }, 20_000);
 
   req.on("close", () => {
@@ -180,7 +188,7 @@ roomsRouter.put(
   validate(RequestSaveQuestionsSchema),
   async (req, res) => {
     const user = getUser(req);
-    const room = await roomService.saveQuestions(
+    const room = await roomService.updateQuestions(
       req.params.id,
       user.id,
       req.body.questions,

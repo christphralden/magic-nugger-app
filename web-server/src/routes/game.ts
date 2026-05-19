@@ -55,6 +55,11 @@ gameRouter.post(
       userId: user.id,
       metadata: { session_id: session.id, level_id: req.body.level_id },
     });
+    if (session.room_id) {
+      roomEventBus.publish(session.room_id, ROOM_SSE_EVENTS.SESSION_STARTED, {
+        player_id: user.id,
+      });
+    }
     res.status(HttpCode.CREATED).json({
       code: HttpCode.CREATED,
       error: null,
@@ -67,28 +72,53 @@ gameRouter.post(
   "/:id/answer",
   validate(RequestAnswerSchema),
   async (req, res) => {
-    const answer = await gameService.answer({
+    const user = getUser(req);
+    const result = await gameService.answer({
       sessionId: req.params.id,
+      userId: user.id,
       isCorrect: req.body.is_correct,
       timeTakenMs: req.body.time_taken_ms,
     });
+    if (result.room_id) {
+      roomEventBus.publish(result.room_id, ROOM_SSE_EVENTS.ANSWER_UPDATE, {
+        player_id: user.id,
+        score: result.current_score,
+        correct_count: result.correct_count,
+        incorrect_count: result.incorrect_count,
+        current_streak: result.current_streak,
+      });
+    }
     res.json({
       code: HttpCode.OK,
       error: null,
-      data: answer,
+      data: {
+        is_correct: result.is_correct,
+        elo_delta: result.elo_delta,
+        current_streak: result.current_streak,
+        current_score: result.current_score,
+      },
     } satisfies ApiResponse<ResponseAnswer>);
   },
 );
 
 gameRouter.post("/:id/end", async (req, res) => {
   const user = getUser(req);
-  const { levelId, eloDelta, newlyUnlockedNames, roomId, roomCompleted } =
-    await gameService.end({
-      sessionId: req.params.id,
-      userId: user.id,
-      currentElo: user.current_elo,
-      status: "completed",
-    });
+  const {
+    levelId,
+    eloDelta,
+    newlyUnlockedNames,
+    roomId,
+    roomCompleted,
+    score,
+    correctCount,
+    incorrectCount,
+    maxStreak,
+  } = await gameService.end({
+    sessionId: req.params.id,
+    userId: user.id,
+    currentElo: user.current_elo,
+    status: "completed",
+  });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
   loggingService.log({
@@ -107,6 +137,11 @@ gameRouter.post("/:id/end", async (req, res) => {
     roomEventBus.publish(roomId, ROOM_SSE_EVENTS.SESSION_UPDATE, {
       player_id: user.id,
       session_status: "completed",
+      score,
+      elo_delta: eloDelta,
+      correct_count: correctCount,
+      incorrect_count: incorrectCount,
+      max_streak: maxStreak,
     });
     if (roomCompleted) {
       roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
@@ -126,12 +161,13 @@ gameRouter.post("/:id/end", async (req, res) => {
 
 gameRouter.post("/:id/fail", async (req, res) => {
   const user = getUser(req);
-  const { levelId, eloDelta, roomId, roomCompleted } = await gameService.end({
-    sessionId: req.params.id,
-    userId: user.id,
-    currentElo: user.current_elo,
-    status: "failed",
-  });
+  const { levelId, eloDelta, roomId, roomCompleted, score, correctCount, incorrectCount, maxStreak } =
+    await gameService.end({
+      sessionId: req.params.id,
+      userId: user.id,
+      currentElo: user.current_elo,
+      status: "failed",
+    });
   leaderboardService.invalidateGlobal();
   leaderboardService.invalidateByLevel(levelId);
   loggingService.log({
@@ -150,6 +186,11 @@ gameRouter.post("/:id/fail", async (req, res) => {
     roomEventBus.publish(roomId, ROOM_SSE_EVENTS.SESSION_UPDATE, {
       player_id: user.id,
       session_status: "failed",
+      score,
+      elo_delta: eloDelta,
+      correct_count: correctCount,
+      incorrect_count: incorrectCount,
+      max_streak: maxStreak,
     });
     if (roomCompleted) {
       roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
@@ -169,7 +210,8 @@ gameRouter.post("/:id/fail", async (req, res) => {
 
 gameRouter.post("/:id/abandon", async (req, res) => {
   const user = getUser(req);
-  const { roomId } = await gameService.abandon({ sessionId: req.params.id });
+  const { roomId, score, correctCount, incorrectCount, maxStreak, eloDelta } =
+    await gameService.abandon({ sessionId: req.params.id });
   loggingService.log({
     event: "session:abandoned",
     level: "info",
@@ -179,6 +221,11 @@ gameRouter.post("/:id/abandon", async (req, res) => {
     roomEventBus.publish(roomId, ROOM_SSE_EVENTS.SESSION_UPDATE, {
       player_id: user.id,
       session_status: "abandoned",
+      score,
+      elo_delta: eloDelta,
+      correct_count: correctCount,
+      incorrect_count: incorrectCount,
+      max_streak: maxStreak,
     });
     const roomCompleted = await roomService.reconcileRoom(roomId);
     if (roomCompleted) {

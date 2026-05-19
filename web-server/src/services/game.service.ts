@@ -35,6 +35,13 @@ export const gameService = {
         if (room.status !== "in_progress") {
           throw new AppError(HttpCode.CONFLICT, "Room is not in progress");
         }
+        const prior = await gameSessionService.getByPlayerAndRoom({
+          userId,
+          roomId,
+        });
+        if (prior) {
+          throw new AppError(HttpCode.CONFLICT, "Already played this room");
+        }
       }
 
       const existing = await gameSessionService.getActiveByPlayerId({
@@ -75,18 +82,24 @@ export const gameService = {
 
   async answer({
     sessionId,
+    userId,
     isCorrect,
     timeTakenMs,
   }: {
     sessionId: string;
+    userId: string;
     isCorrect: boolean;
     timeTakenMs?: number;
-  }): Promise<ResponseAnswer> {
+  }): Promise<ResponseAnswer & { room_id: string | null; correct_count: number; incorrect_count: number }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
 
       if (!session) {
         throw new AppError(HttpCode.NOT_FOUND, "Session not found");
+      }
+
+      if (session.player_id !== userId) {
+        throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
       }
 
       const level = await levelService.getById(String(session.level_id));
@@ -125,6 +138,9 @@ export const gameService = {
         elo_delta: delta,
         current_streak: newStreak,
         current_score: newScore,
+        room_id: session.room_id,
+        correct_count: newCorrect,
+        incorrect_count: newIncorrect,
       };
     });
   },
@@ -145,6 +161,10 @@ export const gameService = {
     newlyUnlockedNames: string[];
     roomId: string | null;
     roomCompleted: boolean;
+    score: number;
+    correctCount: number;
+    incorrectCount: number;
+    maxStreak: number;
   }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
@@ -197,6 +217,10 @@ export const gameService = {
         newlyUnlockedNames,
         roomId: session.room_id ?? null,
         roomCompleted,
+        score: session.score,
+        correctCount: session.correct_count,
+        incorrectCount: session.incorrect_count,
+        maxStreak: session.max_streak,
       };
     });
   },
@@ -205,11 +229,25 @@ export const gameService = {
     sessionId,
   }: {
     sessionId: string;
-  }): Promise<{ roomId: string | null }> {
+  }): Promise<{
+    roomId: string | null;
+    score: number | null;
+    correctCount: number | null;
+    incorrectCount: number | null;
+    maxStreak: number | null;
+    eloDelta: number | null;
+  }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
       await gameSessionService.abandon({ sessionId });
-      return { roomId: session?.room_id ?? null };
+      return {
+        roomId: session?.room_id ?? null,
+        score: session?.score ?? null,
+        correctCount: session?.correct_count ?? null,
+        incorrectCount: session?.incorrect_count ?? null,
+        maxStreak: session?.max_streak ?? null,
+        eloDelta: session?.elo_delta ?? null,
+      };
     });
   },
 };

@@ -31,5 +31,6 @@ export const LogEventSchema = z.enum([
   "room:started",
   "room:ended",
   "room:cancelled",
+  "sse",
 ]);
 export type LogEvent = z.infer<typeof LogEventSchema>;

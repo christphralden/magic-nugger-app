@@ -18,13 +18,14 @@ import { FloatingText } from "@/components/floating-text";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus } from "lucide-react";
 import type { Room, RoomStatus } from "@magic-nugger-app/shared";
+import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<RoomStatus, string> = {
   creation: "Setting up since",
   waiting: "In lobby for",
   in_progress: "In game for",
-  completed: "Completed since",
-  cancelled: "Cancelled at",
+  completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 const STATUS_COLORS: Record<RoomStatus, string> = {
@@ -71,9 +72,7 @@ export function RoomHostPage() {
     if (room.status === "completed") navigate(`/game/room/${room.id}/finished`);
   };
 
-  const activeRooms = rooms.filter(
-    (r) => r.status !== "cancelled" && r.status !== "completed",
-  );
+  const filteredRooms = rooms;
 
   return (
     <PageLayout title="Host">
@@ -86,7 +85,7 @@ export function RoomHostPage() {
           <ArrowLeft className="size-4 stroke-[3px]" />
           <Typography variant="label">Back</Typography>
         </Button>
-        <div className="w-full h-full max-w-6xl flex flex-col gap-8 items-center">
+        <div className="w-full h-full max-w-3xl flex flex-col gap-8 items-center">
           <div className="text-center flex flex-col gap-2">
             <Typography variant="heading">
               <FloatingText text="Host a game" duration={2} />
@@ -95,7 +94,18 @@ export function RoomHostPage() {
               Resume an active room or start a new one.
             </Typography>
           </div>
-
+          {roomsStatus !== "loading" && filteredRooms.length > 0 && (
+            <CartoonButton
+              variant="primary"
+              size={"sm"}
+              onClick={handleCreate}
+              disabled={creating}
+              className="w-fit self-start"
+            >
+              <Plus className="size-5 stroke-[4px]" />
+              {creating ? "Creating..." : "New Room"}
+            </CartoonButton>
+          )}
           {loading ? (
             <div className="flex justify-center py-8">
               <Typography variant="secondary" className="text-ink-soft">
@@ -104,12 +114,17 @@ export function RoomHostPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4 max-w-3xl w-full">
-              {activeRooms.length > 0 && (
+              {filteredRooms.length > 0 ? (
                 <div className="flex flex-col gap-3">
-                  {activeRooms.map((room) => (
+                  {filteredRooms.map((room) => (
                     <div
                       key={room.id}
-                      className="bg-paper border-[3px] border-border rounded-2xl shadow-cartoon-sm p-4 flex items-center justify-between gap-4"
+                      className={cn(
+                        (room.status === "completed" ||
+                          room.status === "cancelled") &&
+                          "brightness-75",
+                        "bg-paper border-[3px] border-border rounded-2xl shadow-cartoon-sm p-4 flex items-center justify-between gap-4",
+                      )}
                     >
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center">
@@ -148,17 +163,26 @@ export function RoomHostPage() {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="py-16 flex flex-col items-center gap-4">
+                  <Typography
+                    variant={"label"}
+                    className="max-w-xs mx-auto text-center"
+                  >
+                    Click the button below to start playing with friends
+                  </Typography>
+                  <CartoonButton
+                    variant="primary"
+                    size={"sm"}
+                    onClick={handleCreate}
+                    disabled={creating}
+                    className="w-fit "
+                  >
+                    <Plus className="size-5 stroke-[4px]" />
+                    {creating ? "Creating..." : "New room"}
+                  </CartoonButton>
+                </div>
               )}
-
-              <CartoonButton
-                variant="primary"
-                onClick={handleCreate}
-                disabled={creating}
-                className="w-full"
-              >
-                <Plus className="size-5 stroke-[4px]" />
-                {creating ? "Creating..." : "New Room"}
-              </CartoonButton>
             </div>
           )}
         </div>

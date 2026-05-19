@@ -7,7 +7,6 @@ import type {
   RoomMemberDetail,
   RequestCreateRoom,
   Question,
-  RoomStatus,
 } from "@magic-nugger-app/shared";
 import { v4 as uuidv4 } from "uuid";
 
@@ -36,18 +35,16 @@ export const roomService = {
     });
   },
 
-  async getActiveForPlayer(playerId: string): Promise<Room[]> {
+  async getByPlayer(playerId: string): Promise<Room[]> {
     const { rows } = await getDb().query<Room>(
       `SELECT
         r.id, r.host_id, r.level_id, r.type, r.status,
         r.invite_code, r.max_players, r.started_at, r.ended_at,
         r.created_at, r.updated_at, r.questions
-       FROM rooms r
-       JOIN room_members rm ON rm.room_id = r.id
-       WHERE rm.player_id = $1
-         AND rm.deleted_at IS NULL
-         AND r.status IN ('creation', 'waiting', 'in_progress')
-       ORDER BY r.created_at DESC`,
+      FROM rooms r
+      WHERE r.host_id = $1
+        AND r.status != 'cancelled'
+      ORDER BY r.updated_at DESC`,
       [playerId],
     );
     return rows;
@@ -167,7 +164,7 @@ export const roomService = {
     return rows[0];
   },
 
-  async saveQuestions(
+  async updateQuestions(
     roomId: string,
     hostId: string,
     questions: Question[],
@@ -318,7 +315,11 @@ export const roomService = {
 
   async isMember(roomId: string, playerId: string): Promise<boolean> {
     const { rows } = await getDb().query(
-      `SELECT 1 FROM room_members WHERE room_id = $1 AND player_id = $2 AND deleted_at IS NULL`,
+      `SELECT 1
+       FROM room_members rm
+       JOIN rooms r ON r.id = rm.room_id
+       WHERE rm.room_id = $1 AND rm.player_id = $2
+         AND (rm.deleted_at IS NULL OR (r.started_at IS NOT NULL AND rm.deleted_at > r.started_at))`,
       [roomId, playerId],
     );
     return rows.length > 0;

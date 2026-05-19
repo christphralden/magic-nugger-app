@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "@/store/hooks";
 import {
   selectRoomLeaderboard,
   clearRoomLeaderboard,
+  updateLeaderboardRow,
 } from "@/feature/room/state/room.slice";
 import { handleGetRoomLeaderboard } from "@/feature/room/state/room.actions";
 import { useRoomSse } from "@/hooks/use-room-sse";
@@ -24,7 +25,7 @@ import { FloatingText } from "@/components/floating-text";
 import { nameInitials, cn } from "@/lib/utils";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
 import type { RoomLeaderboardRow } from "@magic-nugger-app/shared";
-import { toastInfo } from "@/lib/toast";
+import { toastError, toastInfo } from "@/lib/toast";
 
 export function RoomFinishedPage() {
   const navigate = useNavigate();
@@ -48,7 +49,58 @@ export function RoomFinishedPage() {
     roomId,
     {
       [ROOM_SSE_EVENTS.INIT]: (data) => {
-        if (data.room.status === "completed") setIsCompleted(true);
+        switch (data.room.status) {
+          case "creation":
+            toastError("Room is still being set up");
+            navigate(`..`);
+            break;
+          case "waiting":
+            toastError("Game has not yet started");
+            navigate(`/game/room/${roomId}`);
+            break;
+          case "in_progress":
+            break;
+          case "completed":
+            setIsCompleted(true);
+            break;
+          case "cancelled":
+            toastError("Room ceased to exist");
+            navigate("..");
+            break;
+        }
+      },
+      [ROOM_SSE_EVENTS.SESSION_STARTED]: (data) => {
+        dispatch(
+          updateLeaderboardRow({
+            player_id: data.player_id,
+            session_status: "in_progress",
+          }),
+        );
+      },
+      [ROOM_SSE_EVENTS.ANSWER_UPDATE]: (data) => {
+        dispatch(
+          updateLeaderboardRow({
+            player_id: data.player_id,
+            score: data.score,
+            correct_count: data.correct_count,
+            incorrect_count: data.incorrect_count,
+          }),
+        );
+      },
+      [ROOM_SSE_EVENTS.SESSION_UPDATE]: (data) => {
+        if (data.session_status === "completed") setIsCompleted(true);
+        dispatch(
+          updateLeaderboardRow({
+            player_id: data.player_id,
+            session_status: data.session_status,
+            score: data.score,
+            elo_delta: data.elo_delta,
+            correct_count: data.correct_count,
+            incorrect_count: data.incorrect_count,
+            max_streak: data.max_streak,
+          }),
+        );
+        refreshLeaderboard();
       },
       [ROOM_SSE_EVENTS.MEMBER_LEFT]: (data) => {
         const isMe = data.player_id === currentPlayer?.id;
@@ -70,13 +122,9 @@ export function RoomFinishedPage() {
         }
         refreshLeaderboard();
       },
-      [ROOM_SSE_EVENTS.SESSION_UPDATE]: (data) => {
-        if (data.session_status === "completed") setIsCompleted(true);
-        refreshLeaderboard();
-      },
       [ROOM_SSE_EVENTS.ROOM_COMPLETED]: () => {
-        refreshLeaderboard();
         setIsCompleted(true);
+        refreshLeaderboard();
       },
     },
     { onError: onSseError },
@@ -86,7 +134,7 @@ export function RoomFinishedPage() {
     <PageLayout title="Results">
       <div className="flex flex-col items-center h-full gap-6 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between w-full">
-          <Typography variant="heading">
+          <Typography variant="heading" className="mx-auto">
             {isCompleted ? "Final Results" : "Results"}
           </Typography>
           {!isCompleted && (
