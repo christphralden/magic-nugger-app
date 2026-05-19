@@ -123,7 +123,7 @@ export function RoomGameView() {
   }, [roomId]);
 
   return (
-    <PageLayout title="Game">
+    <PageLayout title="Game" headless>
       {blocker.state === "blocked" && (
         <ConfirmLeaveDialog
           title="Abandon game?"
