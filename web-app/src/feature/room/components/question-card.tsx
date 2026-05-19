@@ -100,7 +100,7 @@ export function QuestionCard({
               control={control}
               name={`questions.${index}.choices.${choiceIdx}.text`}
               render={({ field }) => (
-                <FormItem className="flex-1 ml-4">
+                <FormItem className="flex-1 ml-2">
                   <FormMessage />
                   <FormControl>
                     <CartoonInput placeholder={`Choice ${label}`} {...field} />

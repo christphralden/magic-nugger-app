@@ -11,6 +11,7 @@ import { cn, nameInitials } from "@/lib/utils";
 interface PageLayoutProps {
   title: string;
   children: ReactNode;
+  headless?: boolean;
 }
 
 const NAV_LINKS = [
@@ -20,7 +21,7 @@ const NAV_LINKS = [
   { to: "/leaderboard", label: "Leaderboard" },
 ];
 
-export function PageLayout({ title, children }: PageLayoutProps) {
+export function PageLayout({ title, children, headless }: PageLayoutProps) {
   const player = useSelector(selectCurrentPlayer);
 
   const location = useLocation();
@@ -95,7 +96,12 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           </Link>
         </section>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto px-4 py-8 md:px-8 relative">
+      <div
+        className={cn(
+          headless ? "" : "px-4 py-8 md:px-8 ",
+          "flex-1 min-h-0 overflow-auto relative",
+        )}
+      >
         {children}
       </div>
     </div>

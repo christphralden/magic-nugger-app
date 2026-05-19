@@ -26,9 +26,9 @@ function GameView() {
   const { provider, isLoaded } = useUnityBridge();
 
   return (
-    <PageLayout title="Game">
+    <PageLayout title="Game" headless>
       {!isLoaded && (
-        <div className="absolute w-full h-full flex justify-center items-center">
+        <div className="absolute w-full h-full flex justify-center items-center top-0 left-0">
           <Typography variant={"heading"}>
             <FloatingText text="Loading your nuggers..." duration={1} />
           </Typography>
