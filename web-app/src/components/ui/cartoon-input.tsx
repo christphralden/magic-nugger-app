@@ -18,7 +18,7 @@ export const CartoonInput = React.forwardRef<
         {...rest}
         className={cn(
           typographyVariants({ variant: "body" }),
-          "bg-white border-[3px] border-border rounded-md p-4 h-auto shadow-cartoon-sm",
+          "bg-white border-[3px] border-border rounded-md p-4 py-3 h-auto shadow-cartoon-sm",
           "outline-none transition-all duration-[120ms]",
           "placeholder:text-placeholder placeholder:font-medium",
           "focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]",

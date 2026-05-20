@@ -121,7 +121,7 @@ export function RoomSetupPage() {
                 <FloatingText text="Build your quiz" duration={2} />
               </Typography>
               <Typography variant="secondary">
-                Add problems and mark the correct answer for each.
+                Add problems and mark the correct answer for each
               </Typography>
             </div>
 

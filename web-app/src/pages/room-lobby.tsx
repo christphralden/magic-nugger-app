@@ -157,6 +157,10 @@ export function RoomLobbyPage() {
   };
 
   const handleStart = async () => {
+    if (members.length < 2) {
+      toastError("Invite friends first before starting the game");
+      return;
+    }
     setStarting(true);
     await dispatch(handleStartRoom(roomId));
     setStarting(false);
@@ -223,7 +227,7 @@ export function RoomLobbyPage() {
               />
             </Typography>
             <Typography variant="secondary">
-              Share the invite code. Game starts when the host hits play.
+              Share the invite code! Game starts when the host hits play
             </Typography>
           </div>
 
@@ -285,6 +289,7 @@ export function RoomLobbyPage() {
               {isHost && (
                 <CartoonButton
                   variant="secondary"
+                  size="sm"
                   onClick={handleDestroyRoom}
                   disabled={starting}
                   className="w-full"
@@ -295,6 +300,7 @@ export function RoomLobbyPage() {
               {isHost && (
                 <CartoonButton
                   variant="secondary"
+                  size="sm"
                   onClick={handleEditQuestions}
                   disabled={starting}
                   className="w-full"
@@ -304,8 +310,9 @@ export function RoomLobbyPage() {
               )}
               {isHost && (
                 <CartoonButton
+                  size="sm"
                   onClick={handleStart}
-                  disabled={starting || members.length < 2}
+                  disabled={starting}
                   className="w-full"
                 >
                   {starting ? "Starting..." : "Start game"}
@@ -317,6 +324,7 @@ export function RoomLobbyPage() {
                   onClick={handleLeaveRoom}
                   disabled={starting}
                   className="w-full"
+                  size="sm"
                 >
                   Leave room
                 </CartoonButton>

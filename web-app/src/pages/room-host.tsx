@@ -37,10 +37,10 @@ const STATUS_COLORS: Record<RoomStatus, string> = {
 };
 
 const RESUME_LABELS: Record<RoomStatus, string> = {
-  creation: "Resume setup",
-  waiting: "Resume room",
-  in_progress: "View leaderboard",
-  completed: "View leaderboard",
+  creation: "Continue setup",
+  waiting: "Go to room",
+  in_progress: "Leaderboard",
+  completed: "Leaderboard",
   cancelled: "",
 };
 
@@ -91,7 +91,7 @@ export function RoomHostPage() {
               <FloatingText text="Host a game" duration={2} />
             </Typography>
             <Typography variant="secondary">
-              Resume an active room or start a new one.
+              Jump into an active room or spin up a new one
             </Typography>
           </div>
           {roomsStatus !== "loading" && filteredRooms.length > 0 && (

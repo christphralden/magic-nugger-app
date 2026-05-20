@@ -48,7 +48,7 @@ export function QuestionCard({
   return (
     <div className={cn(cardVariants())}>
       <div className="flex items-center justify-between">
-        <Typography variant="label" as="span">
+        <Typography variant="secondary" as="p">
           Problem {index + 1}
         </Typography>
         {showRemove && (

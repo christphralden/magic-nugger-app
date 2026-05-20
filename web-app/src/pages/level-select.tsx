@@ -70,9 +70,9 @@ export function LevelSelectPage() {
                   !isAccessible && "opacity-50 pointer-events-none",
                 )}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2">
                       {!isAccessible && (
                         <Lock className="size-4 text-ink-soft shrink-0" />
                       )}
@@ -92,6 +92,7 @@ export function LevelSelectPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <CartoonButton
                       variant="secondary"
+                      size="sm"
                       onClick={() =>
                         navigate(`/leaderboard?tab=level&level=${level.id}`)
                       }
@@ -100,6 +101,7 @@ export function LevelSelectPage() {
                     </CartoonButton>
                     <CartoonButton
                       variant="primary"
+                      size="sm"
                       onClick={() => navigate(`/game?level=${level.id}`)}
                     >
                       Play!

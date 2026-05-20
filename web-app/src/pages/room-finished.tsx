@@ -135,13 +135,16 @@ export function RoomFinishedPage() {
         </div>
 
         {rows.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center justify-center">
             <Typography variant="secondary" className="text-ink-soft">
               <FloatingText text="Loading results..." duration={1} />
             </Typography>
           </div>
         ) : (
-          <RoomLeaderboardTable rows={rows} currentPlayerId={currentPlayer?.id ?? ""} />
+          <RoomLeaderboardTable
+            rows={rows}
+            currentPlayerId={currentPlayer?.id ?? ""}
+          />
         )}
 
         <CartoonButton variant="secondary" onClick={() => navigate("/game")}>
@@ -151,4 +154,3 @@ export function RoomFinishedPage() {
     </PageLayout>
   );
 }
-

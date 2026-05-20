@@ -34,9 +34,8 @@ export function CartoonSelect({
         <SelectTrigger
           className={cn(
             typographyVariants({ variant: "body" }),
-            "shadow-cartoon-sm w-full bg-white border-[3px] border-border rounded-md p-4 pb-[1.05rem] h-auto",
+            "shadow-cartoon-sm w-full bg-white border-[3px] border-border rounded-md p-4 py-3 h-auto",
             "outline-none transition-all duration-[120ms]",
-            "focus:ring-0 focus:ring-offset-0 focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]",
             className,
           )}
         >
@@ -49,7 +48,7 @@ export function CartoonSelect({
               value={opt.value}
               className={cn(
                 typographyVariants({ variant: "body" }),
-                "cursor-pointer focus:bg-cream data-[highlighted]:bg-cream rounded py-2.5 pl-8 ",
+                "cursor-pointer focus:bg-cream data-[highlighted]:bg-cream rounded py-3 pl-8",
               )}
             >
               {opt.label}

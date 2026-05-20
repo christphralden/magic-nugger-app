@@ -49,7 +49,7 @@ export function RoomPage() {
               <FloatingText text="Ready to play?" />
             </Typography>
             <Typography variant="secondary" className="text-center">
-              Spin up a new room, or jump into a friend's with their code.
+              Spin up a new room, or jump into a friend's with their code
             </Typography>
           </div>
           <div className="mb-6 flex flex-col items-center w-full max-w-md gap-6 z-[1] h-full justify-center">
