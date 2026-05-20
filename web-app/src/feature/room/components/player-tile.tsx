@@ -24,7 +24,7 @@ export function PlayerTile({ member, isHost, isMe }: PlayerTileProps) {
         <AvatarFallback>{nameInitials(name)}</AvatarFallback>
       </Avatar>
       <div className="flex items-baseline gap-1">
-        {!isMe ? (
+        {isMe ? (
           <Typography variant="label" as="p" className="text-ink-soft">
             Me
           </Typography>

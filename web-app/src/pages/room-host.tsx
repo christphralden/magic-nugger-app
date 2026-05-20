@@ -103,7 +103,7 @@ export function RoomHostPage() {
               className="w-fit self-start"
             >
               <Plus className="size-5 stroke-[4px]" />
-              {creating ? "Creating..." : "New Room"}
+              {creating ? "Creating..." : "New room"}
             </CartoonButton>
           )}
           {loading ? (

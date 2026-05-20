@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useCursor } from "@/hooks/use-cursor";
 import { useSelector, useDispatch } from "@/store/hooks";
@@ -17,8 +17,8 @@ import {
 } from "@/feature/levels/state/levels.slice";
 import { handleGetLevels } from "@/feature/levels/state/levels.actions";
 import { GlobalRow } from "@/feature/leaderboard/components/global-row";
-import { LevelRow } from "@/feature/leaderboard/components/level-row";
 import { EmptyRow } from "@/feature/leaderboard/components/empty-row";
+import { LevelLeaderboardTable } from "@/feature/leaderboard/components/level-leaderboard-table";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
 import { CartoonButton } from "@/components/ui/cartoon-button";
@@ -40,9 +40,9 @@ import { IconStreak } from "@/components/decor/streak";
 type MainTab = "global" | "level";
 
 const PERIODS: { value: LeaderboardPeriod; label: string }[] = [
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "alltime", label: "All Time" },
+  { value: "week", label: "Weekly" },
+  { value: "month", label: "Monthly" },
+  { value: "alltime", label: "All time" },
 ];
 
 const tabClass = (active: boolean) =>
@@ -172,11 +172,26 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
     cursor.prev();
   }
 
+  const title = useMemo(() => {
+    if (mainTab === "global") {
+      return "Leaderboard - Global";
+    }
+    if (mainTab === "level") {
+      const level = levels.find((l) => l.id === selectedLevelId);
+      if (level && level.name) {
+        return `Leaderboard - ${level.name}`;
+      } else {
+        return "Leaderboard - Levels";
+      }
+    }
+    return "Leaderboard";
+  }, [mainTab, levels, selectedLevelId]);
+
   return (
-    <PageLayout title="Leaderboard">
+    <PageLayout title={title}>
       <div className="max-w-6xl mx-auto">
         <Typography variant="subheading" className="mb-6">
-          Leaderboard
+          {title}
         </Typography>
 
         <div className="flex w-full justify-between">
@@ -238,12 +253,7 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
 
         {showTable && (
           <>
-            {mainTab === "level" && selectedLevelId !== null && (
-              <Typography variant="label" className="mb-3 text-ink-soft">
-                Level {">"} {levels.find((l) => l.id === selectedLevelId)?.name}
-              </Typography>
-            )}
-            <div className="bg-white border-[3px] border-border rounded-md shadow-cartoon overflow-hidden">
+            <div className="bg-white border-[3px] border-border rounded-xl shadow-cartoon overflow-hidden">
               {mainTab === "global" ? (
                 <ScrollArea className="h-[60dvh]">
                   <Table>
@@ -306,60 +316,12 @@ function LeaderboardContent({ currentPlayerId }: { currentPlayerId: string }) {
                   </Table>
                 </ScrollArea>
               ) : (
-                <ScrollArea className="h-[480px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow header>
-                        <TableHead colSpan={1}>
-                          <Typography variant="label" className="text-ink-soft">
-                            #
-                          </Typography>
-                        </TableHead>
-                        <TableHead colSpan={3} className="w-full">
-                          <Typography variant="label" className="text-ink-soft">
-                            Player
-                          </Typography>
-                        </TableHead>
-                        <TableHead
-                          className="text-right min-w-[10rem]"
-                          colSpan={1}
-                        >
-                          <Typography variant="label" className="text-ink-soft">
-                            Best Score
-                          </Typography>
-                        </TableHead>
-                        <TableHead
-                          className="text-right min-w-[10rem]"
-                          colSpan={1}
-                        >
-                          <Typography variant="label" className="text-ink-soft">
-                            Best Streak
-                          </Typography>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className={cn(isLoading && "opacity-50")}>
-                      {levelState.items.map((row, i) => (
-                        <LevelRow
-                          key={row.player_id}
-                          row={row}
-                          rank={pageOffset + i + 1}
-                          currentPlayerId={currentPlayerId}
-                        />
-                      ))}
-                      {!isLoading && levelState.items.length === 0 && (
-                        <EmptyRow colSpan={8} message="No scores yet." />
-                      )}
-                    </TableBody>
-                    {isLoading && (
-                      <TableRow>
-                        <TableCell colSpan={8}>
-                          <Loader2 className="animate-spin mx-auto" />
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Table>
-                </ScrollArea>
+                <LevelLeaderboardTable
+                  items={levelState.items}
+                  currentPlayerId={currentPlayerId}
+                  isLoading={isLoading}
+                  pageOffset={pageOffset}
+                />
               )}
             </div>
 

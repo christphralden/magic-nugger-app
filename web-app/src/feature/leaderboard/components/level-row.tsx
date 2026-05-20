@@ -7,11 +7,12 @@ interface LevelRowProps {
   row: LevelLeaderboardRow;
   rank: number;
   currentPlayerId: string;
+  overrideName?: string;
 }
 
-export function LevelRow({ row, rank, currentPlayerId }: LevelRowProps) {
+export function LevelRow({ row, rank, currentPlayerId, overrideName }: LevelRowProps) {
   const isMe = row.player_id === currentPlayerId;
-  const name = isMe ? "Me" : row.display_name || row.username;
+  const name = overrideName ?? (isMe ? "Me" : row.display_name || row.username);
   return (
     <TableRow>
       <TableCell colSpan={1}>

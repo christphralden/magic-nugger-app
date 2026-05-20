@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 const cartoonButtonVariants = cva(
-  "hover:brightness-[80%] font-display font-bold tracking-wide inline-flex items-center justify-center gap-2.5 cursor-pointer transition-all duration-[120ms] ease-out active:translate-y-1 select-none whitespace-nowrap border-[3px] border-ink",
+  "hover:brightness-[80%] font-display font-bold tracking-wide inline-flex items-center justify-center gap-2 cursor-pointer transition-all duration-[120ms] ease-out active:translate-y-1 select-none whitespace-nowrap border-[3px] border-ink",
   {
     variants: {
       variant: {

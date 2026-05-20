@@ -16,3 +16,7 @@ export const UNITY_SEND_METHOD = {
   GIVE_INITIAL_DATA: "GiveInitialdata",
   FINALIZED: "Finalized",
 };
+export const DISABLED_CANVAS_EVENTS: (keyof GlobalEventHandlersEventMap)[] = [
+  "dragstart",
+  "scroll",
+];

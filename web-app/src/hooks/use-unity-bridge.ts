@@ -21,6 +21,7 @@ import { useDispatch, useSelector } from "@/store/hooks";
 import { useCallback, useEffect, useRef } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import type { Question } from "@magic-nugger-app/shared";
+import { toastError } from "@/lib/toast";
 
 export function useUnityBridge(
   options: {
@@ -29,6 +30,8 @@ export function useUnityBridge(
     onSessionFinished?: (result: {
       elo_gained: number;
       new_levels_unlocked: string[];
+      levelId: number | null;
+      score: number;
     }) => void;
   } = {},
 ) {
@@ -39,6 +42,8 @@ export function useUnityBridge(
 
   const sessionIdRef = useRef<string | null>(null);
   const lastAnswerAtRef = useRef<number | null>(null);
+  const currentLevelIdRef = useRef<number | null>(null);
+  const currentScoreRef = useRef<number>(0);
   const {
     unityProvider: provider,
     sendMessage,
@@ -50,6 +55,18 @@ export function useUnityBridge(
     dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
     frameworkUrl: `${PATH_TO_UNITY}/Calculon.framework.js`,
     codeUrl: `${PATH_TO_UNITY}/Calculon.wasm`,
+    webglContextAttributes: {
+      alpha: true,
+      antialias: true,
+      depth: true,
+      failIfMajorPerformanceCaveat: true,
+      powerPreference: 2,
+      premultipliedAlpha: true,
+      // preserveDrawingBuffer: true,
+      // stencil: true,
+      // desynchronized: true,
+      // xrCompatible: true,
+    },
   });
 
   const handleInit = useCallback(() => {
@@ -80,10 +97,13 @@ export function useUnityBridge(
       const level = levels.find((l) => l.name === levelName);
       if (!level) {
         console.error(
-          `[useUnityBridge] Level "${levelName}" not found in DB. Ensure Unity LevelData.levelName matches the DB level name.`,
+          `[useUnityBridge] Level "${levelName}" not found in DB. Ensure Unity LevelData.levelName matches the DB level name`,
         );
+        toastError(`Sorry but ${levelName} isn't currently playable`);
         return;
       }
+      currentLevelIdRef.current = level.id;
+      currentScoreRef.current = 0;
       const startSession = async () => {
         const result = await dispatch(
           createGameSession({ level_id: level.id, room_id: options.roomId }),
@@ -107,13 +127,21 @@ export function useUnityBridge(
           ? now - lastAnswerAtRef.current
           : undefined;
       lastAnswerAtRef.current = now;
-      dispatch(
-        submitAnswer({
-          sessionId: sessionIdRef.current,
-          is_correct: Boolean(correct),
-          time_taken_ms,
-        }),
-      );
+      const trackAnswer = async () => {
+        const result = await dispatch(
+          submitAnswer({
+            sessionId: sessionIdRef.current!,
+            is_correct: Boolean(correct),
+            time_taken_ms,
+          }),
+        );
+        if (isFulfilled(submitAnswer)(result)) {
+          currentScoreRef.current = result.payload.current_score;
+        } else {
+          toastError("Sorry, we couldnt save your answer");
+        }
+      };
+      trackAnswer();
     },
     [dispatch],
   );
@@ -124,16 +152,21 @@ export function useUnityBridge(
       const sessionId = sessionIdRef.current;
       sessionIdRef.current = null;
       const finishSession = async () => {
-        const thunk = alive ? endGameSession : failGameSession;
-        const result = await dispatch(thunk({ sessionId }));
-        if (isFulfilled(thunk)(result)) {
+        const action = alive ? endGameSession : failGameSession;
+        const result = await dispatch(action({ sessionId }));
+        if (isFulfilled(action)(result)) {
           sendMessage(
             UNITY_GAME_OBJECT,
             UNITY_SEND_METHOD.FINALIZED,
             JSON.stringify(result.payload),
           );
           dispatch(getMe());
-          options.onSessionFinished?.(result.payload);
+          options.onSessionFinished?.({
+            elo_gained: result.payload.elo_gained,
+            new_levels_unlocked: result.payload.new_levels_unlocked,
+            levelId: currentLevelIdRef.current,
+            score: currentScoreRef.current,
+          });
         }
       };
       finishSession();

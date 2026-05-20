@@ -1,11 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FloatingText } from "@/components/floating-text";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Typography } from "@/components/ui/typography";
 import { ConfirmLeaveDialog } from "@/components/ui/confirm-leave-dialog";
+import { SessionEndDialog } from "@/components/ui/session-end-dialog";
 import { useUnityBridge } from "@/hooks/use-unity-bridge";
 import { useDispatch, useSelector } from "@/store/hooks";
 import {
+  selectLevels,
   selectLevelsStatus,
   selectUnlockedLevelsStatus,
 } from "@/feature/levels/state/levels.slice";
@@ -13,17 +15,60 @@ import {
   handleGetLevels,
   handleGetUnlockedLevels,
 } from "@/feature/levels/state/levels.actions";
+import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import { Unity } from "react-unity-webgl";
 
 import { useNavigate, useParams, useBlocker } from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
 import { useRoom } from "@/contexts/room.context";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
-import { toastError } from "@/lib/toast";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
+import { DISABLED_CANVAS_EVENTS } from "@/constants";
+
+type SessionResult = {
+  levelId: number;
+  levelName: string;
+  score: number;
+};
 
 function GameView() {
-  const { provider, isLoaded } = useUnityBridge();
+  const [sessionResult, setSessionResult] = useState<SessionResult | null>(
+    null,
+  );
+  const levels = useSelector(selectLevels);
+  const currentPlayer = useSelector(selectCurrentPlayer);
+
+  const { provider, isLoaded } = useUnityBridge({
+    onSessionFinished: ({
+      elo_gained,
+      new_levels_unlocked,
+      levelId,
+      score,
+    }) => {
+      if (!levelId) return;
+      const level = levels.find((l) => l.id === levelId);
+
+      let delay = 0;
+      const STAGGER = 800;
+
+      if (elo_gained > 0) {
+        setTimeout(() => toastSuccess(`You gained ${elo_gained} ELO`), delay);
+        delay += STAGGER;
+      }
+
+      for (const unlockedLevel of new_levels_unlocked) {
+        setTimeout(() => toastSuccess(`Unlocked ${unlockedLevel}`), delay);
+        delay += STAGGER;
+      }
+
+      setTimeout(
+        () =>
+          setSessionResult({ levelId, levelName: level?.name ?? "", score }),
+        delay,
+      );
+    },
+  });
 
   return (
     <PageLayout title="Game" headless>
@@ -35,8 +80,22 @@ function GameView() {
         </div>
       )}
       <div className="flex justify-center w-full h-full items-center">
-        <Unity unityProvider={provider} className="w-full h-full" />
+        <Unity
+          unityProvider={provider}
+          className="w-full h-full"
+          disabledCanvasEvents={DISABLED_CANVAS_EVENTS}
+        />
       </div>
+      {sessionResult && currentPlayer && (
+        <SessionEndDialog
+          open
+          levelId={sessionResult.levelId}
+          levelName={sessionResult.levelName}
+          score={sessionResult.score}
+          currentPlayer={currentPlayer}
+          onClose={() => setSessionResult(null)}
+        />
+      )}
     </PageLayout>
   );
 }
@@ -152,7 +211,11 @@ export function RoomGameView() {
         </div>
       )}
       <div className="flex justify-center w-full h-full items-center">
-        <Unity unityProvider={provider} className="w-full h-full" />
+        <Unity
+          unityProvider={provider}
+          className="w-full h-full"
+          disabledCanvasEvents={DISABLED_CANVAS_EVENTS}
+        />
       </div>
     </PageLayout>
   );
