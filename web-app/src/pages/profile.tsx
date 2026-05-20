@@ -150,11 +150,19 @@ export function ProfileTab() {
           className="flex flex-col gap-8"
         >
           <div className="rounded-xl flex flex-col gap-2 bg-white p-6 pb-12 border-border border-[3px] shadow-cartoon-lg">
-            <div className="flex flex-col gap-1">
-              <Typography variant={"label"}>Email</Typography>
-              <Typography variant={"body"} className="text-ink-soft">
-                {player.email}
-              </Typography>
+            <div className="flex gap-4">
+              <div className="flex flex-col gap-1">
+                <Typography variant={"label"}>Email</Typography>
+                <Typography variant={"body"} className="text-ink-soft">
+                  {player.email}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant={"label"}>ID</Typography>
+                <Typography variant={"body"} className="text-ink-soft">
+                  {player.id}
+                </Typography>
+              </div>
             </div>
             <FormField
               control={form.control}

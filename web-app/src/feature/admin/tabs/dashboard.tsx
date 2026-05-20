@@ -46,9 +46,9 @@ export function DashboardTab() {
         {stats && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: "Total Players", value: stats.total_players },
-              { label: "Total Sessions", value: stats.total_sessions },
-              { label: "Completed Sessions", value: stats.completed_sessions },
+              { label: "Total players", value: stats.total_players },
+              { label: "Total sessions", value: stats.total_sessions },
+              { label: "Completed sessions", value: stats.completed_sessions },
             ].map(({ label, value }) => (
               <div
                 key={label}
