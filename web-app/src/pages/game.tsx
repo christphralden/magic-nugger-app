@@ -19,7 +19,7 @@ export function GamePage() {
               <FloatingText text="Ready to play?" />
             </Typography>
             <Typography variant="secondary" className="text-center">
-              Sharpen your numbers solo, or rally a crew of up to 10 friends.
+              Grind solo, or rally a crew of up to 10 friends.
             </Typography>
           </div>
           <div className="flex flex-col items-center w-full max-w-md gap-6 z-[1] h-full justify-center">

@@ -62,11 +62,11 @@ export function SessionEndDialog({
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 bg-paper border-[3px] border-border rounded-xl shadow-cartoon-lg p-4 px-6 flex flex-col gap-6 focus:outline-none">
           <div className="flex flex-col gap-1">
             <DialogPrimitive.Title asChild>
-              <Typography variant="primary">{levelName}</Typography>
+              <Typography variant="subheading">{levelName}</Typography>
             </DialogPrimitive.Title>
             {levelName && (
               <DialogPrimitive.Description asChild>
-                <Typography variant="secondary" className="text-ink-soft">
+                <Typography variant="caption" className="text-ink-soft">
                   Score: {score}
                 </Typography>
               </DialogPrimitive.Description>

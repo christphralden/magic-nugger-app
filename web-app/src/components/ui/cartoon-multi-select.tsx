@@ -38,7 +38,7 @@ export function CartoonMultiSelect({
           type="button"
           className={cn(
             typographyVariants({ variant: "body" }),
-            "min-h-[46px] w-full bg-white border-[3px] border-border rounded-md px-3 py-4",
+            "min-h-[46px] w-full bg-white border-[3px] border-border rounded-md px-4 py-3",
             "shadow-cartoon-sm flex flex-wrap gap-1.5 items-center text-left",
             "focus:outline-none focus:shadow-[0_0_0_4px_rgba(255,182,39,0.45)]",
             className,
