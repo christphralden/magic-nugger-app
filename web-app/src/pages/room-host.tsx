@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<RoomStatus, string> = {
   creation: "Setting up since",
-  waiting: "In lobby for",
+  waiting: "Horsing around for",
   in_progress: "In game for",
   completed: "Completed",
   cancelled: "Cancelled",
@@ -67,8 +67,10 @@ export function RoomHostPage() {
   const handleRedirect = (room: Room) => {
     if (room.status === "creation") navigate(`/game/room/${room.id}/setup`);
     if (room.status === "waiting") navigate(`/game/room/${room.id}`);
-    if (room.status === "in_progress")
+    if (room.status === "in_progress") {
       navigate(`/game/room/${room.id}/finished`);
+    }
+
     if (room.status === "completed") navigate(`/game/room/${room.id}/finished`);
   };
 
@@ -142,7 +144,10 @@ export function RoomHostPage() {
                             as="span"
                           >
                             {formatDistanceToNow(new Date(room.updated_at), {
-                              addSuffix: true,
+                              addSuffix:
+                                room.status === "completed" ||
+                                room.status === "creation" ||
+                                room.status === "cancelled",
                             })}
                           </Typography>
                         </div>

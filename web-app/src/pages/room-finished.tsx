@@ -124,7 +124,7 @@ export function RoomFinishedPage() {
     <PageLayout title="Results">
       <div className="flex flex-col items-center h-full gap-6 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between w-full">
-          <Typography variant="heading" className="mx-auto">
+          <Typography variant="subheading" className="">
             {isCompleted ? "Final Results" : "Results"}
           </Typography>
           {!isCompleted && (
@@ -147,7 +147,11 @@ export function RoomFinishedPage() {
           />
         )}
 
-        <CartoonButton variant="secondary" onClick={() => navigate("/game")}>
+        <CartoonButton
+          variant="primary"
+          size="sm"
+          onClick={() => navigate("/game")}
+        >
           Back to Game
         </CartoonButton>
       </div>
