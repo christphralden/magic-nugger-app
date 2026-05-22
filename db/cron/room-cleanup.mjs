@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import { Client } from "pg";
 
-const IN_PROGRESS_TIMEOUT_MS = parseInt(process.env.ROOM_IN_PROGRESS_TIMEOUT_MS ?? "1800000", 10);
+const IN_PROGRESS_TIMEOUT_MS = parseInt(
+  process.env.ROOM_IN_PROGRESS_TIMEOUT_MS ?? "1800000",
+  10,
+);
 const BATCH_SIZE = parseInt(process.env.ROOM_CLEANUP_BATCH_SIZE ?? "50", 10);
 const source = process.stdout.isTTY ? "manual" : "cron";
 const host = process.env.POSTGRES_HOST ?? "localhost";
-const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
+const connectionString = `postgresql://${process.env.APP_USER}:${process.env.APP_USER_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
 
 async function reconcileCompletedRooms(client) {
   const { rows } = await client.query(
@@ -108,7 +111,8 @@ async function main() {
   const start = Date.now();
   try {
     const reconciledIds = await reconcileCompletedRooms(client);
-    const { completedRoomIds, abandonedSessionCount } = await completeStaleInProgressRooms(client);
+    const { completedRoomIds, abandonedSessionCount } =
+      await completeStaleInProgressRooms(client);
 
     const summary = {
       source,
@@ -126,16 +130,24 @@ async function main() {
     );
 
     if (reconciledIds.length > 0) {
-      console.log(`[room-cleanup] completed ${reconciledIds.length} room(s) where all members finished`);
+      console.log(
+        `[room-cleanup] completed ${reconciledIds.length} room(s) where all members finished`,
+      );
     }
     if (completedRoomIds.length > 0) {
-      console.log(`[room-cleanup] completed ${completedRoomIds.length} stuck in-progress room(s), abandoned ${abandonedSessionCount} session(s)`);
+      console.log(
+        `[room-cleanup] completed ${completedRoomIds.length} stuck in-progress room(s), abandoned ${abandonedSessionCount} session(s)`,
+      );
     }
   } catch (err) {
     await client
       .query(
         "INSERT INTO audit.log_events (event, level, metadata) VALUES ($1, $2, $3)",
-        ["cron:room-cleanup", "error", JSON.stringify({ source, error: err.message })],
+        [
+          "cron:room-cleanup",
+          "error",
+          JSON.stringify({ source, error: err.message }),
+        ],
       )
       .catch(() => {});
     throw err;

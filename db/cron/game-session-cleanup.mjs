@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 import { Client } from "pg";
 
-const olderThanMs = parseInt(process.env.GAME_SESSION_RESUME_WINDOW_MS ?? "1800000", 10);
-const BATCH_SIZE = parseInt(process.env.SESSION_CLEANUP_BATCH_SIZE ?? "100", 10);
+const olderThanMs = parseInt(
+  process.env.GAME_SESSION_RESUME_WINDOW_MS ?? "1800000",
+  10,
+);
+const BATCH_SIZE = parseInt(
+  process.env.SESSION_CLEANUP_BATCH_SIZE ?? "100",
+  10,
+);
 const source = process.stdout.isTTY ? "manual" : "cron";
 const host = process.env.POSTGRES_HOST ?? "localhost";
-const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
+const connectionString = `postgresql://${process.env.APP_USER_PASSWORD}:${process.env.APP_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
 
 async function resolveRoomsForAbandonedSessions(client, roomIds) {
   if (roomIds.length === 0) return 0;
@@ -86,8 +92,13 @@ async function main() {
     const sessionIds = rows.map((r) => r.id);
     const sessionCount = sessionIds.length;
 
-    const roomIds = rows.filter((r) => r.room_id !== null).map((r) => r.room_id);
-    const resolvedRoomCount = await resolveRoomsForAbandonedSessions(client, roomIds);
+    const roomIds = rows
+      .filter((r) => r.room_id !== null)
+      .map((r) => r.room_id);
+    const resolvedRoomCount = await resolveRoomsForAbandonedSessions(
+      client,
+      roomIds,
+    );
 
     await client.query(
       "INSERT INTO audit.log_events (event, level, metadata) VALUES ($1, $2, $3)",
@@ -105,10 +116,14 @@ async function main() {
     );
 
     if (sessionCount > 0) {
-      console.log(`[game-session-cleanup] abandoned ${sessionCount} orphaned session(s)`);
+      console.log(
+        `[game-session-cleanup] abandoned ${sessionCount} orphaned session(s)`,
+      );
     }
     if (resolvedRoomCount > 0) {
-      console.log(`[game-session-cleanup] resolved ${resolvedRoomCount} room(s) to completed`);
+      console.log(
+        `[game-session-cleanup] resolved ${resolvedRoomCount} room(s) to completed`,
+      );
     }
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});

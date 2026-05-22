@@ -45,7 +45,7 @@ app.use(express.json({ limit: "1mb" }));
 if (!isLocalEnvironment) {
   const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    limit: process.env.RRM_LIMIT ? Number(process.env.RPM_LIMIT) : 3000,
+    limit: process.env.RPM_LIMIT ? Number(process.env.RPM_LIMIT) : 3000,
     standardHeaders: "draft-7",
     legacyHeaders: false,
     keyGenerator: (req) => getClientIp(req),

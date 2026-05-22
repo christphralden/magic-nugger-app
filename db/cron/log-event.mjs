@@ -3,7 +3,7 @@ import { Client } from "pg";
 
 const [, , event, level, metaJson] = process.argv;
 const host = process.env.POSTGRES_HOST ?? "localhost";
-const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
+const connectionString = `postgresql://${process.env.APP_USER}:${process.env.APP_USER_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
 
 const client = new Client({ connectionString });
 await client.connect();
