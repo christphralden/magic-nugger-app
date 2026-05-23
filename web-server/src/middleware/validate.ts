@@ -6,7 +6,6 @@ import { loggingService } from "@/services/logging.service";
 export const validate =
   <T>(schema: ZodSchema<T>) =>
   (req: Request, res: Response, next: NextFunction) => {
-    console.log("[server] ", req.body);
     const result = schema.safeParse(req.body);
 
     // circuit breaks request
