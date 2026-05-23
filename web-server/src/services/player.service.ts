@@ -62,7 +62,6 @@ export const playerService = {
   }: {
     userId: string;
     eloDelta: number;
-    status: "completed" | "failed";
     totalAnswered: number;
     totalCorrect: number;
     totalIncorrect: number;
@@ -79,7 +78,14 @@ export const playerService = {
         updated_at = now()
        WHERE id = $1
       `,
-      [userId, eloDelta, totalAnswered, totalCorrect, totalIncorrect, maxStreak],
+      [
+        userId,
+        eloDelta,
+        totalAnswered,
+        totalCorrect,
+        totalIncorrect,
+        maxStreak,
+      ],
     );
   },
 };

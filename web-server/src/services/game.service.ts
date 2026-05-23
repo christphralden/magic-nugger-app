@@ -194,15 +194,7 @@ export const gameService = {
       if (session.room_id) {
         await Promise.all([
           gameSessionService.finalize({ sessionId, status, finalElo }),
-          playerService.updateAfterSession({
-            userId,
-            eloDelta,
-            status,
-            totalAnswered: session.correct_count + session.incorrect_count,
-            totalCorrect: session.correct_count,
-            totalIncorrect: session.incorrect_count,
-            maxStreak: session.max_streak,
-          }),
+          // never update player stats on a multiplayer game to avoid farming
         ]);
       } else {
         if (status !== "failed") {
@@ -222,7 +214,6 @@ export const gameService = {
           playerService.updateAfterSession({
             userId,
             eloDelta,
-            status,
             totalAnswered: session.correct_count + session.incorrect_count,
             totalCorrect: session.correct_count,
             totalIncorrect: session.incorrect_count,
