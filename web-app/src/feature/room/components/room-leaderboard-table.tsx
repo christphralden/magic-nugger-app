@@ -18,7 +18,10 @@ interface RoomLeaderboardTableProps {
   currentPlayerId: string;
 }
 
-export function RoomLeaderboardTable({ rows, currentPlayerId }: RoomLeaderboardTableProps) {
+export function RoomLeaderboardTable({
+  rows,
+  currentPlayerId,
+}: RoomLeaderboardTableProps) {
   return (
     <div className="w-full bg-paper border-[3px] border-border rounded-2xl shadow-cartoon overflow-hidden">
       <Table>
@@ -26,8 +29,6 @@ export function RoomLeaderboardTable({ rows, currentPlayerId }: RoomLeaderboardT
           <TableRow>
             <TableHead className="w-12">#</TableHead>
             <TableHead>Player</TableHead>
-            <TableHead className="text-right">Score</TableHead>
-            <TableHead className="text-right">ELO</TableHead>
             <TableHead className="text-right">Correct</TableHead>
             <TableHead className="text-right">Status</TableHead>
           </TableRow>
@@ -83,29 +84,15 @@ function ResultRow({
               {nameInitials(row.display_name || row.username)}
             </AvatarFallback>
           </Avatar>
-          <Typography variant="label" className={isMe ? "text-coral" : undefined}>
+          <Typography
+            variant="label"
+            className={isMe ? "text-coral" : undefined}
+          >
             {name}
           </Typography>
         </div>
       </TableCell>
-      <TableCell className="text-right">
-        <Typography variant="label">{row.score ?? "—"}</Typography>
-      </TableCell>
-      <TableCell className="text-right">
-        <Typography
-          variant="label"
-          className={cn(
-            row.elo_delta != null && row.elo_delta > 0 && "text-green-600",
-            row.elo_delta != null && row.elo_delta < 0 && "text-red-500",
-          )}
-        >
-          {row.elo_delta != null
-            ? row.elo_delta > 0
-              ? `+${row.elo_delta}`
-              : `${row.elo_delta}`
-            : "—"}
-        </Typography>
-      </TableCell>
+
       <TableCell className="text-right">
         <Typography variant="label">
           {row.correct_count != null

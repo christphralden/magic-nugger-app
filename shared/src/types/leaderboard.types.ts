@@ -19,8 +19,6 @@ export type LevelLeaderboardRow = BaseLeaderboardRow & {
 
 export type RoomLeaderboardRow = BaseLeaderboardRow & {
   game_session_id: string | null;
-  score: number | null;
-  elo_delta: number | null;
   correct_count: number | null;
   incorrect_count: number | null;
   max_streak: number | null;

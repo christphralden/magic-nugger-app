@@ -96,13 +96,14 @@ export const gameService = {
     userId: string;
     isCorrect: boolean;
     timeTakenMs?: number;
-  }): Promise<
-    ResponseAnswer & {
+  }): Promise<{
+    answer: ResponseAnswer;
+    metadata: {
       room_id: string | null;
       correct_count: number;
       incorrect_count: number;
-    }
-  > {
+    };
+  }> {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
 
@@ -146,13 +147,18 @@ export const gameService = {
       ]);
 
       return {
-        is_correct: isCorrect,
-        elo_delta: delta,
-        current_streak: newStreak,
-        current_score: newScore,
-        room_id: session.room_id,
-        correct_count: newCorrect,
-        incorrect_count: newIncorrect,
+        answer: {
+          is_correct: isCorrect,
+          elo_delta: delta,
+          current_streak: newStreak,
+          current_score: newScore,
+        },
+
+        metadata: {
+          room_id: session.room_id,
+          correct_count: newCorrect,
+          incorrect_count: newIncorrect,
+        },
       };
     });
   },
@@ -173,12 +179,20 @@ export const gameService = {
     newlyUnlockedNames: string[];
     roomId: string | null;
     roomCompleted: boolean;
-    score: number;
     correctCount: number;
     incorrectCount: number;
     maxStreak: number;
   }> {
-    return tx(async () => {
+    return tx<{
+      levelId: number | null;
+      eloDelta: number;
+      newlyUnlockedNames: string[];
+      roomId: string | null;
+      roomCompleted: boolean;
+      correctCount: number;
+      incorrectCount: number;
+      maxStreak: number;
+    }>(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
       if (!session) {
         throw new AppError(HttpCode.NOT_FOUND, "Session not found");
@@ -241,7 +255,6 @@ export const gameService = {
         newlyUnlockedNames,
         roomId: session.room_id ?? null,
         roomCompleted,
-        score: session.score,
         correctCount: session.correct_count,
         incorrectCount: session.incorrect_count,
         maxStreak: session.max_streak,
@@ -251,18 +264,22 @@ export const gameService = {
 
   async abandon({ sessionId }: { sessionId: string }): Promise<{
     roomId: string | null;
-    score: number | null;
     correctCount: number | null;
     incorrectCount: number | null;
     maxStreak: number | null;
     eloDelta: number | null;
   }> {
-    return tx(async () => {
+    return tx<{
+      roomId: string | null;
+      correctCount: number | null;
+      incorrectCount: number | null;
+      maxStreak: number | null;
+      eloDelta: number | null;
+    }>(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
       await gameSessionService.abandon({ sessionId });
       return {
         roomId: session?.room_id ?? null,
-        score: session?.score ?? null,
         correctCount: session?.correct_count ?? null,
         incorrectCount: session?.incorrect_count ?? null,
         maxStreak: session?.max_streak ?? null,

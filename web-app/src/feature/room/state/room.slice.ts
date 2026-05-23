@@ -1,6 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { createRoom, joinRoom, startRoom, getRoomLeaderboard } from "./room.thunk";
+import {
+  createRoom,
+  joinRoom,
+  startRoom,
+  getRoomLeaderboard,
+} from "./room.thunk";
 import type { AsyncStatus, RoomLeaderboardRow } from "@magic-nugger-app/shared";
 
 type RoomState = {
@@ -27,7 +32,9 @@ const roomSlice = createSlice({
     },
     updateLeaderboardRow: (
       state,
-      action: PayloadAction<Partial<RoomLeaderboardRow> & { player_id: string }>,
+      action: PayloadAction<
+        Partial<RoomLeaderboardRow> & { player_id: string }
+      >,
     ) => {
       const idx = state.leaderboard.findIndex(
         (r) => r.player_id === action.payload.player_id,
@@ -44,7 +51,7 @@ const roomSlice = createSlice({
             ? 0
             : 1;
         if (aFinal !== bFinal) return aFinal - bFinal;
-        return (b.score ?? -1) - (a.score ?? -1);
+        return (b.correct_count ?? -1) - (a.correct_count ?? -1);
       });
     },
   },

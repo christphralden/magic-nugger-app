@@ -71,7 +71,6 @@ export function RoomFinishedPage() {
         dispatch(
           updateLeaderboardRow({
             player_id: data.player_id,
-            score: data.score,
             correct_count: data.correct_count,
             incorrect_count: data.incorrect_count,
           }),
@@ -83,8 +82,6 @@ export function RoomFinishedPage() {
           updateLeaderboardRow({
             player_id: data.player_id,
             session_status: data.session_status,
-            score: data.score,
-            elo_delta: data.elo_delta,
             correct_count: data.correct_count,
             incorrect_count: data.incorrect_count,
             max_streak: data.max_streak,

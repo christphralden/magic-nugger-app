@@ -7,4 +7,4 @@ const dbAsyncStorage = new AsyncLocalStorage<QueryRunner>();
 export const getDb = (): QueryRunner => dbAsyncStorage.getStore() ?? db;
 
 export const tx = <T>(fn: () => Promise<T>): Promise<T> =>
-  db.transaction((trx) => dbAsyncStorage.run(trx, fn));
+  db.transaction((trx) => dbAsyncStorage.run(trx, fn)) satisfies Promise<T>;

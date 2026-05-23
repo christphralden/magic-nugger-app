@@ -139,8 +139,6 @@ export const leaderboardService = {
         p.display_name,
         p.avatar_url,
         rm.game_session_id,
-        gs.score,
-        gs.elo_delta,
         gs.correct_count,
         gs.incorrect_count,
         gs.max_streak,
@@ -180,20 +178,6 @@ export const leaderboardService = {
     const prefix = buildInvalidationPrefix({
       table: "leaderboard",
       identity: { levelId, scope: "level" },
-    });
-    console.log(`[cache] pruned ${prefix}`);
-    loggingService.log({
-      event: "cache:pruned",
-      level: "info",
-      description: prefix,
-    });
-    leaderboardCache.deleteByPrefix(prefix);
-  },
-
-  invalidateByClassroom(classroomId: string): void {
-    const prefix = buildInvalidationPrefix({
-      table: "leaderboard",
-      identity: { classroomId, scope: "classroom" },
     });
     console.log(`[cache] pruned ${prefix}`);
     loggingService.log({
