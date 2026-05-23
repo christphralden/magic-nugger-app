@@ -30,7 +30,7 @@ gameRouter.post(
     const user = getUser(req);
     const { session, created } = await gameService.start({
       userId: user.id,
-      levelId: req.body.level_id,
+      levelId: req.body.level_id ?? null,
       currentElo: user.current_elo,
       ip: getClientIp(req),
       userAgent: getUserAgent(req),
@@ -120,7 +120,9 @@ gameRouter.post("/:id/end", async (req, res) => {
     status: "completed",
   });
   leaderboardService.invalidateGlobal();
-  leaderboardService.invalidateByLevel(levelId);
+  if (levelId != null) {
+    leaderboardService.invalidateByLevel(levelId);
+  }
   loggingService.log({
     event: "session:ended",
     level: "info",
@@ -169,7 +171,9 @@ gameRouter.post("/:id/fail", async (req, res) => {
       status: "failed",
     });
   leaderboardService.invalidateGlobal();
-  leaderboardService.invalidateByLevel(levelId);
+  if (levelId != null) {
+    leaderboardService.invalidateByLevel(levelId);
+  }
   loggingService.log({
     event: "session:failed",
     level: "info",

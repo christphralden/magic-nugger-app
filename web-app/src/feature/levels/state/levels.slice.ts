@@ -59,6 +59,16 @@ const levelsSlice = createSlice({
           .filter((l) => l.is_active)
           .sort((a, b) => a.order_index - b.order_index),
     ),
+    selectUnlockedLevels: createSelector(
+      [(state: LevelsState) => state],
+      (state) => {
+        const unlockedLevelNames = new Set(state.unlockedNames);
+
+        return state.items
+          .filter((i) => unlockedLevelNames.has(i.name))
+          .sort((a, b) => a.order_index - b.order_index);
+      },
+    ),
     selectLevelsStatus: (state) => state.status,
     selectUnlockedLevelNames: (state) => state.unlockedNames,
     selectUnlockedLevelsStatus: (state) => state.unlockedStatus,
@@ -67,6 +77,7 @@ const levelsSlice = createSlice({
 
 export const {
   selectLevels,
+  selectUnlockedLevels,
   selectActiveLevels,
   selectLevelsStatus,
   selectUnlockedLevelNames,

@@ -23,7 +23,7 @@ export const gameService = {
     roomId,
   }: {
     userId: string;
-    levelId: number;
+    levelId: number | null;
     currentElo: number;
     ip: string;
     userAgent: string | null;
@@ -53,10 +53,12 @@ export const gameService = {
           return { session: existing, created: false };
         }
         await gameSessionService.abandon({ sessionId: existing.id });
-        await gameSessionService.reconcileAbandonedElo({
-          session: existing,
-          currentElo,
-        });
+        if (!existing.room_id) {
+          await gameSessionService.reconcileAbandonedElo({
+            session: existing,
+            currentElo,
+          });
+        }
       }
 
       const session = await gameSessionService.create({
@@ -67,6 +69,10 @@ export const gameService = {
         userAgent,
         roomId,
       });
+
+      if (!session) {
+        throw new AppError(HttpCode.FORBIDDEN, "Unable to create session");
+      }
 
       if (roomId) {
         await roomService.linkMemberSession({
@@ -90,7 +96,13 @@ export const gameService = {
     userId: string;
     isCorrect: boolean;
     timeTakenMs?: number;
-  }): Promise<ResponseAnswer & { room_id: string | null; correct_count: number; incorrect_count: number }> {
+  }): Promise<
+    ResponseAnswer & {
+      room_id: string | null;
+      correct_count: number;
+      incorrect_count: number;
+    }
+  > {
     return tx(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
 
@@ -102,11 +114,11 @@ export const gameService = {
         throw new AppError(HttpCode.FORBIDDEN, "Forbidden");
       }
 
-      const level = await levelService.getById(String(session.level_id));
-
-      const delta = isCorrect
-        ? level.elo_gain_correct
-        : -level.elo_loss_incorrect;
+      let delta = 0;
+      if (session.level_id != null) {
+        const level = await levelService.getById(String(session.level_id));
+        delta = isCorrect ? level.elo_gain_correct : -level.elo_loss_incorrect;
+      }
 
       const newScore = session.score + delta;
       const newCorrect = session.correct_count + (isCorrect ? 1 : 0);
@@ -156,7 +168,7 @@ export const gameService = {
     currentElo: number;
     status: "completed" | "failed";
   }): Promise<{
-    levelId: number;
+    levelId: number | null;
     eloDelta: number;
     newlyUnlockedNames: string[];
     roomId: string | null;
@@ -172,39 +184,60 @@ export const gameService = {
         throw new AppError(HttpCode.NOT_FOUND, "Session not found");
       }
 
-      const eloDelta = status === "failed" ? 0 : (session.elo_delta ?? 0);
-      const finalElo =
-        status === "failed" ? currentElo : Math.max(0, currentElo + eloDelta);
-
       const reason: EloHistoryReason =
         status === "completed" ? "session_completed" : "session_failed";
 
-      const [newlyUnlockedNames] = await Promise.all([
-        status === "completed"
-          ? levelService.unlockChildLevels({
-              playerId: userId,
-              levelId: session.level_id,
-            })
-          : Promise.resolve([]),
-        gameSessionService.finalize({ sessionId, status, finalElo }),
-        playerService.updateAfterSession({
-          userId,
-          eloDelta,
-          status,
-          totalAnswered: session.correct_count + session.incorrect_count,
-          totalCorrect: session.correct_count,
-          totalIncorrect: session.incorrect_count,
-          maxStreak: session.max_streak,
-        }),
-        eloService.append({
-          userId,
-          sessionId,
-          eloBefore: session.elo_before,
-          eloAfter: finalElo,
-          delta: eloDelta,
-          reason,
-        }),
-      ]);
+      let newlyUnlockedNames: string[] = [];
+      let eloDelta = 0;
+      let finalElo = currentElo;
+
+      if (session.room_id) {
+        await Promise.all([
+          gameSessionService.finalize({ sessionId, status, finalElo }),
+          playerService.updateAfterSession({
+            userId,
+            eloDelta,
+            status,
+            totalAnswered: session.correct_count + session.incorrect_count,
+            totalCorrect: session.correct_count,
+            totalIncorrect: session.incorrect_count,
+            maxStreak: session.max_streak,
+          }),
+        ]);
+      } else {
+        if (status !== "failed") {
+          eloDelta = session.elo_delta ?? 0;
+          finalElo = Math.max(0, currentElo + eloDelta);
+        }
+
+        if (status === "completed" && session.level_id != null) {
+          newlyUnlockedNames = await levelService.unlockChildLevels({
+            playerId: userId,
+            levelId: session.level_id,
+          });
+        }
+
+        await Promise.all([
+          gameSessionService.finalize({ sessionId, status, finalElo }),
+          playerService.updateAfterSession({
+            userId,
+            eloDelta,
+            status,
+            totalAnswered: session.correct_count + session.incorrect_count,
+            totalCorrect: session.correct_count,
+            totalIncorrect: session.incorrect_count,
+            maxStreak: session.max_streak,
+          }),
+          eloService.append({
+            userId,
+            sessionId,
+            eloBefore: session.elo_before,
+            eloAfter: finalElo,
+            delta: eloDelta,
+            reason,
+          }),
+        ]);
+      }
 
       let roomCompleted = false;
       if (session.room_id) {
@@ -225,11 +258,7 @@ export const gameService = {
     });
   },
 
-  async abandon({
-    sessionId,
-  }: {
-    sessionId: string;
-  }): Promise<{
+  async abandon({ sessionId }: { sessionId: string }): Promise<{
     roomId: string | null;
     score: number | null;
     correctCount: number | null;

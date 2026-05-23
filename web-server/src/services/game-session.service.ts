@@ -53,7 +53,7 @@ export const gameSessionService = {
     roomId,
   }: {
     userId: string;
-    levelId: number;
+    levelId: number | null;
     currentElo: number;
     ip: string;
     userAgent: string | null;

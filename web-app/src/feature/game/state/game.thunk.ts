@@ -4,7 +4,7 @@ import type { ApiResponse, GameSession, ResponseAnswer } from "@magic-nugger-app
 
 export const createGameSession = createAsyncThunk<
   GameSession,
-  { level_id: number; room_id?: string }
+  { level_id?: number | null; room_id?: string }
 >(
   "game/createSession",
   async ({ level_id, room_id }, { rejectWithValue }) => {

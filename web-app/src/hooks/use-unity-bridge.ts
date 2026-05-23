@@ -1,5 +1,6 @@
 import {
   PATH_TO_UNITY,
+  UNITY_CUSTOM_LEVEL,
   UNITY_GAME_OBJECT,
   UNITY_SEND_METHOD,
   UNITY_SUBSCRIBED_EVENT,
@@ -16,6 +17,7 @@ import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
   selectLevels,
   selectUnlockedLevelNames,
+  selectUnlockedLevels,
 } from "@/feature/levels/state/levels.slice";
 import { useDispatch, useSelector } from "@/store/hooks";
 import { useCallback, useEffect, useRef } from "react";
@@ -27,6 +29,7 @@ export function useUnityBridge(
   options: {
     roomId?: string;
     questions?: Question[];
+    onCriticalError?: () => void;
     onSessionFinished?: (result: {
       elo_gained: number;
       new_levels_unlocked: string[];
@@ -38,7 +41,7 @@ export function useUnityBridge(
   const dispatch = useDispatch();
   const currentPlayer = useSelector(selectCurrentPlayer);
   const unlockedNames = useSelector(selectUnlockedLevelNames);
-  const levels = useSelector(selectLevels);
+  const levels = useSelector(selectUnlockedLevels);
 
   const sessionIdRef = useRef<string | null>(null);
   const lastAnswerAtRef = useRef<number | null>(null);
@@ -95,27 +98,36 @@ export function useUnityBridge(
   const handleLevel = useCallback(
     (levelName: unknown) => {
       const level = levels.find((l) => l.name === levelName);
-      if (!level) {
-        console.error(
-          `[useUnityBridge] Level "${levelName}" not found in DB. Ensure Unity LevelData.levelName matches the DB level name`,
-        );
-        toastError(`Sorry but ${levelName} isn't currently playable`);
-        return;
+
+      // if game isnt a custom multiplayer game, validate
+      if (levelName !== UNITY_CUSTOM_LEVEL) {
+        if (!level) {
+          toastError(`Sorry, ${levelName} isn't currently playable`);
+          options.onCriticalError?.();
+          return;
+        }
+        currentLevelIdRef.current = level.id;
       }
-      currentLevelIdRef.current = level.id;
+
       currentScoreRef.current = 0;
+
       const startSession = async () => {
         const result = await dispatch(
-          createGameSession({ level_id: level.id, room_id: options.roomId }),
+          createGameSession({ level_id: level?.id, room_id: options.roomId }),
         );
         if (isFulfilled(createGameSession)(result)) {
           sessionIdRef.current = result.payload.id;
           lastAnswerAtRef.current = Date.now();
+        } else {
+          toastError(
+            (result.payload as string) ?? "Could not start game session",
+          );
+          options.onCriticalError?.();
         }
       };
       startSession();
     },
-    [dispatch, levels, options.roomId],
+    [dispatch, levels, options.roomId, options.onCriticalError],
   );
 
   const handleAnswer = useCallback(
@@ -167,6 +179,10 @@ export function useUnityBridge(
             levelId: currentLevelIdRef.current,
             score: currentScoreRef.current,
           });
+        } else {
+          toastError(
+            (result.payload as string) ?? "Could not save your game result",
+          );
         }
       };
       finishSession();

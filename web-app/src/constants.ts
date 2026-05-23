@@ -11,11 +11,13 @@ export const UNITY_SUBSCRIBED_EVENT = {
 };
 
 export const UNITY_GAME_OBJECT = "ReactUnityCommunication";
+export const UNITY_CUSTOM_LEVEL = "Custom React Level";
 
 export const UNITY_SEND_METHOD = {
   GIVE_INITIAL_DATA: "GiveInitialdata",
   FINALIZED: "Finalized",
 };
+
 export const DISABLED_CANVAS_EVENTS: (keyof GlobalEventHandlersEventMap)[] = [
   "dragstart",
   "scroll",

@@ -33,6 +33,7 @@ type SessionResult = {
 };
 
 function GameView() {
+  const navigate = useNavigate();
   const [sessionResult, setSessionResult] = useState<SessionResult | null>(
     null,
   );
@@ -40,6 +41,7 @@ function GameView() {
   const currentPlayer = useSelector(selectCurrentPlayer);
 
   const { provider, isLoaded } = useUnityBridge({
+    onCriticalError: () => navigate("/game"),
     onSessionFinished: ({
       elo_gained,
       new_levels_unlocked,
@@ -112,6 +114,10 @@ export function RoomGameView() {
   const { provider, isLoaded } = useUnityBridge({
     roomId,
     questions,
+    onCriticalError: () => {
+      allowNavRef.current = true;
+      navigate(`/game/room/${roomId}`);
+    },
     onSessionFinished: () => {
       allowNavRef.current = true;
       navigate(`/game/room/${roomId}/finished`);
