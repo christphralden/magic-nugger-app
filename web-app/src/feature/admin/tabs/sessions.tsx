@@ -23,6 +23,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 const SESSION_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -128,7 +129,7 @@ export function SessionsTab() {
                 </TableHead>
                 <TableHead>
                   <Typography variant="body" className="text-ink-soft">
-                    Level
+                    Level / Room ID
                   </Typography>
                 </TableHead>
                 <TableHead className="text-right">
@@ -150,15 +151,29 @@ export function SessionsTab() {
             </TableHeader>
             <TableBody>
               {items.map((session) => (
-                <TableRow key={session.id}>
+                <TableRow
+                  key={session.id}
+                  className={cn(
+                    session.status === "completed" && "bg-green/50",
+                    session.status === "failed" && "bg-coral/50",
+                    session.status === "in_progress" && "bg-teal/50",
+                    session.status === "abandoned" && "bg-ink/50",
+                  )}
+                >
                   <TableCell>
-                    <Typography variant="body">{session.id}</Typography>
+                    <Typography variant="body" className="line-clamp-1">
+                      {session.id}
+                    </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body">{session.player_id}</Typography>
+                    <Typography variant="body" className="line-clamp-1">
+                      {session.player_id}
+                    </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body">{session.level_id}</Typography>
+                    <Typography variant="body" className="line-clamp-1">
+                      {session.level_id ?? session.room_id}
+                    </Typography>
                   </TableCell>
                   <TableCell className="text-right">
                     <Typography variant="body">{session.score}</Typography>

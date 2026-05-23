@@ -292,16 +292,16 @@ export function StatisticsTab() {
       </Typography>
 
       <div className="rounded-xl flex flex-col gap-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="ELO" value={player.current_elo} />
           <StatCard
-            label="Questions Answered"
+            label="Questions answered"
             value={player.total_questions_answered}
           />
           <StatCard label="Accuracy" value={`${accuracy}%`} />
           <StatCard label="Correct" value={player.total_correct} />
           <StatCard label="Incorrect" value={player.total_incorrect} />
-          <StatCard label="Longest Streak" value={player.longest_streak} />
+          <StatCard label="Longest streak" value={player.longest_streak} />
         </div>
       </div>
     </>

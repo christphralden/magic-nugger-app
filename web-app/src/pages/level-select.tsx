@@ -27,6 +27,7 @@ export function LevelSelectPage() {
   const levels = useSelector(selectActiveLevels);
   const levelsStatus = useSelector(selectLevelsStatus);
   const unlockedNames = useSelector(selectUnlockedLevelNames);
+  const unlockedNamesSet = new Set(unlockedNames);
 
   useEffect(() => {
     dispatch(handleGetLevels());
@@ -42,7 +43,7 @@ export function LevelSelectPage() {
           Levels
         </Typography>
 
-        {levelsStatus === "loading" && (
+        {levelsStatus === "loading" && levels.length === 0 && (
           <div className="flex flex-col gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
               <LevelCardSkeleton key={i} />
@@ -60,7 +61,7 @@ export function LevelSelectPage() {
 
         <div className="flex flex-col gap-6">
           {levels.map((level) => {
-            const isAccessible = unlockedNames.includes(level.name);
+            const isAccessible = unlockedNamesSet.has(level.name);
 
             return (
               <div
@@ -102,7 +103,7 @@ export function LevelSelectPage() {
                     <CartoonButton
                       variant="primary"
                       size="sm"
-                      onClick={() => navigate(`/game?level=${level.id}`)}
+                      onClick={() => navigate(`/game/play?level=${level.id}`)}
                     >
                       Play!
                     </CartoonButton>

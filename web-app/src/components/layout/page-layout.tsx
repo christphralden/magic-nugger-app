@@ -30,7 +30,7 @@ export function PageLayout({ title, children, headless }: PageLayoutProps) {
   const avatarFallback = nameInitials(name);
 
   useEffect(() => {
-    document.title = `${title} | Magic Nugger`;
+    document.title = `${title} | Calculon`;
   }, [title]);
 
   return (

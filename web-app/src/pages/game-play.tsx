@@ -77,7 +77,7 @@ function GameView() {
       {!isLoaded && (
         <div className="absolute w-full h-full flex justify-center items-center top-0 left-0">
           <Typography variant={"heading"}>
-            <FloatingText text="Loading your nuggers..." duration={1} />
+            <FloatingText text="Summoning your hero..." duration={1} />
           </Typography>
         </div>
       )}
@@ -212,7 +212,7 @@ export function RoomGameView() {
       {!isLoaded && (
         <div className="absolute w-full h-full flex justify-center items-center">
           <Typography variant="heading">
-            <FloatingText text="Loading your nuggers..." duration={1} />
+            <FloatingText text="Summoning your hero..." duration={1} />
           </Typography>
         </div>
       )}
@@ -245,7 +245,7 @@ export function GamePlayPage() {
       <PageLayout title="Game">
         <div className="w-full h-full flex justify-center items-center">
           <Typography variant={"heading"}>
-            <FloatingText text="Loading your nuggers..." duration={1} />
+            <FloatingText text="Summoning your hero..." duration={1} />
           </Typography>
         </div>
       </PageLayout>

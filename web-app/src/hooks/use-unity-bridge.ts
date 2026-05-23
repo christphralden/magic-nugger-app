@@ -15,7 +15,6 @@ import {
 import { getMe } from "@/feature/auth/state/auth.thunk";
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import {
-  selectLevels,
   selectUnlockedLevelNames,
   selectUnlockedLevels,
 } from "@/feature/levels/state/levels.slice";
