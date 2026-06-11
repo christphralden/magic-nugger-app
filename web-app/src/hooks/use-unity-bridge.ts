@@ -75,7 +75,10 @@ export function useUnityBridge(
     isLoaded,
     addEventListener,
     removeEventListener,
-    unload,
+    // https://github.com/jeffreylanters/react-unity-webgl/issues/22
+    // it said that doing unload on window navigation causes Quit() not to be invoked correctly
+    // react yanks canvas away so it never sees a canvas it needed to destroy
+    UNSAFE__detachAndUnloadImmediate,
   } = useUnityContext({
     loaderUrl: `${PATH_TO_UNITY}/Calculon.loader.js`,
     dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
@@ -236,14 +239,14 @@ export function useUnityBridge(
       removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
   }, [addEventListener, removeEventListener, handleFinished]);
 
-  const unloadRef = useRef(unload);
+  const detachAndUnloadRef = useRef(UNSAFE__detachAndUnloadImmediate);
   useEffect(() => {
-    unloadRef.current = unload;
-  }, [unload]);
+    detachAndUnloadRef.current = UNSAFE__detachAndUnloadImmediate;
+  }, [UNSAFE__detachAndUnloadImmediate]);
 
   useEffect(() => {
     return () => {
-      unloadRef.current().catch(() => {});
+      detachAndUnloadRef.current().catch(() => {});
     };
   }, []);
 
