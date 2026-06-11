@@ -333,4 +333,4 @@ Copy `.env.local.example` to `.env.local` for local dev. See `.env.production.ex
 
 ## License
 
-Skripsi — Jonathan, Alden, Shawn
+Skripsi — Jonathan, Alden, Shawn (JAS)
