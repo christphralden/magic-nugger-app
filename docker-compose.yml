@@ -48,6 +48,10 @@ services:
         - magic-nugger-web-server:latest
     environment:
       NODE_ENV: production
+      POSTGRES_HOST: magic-nugger-postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-magic_nugger}
       DATABASE_URL: postgresql://${APP_USER}:${APP_USER_PASSWORD}@magic-nugger-postgres:5432/${POSTGRES_DB:-magic_nugger}
       SESSION_SECRET: ${SESSION_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
