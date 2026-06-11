@@ -36,6 +36,14 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           ssh_key: ${{ secrets.EC2_SSH_KEY }}
 
+      - name: Pull code
+        uses: ./.github/actions/pull-code
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key: ${{ secrets.EC2_SSH_KEY }}
+          repo_url: ${{ github.server_url }}/${{ github.repository }}.git
+
       - name: Write env
         uses: ./.github/actions/write-env
         with:
@@ -64,14 +72,6 @@ jobs:
           db_ssl_mode: ${{ vars.DB_SSL_MODE }}
           internal_secret: ${{ secrets.INTERNAL_SECRET }}
           game_session_resume_window_ms: ${{ vars.GAME_SESSION_RESUME_WINDOW_MS }}
-
-      - name: Pull code
-        uses: ./.github/actions/pull-code
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          ssh_key: ${{ secrets.EC2_SSH_KEY }}
-          repo_url: ${{ github.server_url }}/${{ github.repository }}.git
 
       - name: Configure server
         uses: ./.github/actions/configure-server
