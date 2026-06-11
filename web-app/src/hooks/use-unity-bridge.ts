@@ -98,6 +98,7 @@ export function useUnityBridge(
       // xrCompatible: true,
     },
   });
+  const detachAndUnloadRef = useRef(UNSAFE__detachAndUnloadImmediate);
 
   const handleInit = useCallback(() => {
     if (!currentPlayer) return;
@@ -239,7 +240,6 @@ export function useUnityBridge(
       removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
   }, [addEventListener, removeEventListener, handleFinished]);
 
-  const detachAndUnloadRef = useRef(UNSAFE__detachAndUnloadImmediate);
   useEffect(() => {
     detachAndUnloadRef.current = UNSAFE__detachAndUnloadImmediate;
   }, [UNSAFE__detachAndUnloadImmediate]);
