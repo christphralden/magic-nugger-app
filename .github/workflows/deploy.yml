@@ -43,6 +43,7 @@ jobs:
           app_user_password: ${{ secrets.APP_USER_PASSWORD }}
           app_ro_user: ${{ secrets.APP_RO_USER }}
           app_ro_password: ${{ secrets.APP_RO_PASSWORD }}
+          partman_password: ${{ secrets.PARTMAN_PASSWORD }}
           session_secret: ${{ secrets.SESSION_SECRET }}
           google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
