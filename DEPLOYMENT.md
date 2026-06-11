@@ -91,7 +91,7 @@ Go to **GitHub → Settings → Secrets and variables → Actions**.
 | `SESSION_SECRET`           | Session secret — `openssl rand -base64 32`                       |
 | `GOOGLE_CLIENT_ID`         | Google OAuth client ID                                           |
 | `GOOGLE_CLIENT_SECRET`     | Google OAuth client secret                                       |
-| `CORS_ORIGIN`              | Server CORS origin (e.g. `https://youractualdomain.com`)         |
+| `CORS_ORIGIN`              | Allowed frontend origin — only required if frontend and API are on different domains. Single-instance deployments behind nginx do not need this set |
 | `ENABLE_REMOTE_DEPLOYMENT` | Set to `true` to enable deploys — omit or leave unset to disable |
 
 ### Variables
