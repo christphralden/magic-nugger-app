@@ -7,7 +7,7 @@
     "shared"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "db:migrate": "node --env-file=.env.local db/runner.mjs up",
