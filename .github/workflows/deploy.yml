@@ -29,6 +29,13 @@ jobs:
             echo "::error::POSTGRES_PASSWORD is not set in GitHub Secrets" && exit 1
           fi
 
+      - name: Configure SSH
+        uses: ./.github/actions/configure-ssh
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key: ${{ secrets.EC2_SSH_KEY }}
+
       - name: Bootstrap
         uses: ./.github/actions/bootstrap
         with:

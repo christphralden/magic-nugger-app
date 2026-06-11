@@ -1,0 +1,27 @@
+name: Configure SSH
+description: Configures SSH on the server to reach GitHub over port 443. Runs on every deploy.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        timeout: 60s
+        script: |
+          mkdir -p /root/.ssh
+          chmod 700 /root/.ssh
+          printf 'Host github.com\n  Hostname ssh.github.com\n  Port 443\n' > /root/.ssh/config
+          chmod 600 /root/.ssh/config
+          ssh-keyscan -p 443 ssh.github.com >> /root/.ssh/known_hosts 2>/dev/null
+          echo "==> ssh configured"
