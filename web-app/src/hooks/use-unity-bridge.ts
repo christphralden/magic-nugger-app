@@ -57,6 +57,12 @@ export function useUnityBridge(
     dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
     frameworkUrl: `${PATH_TO_UNITY}/Calculon.framework.js`,
     codeUrl: `${PATH_TO_UNITY}/Calculon.wasm`,
+    cacheControl: (url: string) => {
+      if (url.match(/\.data$/) || url.match(/\.bundle$/)) {
+        return "must-revalidate";
+      }
+      return "immutable";
+    },
     webglContextAttributes: {
       alpha: true,
       antialias: true,
