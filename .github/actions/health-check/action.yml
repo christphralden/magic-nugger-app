@@ -17,6 +17,7 @@ runs:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
+        timeout: 60s
         script: |
           cd /magic-nugger
           for i in $(seq 1 30); do

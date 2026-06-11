@@ -24,6 +24,7 @@ runs:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
+        timeout: 60s
         envs: DOMAIN,CERTBOT_EMAIL
         script: |
           CONFIGURED_DOMAIN=$(cat /etc/nginx/.configured-domain 2>/dev/null || echo "")

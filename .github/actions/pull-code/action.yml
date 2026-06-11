@@ -21,6 +21,7 @@ runs:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
+        timeout: 60s
         envs: REPO_URL
         script: |
           if [ ! -d /magic-nugger/.git ]; then
