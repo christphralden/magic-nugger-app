@@ -149,6 +149,7 @@ export const leaderboardService = {
        JOIN rooms r ON r.id = rm.room_id
        LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
        WHERE rm.room_id = $1
+         AND rm.player_id != r.host_id
          AND (rm.deleted_at IS NULL OR (r.started_at IS NOT NULL AND rm.deleted_at > r.started_at))
        ORDER BY
          CASE WHEN gs.status IN ('completed', 'failed') THEN 0 ELSE 1 END,

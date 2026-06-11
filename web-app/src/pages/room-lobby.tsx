@@ -103,7 +103,11 @@ export function RoomLobbyPage() {
       },
       [ROOM_SSE_EVENTS.ROOM_STARTED]: () => {
         allowNavRef.current = true;
-        navigate(`/game/room/${roomId}/play`);
+        navigate(
+          isHost
+            ? `/game/room/${roomId}/finished`
+            : `/game/room/${roomId}/play`,
+        );
       },
       [ROOM_SSE_EVENTS.ROOM_CANCELLED]: () => {
         allowNavRef.current = true;

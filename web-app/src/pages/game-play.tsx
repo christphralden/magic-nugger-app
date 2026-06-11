@@ -109,7 +109,7 @@ export function RoomGameView() {
   const allowNavRef = useRef(false);
   const gameActiveRef = useRef(false);
 
-  const { roomId, roomData, setRoomData, handleRoomCancelled, onSseError } =
+  const { roomId, roomData, setRoomData, isHost, handleRoomCancelled, onSseError } =
     useRoom();
   const questions = roomData?.room.questions?.data;
 
@@ -142,6 +142,11 @@ export function RoomGameView() {
             navigate(`/game/room/${roomId}`);
             break;
           case "in_progress":
+            if (isHost) {
+              allowNavRef.current = true;
+              navigate(`/game/room/${roomId}/finished`);
+              return;
+            }
             gameActiveRef.current = true;
             setRoomData(data);
             break;

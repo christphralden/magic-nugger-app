@@ -26,33 +26,6 @@ Launch an Ubuntu 22.04 LTS `t3.micro` (or larger) with:
 
 ---
 
-## 2. Bootstrap the Server (already in workflow)
-
-Run `scripts/bootstrap.sh` as root. The easiest way is to paste it into the EC2 **User Data** field before launching — it runs automatically on first boot. Alternatively, SSH in and run it manually:
-
-```bash
-sudo bash scripts/bootstrap.sh
-```
-
-This installs Docker, Nginx, Certbot, Node 20, and creates `/magic-nugger` and `/var/www/magic-nugger/web-app`.
-
----
-
-## 3. Configure Nginx (already in workflow)
-
-Copy the config from this repo to the server and set your domain:
-
-```bash
-scp nginx/frontend.nginx.conf ubuntu@<EC2_IP>:/tmp/
-ssh ubuntu@<EC2_IP>
-sudo cp /tmp/frontend.nginx.conf /etc/nginx/nginx.conf
-sudo sed -i 's/your-domain\.com/youractualdomain.com/g' /etc/nginx/nginx.conf
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
----
-
 ## 4. SSL (Certbot)
 
 Point your DNS A record to the EC2 public IP first, then:
@@ -75,24 +48,24 @@ Go to **GitHub → Settings → Secrets and variables → Actions**.
 
 ### Secrets
 
-| Secret                     | Description                                                      |
-| -------------------------- | ---------------------------------------------------------------- |
-| `EC2_HOST`                 | Public IP of your EC2                                            |
-| `EC2_USERNAME`             | SSH username (`ubuntu` for Ubuntu AMIs)                          |
-| `EC2_SSH_KEY`              | Private SSH key for the EC2 user                                 |
-| `POSTGRES_USER`            | Database superuser name                                          |
-| `POSTGRES_PASSWORD`        | Database superuser password                                      |
-| `POSTGRES_DB`              | Database name                                                    |
-| `APP_USER`                 | Database app user (SELECT/INSERT/UPDATE/DELETE)                  |
-| `APP_USER_PASSWORD`        | Database app user password                                       |
-| `APP_RO_USER`              | Database read only user (SELECT only)                            |
-| `APP_RO_PASSWORD`          | Database read only user password                                 |
-| `PARTMAN_PASSWORD`         | Password for `partman_user` — pg_partman maintenance role        |
-| `SESSION_SECRET`           | Session secret — `openssl rand -base64 32`                       |
-| `GOOGLE_CLIENT_ID`         | Google OAuth client ID                                           |
-| `GOOGLE_CLIENT_SECRET`     | Google OAuth client secret                                       |
+| Secret                     | Description                                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EC2_HOST`                 | Public IP of your EC2                                                                                                                               |
+| `EC2_USERNAME`             | SSH username (`ubuntu` for Ubuntu AMIs)                                                                                                             |
+| `EC2_SSH_KEY`              | Private SSH key for the EC2 user                                                                                                                    |
+| `POSTGRES_USER`            | Database superuser name                                                                                                                             |
+| `POSTGRES_PASSWORD`        | Database superuser password                                                                                                                         |
+| `POSTGRES_DB`              | Database name                                                                                                                                       |
+| `APP_USER`                 | Database app user (SELECT/INSERT/UPDATE/DELETE)                                                                                                     |
+| `APP_USER_PASSWORD`        | Database app user password                                                                                                                          |
+| `APP_RO_USER`              | Database read only user (SELECT only)                                                                                                               |
+| `APP_RO_PASSWORD`          | Database read only user password                                                                                                                    |
+| `PARTMAN_PASSWORD`         | Password for `partman_user` — pg_partman maintenance role                                                                                           |
+| `SESSION_SECRET`           | Session secret — `openssl rand -base64 32`                                                                                                          |
+| `GOOGLE_CLIENT_ID`         | Google OAuth client ID                                                                                                                              |
+| `GOOGLE_CLIENT_SECRET`     | Google OAuth client secret                                                                                                                          |
 | `CORS_ORIGIN`              | Allowed frontend origin — only required if frontend and API are on different domains. Single-instance deployments behind nginx do not need this set |
-| `ENABLE_REMOTE_DEPLOYMENT` | Set to `true` to enable deploys — omit or leave unset to disable |
+| `ENABLE_REMOTE_DEPLOYMENT` | Set to `true` to enable deploys — omit or leave unset to disable                                                                                    |
 
 ### Variables
 

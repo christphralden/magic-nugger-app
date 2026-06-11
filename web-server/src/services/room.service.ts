@@ -276,6 +276,7 @@ export const roomService = {
        LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
        WHERE rm.room_id = $1
          AND rm.deleted_at IS NULL
+         AND rm.player_id != (SELECT host_id FROM rooms WHERE id = $1)
          AND (rm.game_session_id IS NULL OR gs.status = 'in_progress')`,
       [roomId],
     );
