@@ -20,7 +20,7 @@ import {
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import { Unity } from "react-unity-webgl";
 
-import { useNavigate, useParams, useBlocker } from "react-router-dom";
+import { useNavigate, useParams, useBlocker, type BlockerFunction } from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
 import { useRoom } from "@/contexts/room.context";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
@@ -74,8 +74,21 @@ function GameView() {
     },
   });
 
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }: Parameters<BlockerFunction>[0]) =>
+      isLoaded && currentLocation.pathname !== nextLocation.pathname,
+  );
+
   return (
     <PageLayout title="Game" headless>
+      {blocker.state === "blocked" && (
+        <ConfirmLeaveDialog
+          title="Leave game?"
+          description="Your current session will be lost."
+          onConfirm={() => blocker.proceed?.()}
+          onCancel={() => blocker.reset?.()}
+        />
+      )}
       {!isLoaded && (
         <div className="absolute w-full h-full flex justify-center items-center top-0 left-0">
           <Typography variant={"heading"}>

@@ -75,6 +75,7 @@ export function useUnityBridge(
     isLoaded,
     addEventListener,
     removeEventListener,
+    unload,
   } = useUnityContext({
     loaderUrl: `${PATH_TO_UNITY}/Calculon.loader.js`,
     dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
@@ -234,6 +235,17 @@ export function useUnityBridge(
     return () =>
       removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
   }, [addEventListener, removeEventListener, handleFinished]);
+
+  const unloadRef = useRef(unload);
+  useEffect(() => {
+    unloadRef.current = unload;
+  }, [unload]);
+
+  useEffect(() => {
+    return () => {
+      unloadRef.current().catch(() => {});
+    };
+  }, []);
 
   return {
     Unity,
