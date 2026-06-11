@@ -41,10 +41,10 @@ runs:
             printf '#!/bin/bash\nsystemctl start nginx\n' > /etc/letsencrypt/renewal-hooks/post/nginx-start.sh
             chmod +x /etc/letsencrypt/renewal-hooks/pre/nginx-stop.sh /etc/letsencrypt/renewal-hooks/post/nginx-start.sh
 
-            cp /magic-nugger/nginx/frontend.nginx.conf /etc/nginx/nginx.conf
-            sed -i "s/your-domain\.com/$DOMAIN/g" /etc/nginx/nginx.conf
-
             echo "$DOMAIN" > /etc/nginx/.configured-domain
           fi
 
-          nginx -t && systemctl start nginx
+          cp /magic-nugger/nginx/frontend.nginx.conf /etc/nginx/nginx.conf
+          sed -i "s/your-domain\.com/$DOMAIN/g" /etc/nginx/nginx.conf
+
+          nginx -t && systemctl restart nginx

@@ -1,5 +1,5 @@
 name: Write env file
-description: Writes /magic-nugger/.env.production on the server from secrets and variables.
+description: Writes /magic-nugger/.env on the server from secrets and variables.
 
 inputs:
   host:
@@ -112,5 +112,5 @@ runs:
             printf 'DB_QUERY_TIMEOUT_MS=%s\n'             "$DB_QUERY_TIMEOUT_MS"
             printf 'DB_SSL_MODE=%s\n'                     "$DB_SSL_MODE"
             printf 'GAME_SESSION_RESUME_WINDOW_MS=%s\n'   "$GAME_SESSION_RESUME_WINDOW_MS"
-          } > /magic-nugger/.env.production
-          chmod 600 /magic-nugger/.env.production
+          } > /magic-nugger/.env
+          chmod 600 /magic-nugger/.env
