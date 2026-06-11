@@ -1,0 +1,33 @@
+name: Bootstrap
+description: One-time server setup. Skips if /magic-nugger/.bootstrapped exists.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        script: |
+          if [ -f /magic-nugger/.bootstrapped ]; then
+            echo "Already bootstrapped, skipping."
+            exit 0
+          fi
+          apt update && apt upgrade -y
+          apt install -y docker.io docker-compose-v2
+          apt install -y nginx certbot python3-certbot-nginx
+          systemctl enable nginx
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt install -y nodejs
+          mkdir -p /magic-nugger
+          mkdir -p /var/www/magic-nugger/web-app
+          touch /magic-nugger/.bootstrapped
