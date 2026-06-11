@@ -79,7 +79,7 @@ runs:
         DB_QUERY_TIMEOUT_MS: ${{ inputs.db_query_timeout_ms }}
         DB_SSL_MODE: ${{ inputs.db_ssl_mode }}
         PARTMAN_PASSWORD: ${{ inputs.partman_password }}
-        internal_secret: ${{ inputs.internal_secret }}
+        INTERNAL_SECRET: ${{ inputs.internal_secret }}
         GAME_SESSION_RESUME_WINDOW_MS: ${{ inputs.game_session_resume_window_ms }}
       with:
         host: ${{ inputs.host }}
