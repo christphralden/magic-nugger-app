@@ -8,6 +8,8 @@ import { useUnityBridge } from "@/hooks/use-unity-bridge";
 import { useDispatch, useSelector } from "@/store/hooks";
 import {
   selectLevels,
+  selectActiveLevels,
+  selectUnlockedLevels,
   selectLevelsStatus,
   selectUnlockedLevelsStatus,
 } from "@/feature/levels/state/levels.slice";
@@ -232,6 +234,8 @@ export function GamePlayPage() {
   const dispatch = useDispatch();
   const levelsStatus = useSelector(selectLevelsStatus);
   const unlockedStatus = useSelector(selectUnlockedLevelsStatus);
+  const activeLevels = useSelector(selectActiveLevels);
+  const unlockedLevels = useSelector(selectUnlockedLevels);
 
   useEffect(() => {
     dispatch(handleGetLevels());
@@ -254,6 +258,30 @@ export function GamePlayPage() {
 
   if (id) {
     return <RoomGameView />;
+  }
+
+  if (activeLevels.length === 0) {
+    return (
+      <PageLayout title="Game">
+        <div className="w-full h-full flex justify-center items-center">
+          <Typography variant={"primary"}>
+            <FloatingText text="No levels available yet :(" duration={1} />
+          </Typography>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (unlockedLevels.length === 0) {
+    return (
+      <PageLayout title="Game">
+        <div className="w-full h-full flex justify-center items-center">
+          <Typography variant={"primary"}>
+            <FloatingText text="No levels unlocked yet :(" duration={1} />
+          </Typography>
+        </div>
+      </PageLayout>
+    );
   }
 
   return <GameView />;

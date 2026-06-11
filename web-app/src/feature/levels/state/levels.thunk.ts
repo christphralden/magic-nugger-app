@@ -27,6 +27,7 @@ export const getUnlockedLevels = createAsyncThunk<ResponseUnlockedLevels>(
       `${WEB_SERVER_URL}/${API_VERSION_BASE}/levels/unlocked`,
       { credentials: "include" },
     );
+    if (response.status === 204) return [] as unknown as ResponseUnlockedLevels;
     const data = (await response.json()) as ApiResponse<ResponseUnlockedLevels>;
     if (!response.ok || data.code !== 200) return rejectWithValue(data.error);
     return data.data;
