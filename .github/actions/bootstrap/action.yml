@@ -17,7 +17,8 @@ runs:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
-        timeout: 60s
+        timeout: 5m
+        command_timeout: 20m
         script: |
           if [ -f /root/.magic-nugger-bootstrapped ]; then
             echo "Already bootstrapped, skipping."

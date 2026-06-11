@@ -18,6 +18,7 @@ runs:
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         timeout: 60s
+        command_timeout: 15m
         script: |
           cd /magic-nugger
           docker compose build magic-nugger-web-server

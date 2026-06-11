@@ -25,6 +25,7 @@ runs:
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         timeout: 60s
+        command_timeout: 10m
         envs: WEB_SERVER_URL,API_URL
         script: |
           cd /magic-nugger/web-app
