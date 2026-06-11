@@ -1,6 +1,17 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { execSync } from "child_process";
+
+function getCommitHash(): string {
+  try {
+    return execSync("git rev-parse --short HEAD").toString().trim();
+  } catch {
+    return "dev";
+  }
+}
+
+const commitHash = getCommitHash();
 
 function runtimeConfigPlugin(): Plugin {
   return {
@@ -24,6 +35,9 @@ function runtimeConfigPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), runtimeConfigPlugin()],
+  define: {
+    __COMMIT_HASH__: JSON.stringify(commitHash),
+  },
   server: {
     host: true,
     port: 5173,

@@ -37,8 +37,11 @@ export function PageLayout({ title, children, headless }: PageLayoutProps) {
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <div className="flex items-center justify-between px-8 py-4 border-b-[3px] border-border bg-paper">
         <section className="flex w-full max-w-64 justify-start">
-          <Link to={"/home"}>
+          <Link to={"/home"} className="flex items-center gap-2">
             <MagicNuggerLogo />
+            <Typography variant="label" className="text-ink-soft font-mono text-xs">
+              {__COMMIT_HASH__}
+            </Typography>
           </Link>
         </section>
 
