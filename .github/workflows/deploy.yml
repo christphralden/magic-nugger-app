@@ -106,6 +106,7 @@ jobs:
           ssh_key: ${{ secrets.EC2_SSH_KEY }}
           gh_token: ${{ github.token }}
           repo: ${{ github.repository }}
+          tag: ${{ vars.UNITY_RELEASE_TAG || 'latest' }}
 
       - name: Deploy server
         uses: ./.github/actions/deploy-server
