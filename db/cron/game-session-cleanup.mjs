@@ -2,7 +2,7 @@
 import { Client } from "pg";
 
 const olderThanMs = parseInt(
-  process.env.GAME_SESSION_RESUME_WINDOW_MS ?? "1800000",
+  process.env.GAME_SESSION_STALE_THRESHOLD_MS ?? "1800000",
   10,
 );
 const BATCH_SIZE = parseInt(
@@ -32,6 +32,7 @@ async function resolveRoomsForAbandonedSessions(client, roomIds) {
              FROM room_members rm
              LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
              WHERE rm.room_id = r.id
+               AND rm.player_id != r.host_id
                AND (rm.game_session_id IS NULL OR gs.status = 'in_progress')
            )
        )

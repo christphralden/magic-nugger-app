@@ -12,7 +12,6 @@ import { gameService } from "@/services/game.service.js";
 import { leaderboardService } from "@/services/leaderboard.service.js";
 import { loggingService } from "@/services/logging.service.js";
 import { roomEventBus } from "@/services/room-event-bus.js";
-import { roomService } from "@/services/room.service.js";
 import type {
   ApiResponse,
   GameSession,
@@ -28,7 +27,7 @@ gameRouter.post(
   validate(RequestCreateGameSessionSchema),
   async (req, res) => {
     const user = getUser(req);
-    const { session, created } = await gameService.start({
+    const session = await gameService.start({
       userId: user.id,
       levelId: req.body.level_id ?? null,
       currentElo: user.current_elo,
@@ -36,19 +35,6 @@ gameRouter.post(
       userAgent: getUserAgent(req),
       roomId: req.body.room_id,
     });
-    if (!created) {
-      loggingService.log({
-        event: "session:resumed",
-        level: "info",
-        userId: user.id,
-        metadata: { session_id: session.id },
-      });
-      return res.json({
-        code: 200,
-        error: null,
-        data: session,
-      } satisfies ApiResponse<GameSession>);
-    }
     loggingService.log({
       event: "session:started",
       level: "info",

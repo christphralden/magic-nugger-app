@@ -15,7 +15,7 @@ export const createGameSession = createAsyncThunk<
       body: JSON.stringify({ level_id, ...(room_id ? { room_id } : {}) }),
     });
     const data = (await response.json()) as ApiResponse<GameSession>;
-    if (!response.ok || (data.code !== 200 && data.code !== 201))
+    if (!response.ok || data.code !== 201)
       return rejectWithValue(data.error);
     return data.data;
   },

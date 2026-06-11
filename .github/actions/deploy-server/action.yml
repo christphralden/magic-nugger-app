@@ -22,7 +22,7 @@ runs:
         script: |
           cd /magic-nugger
           echo "==> docker compose build"
-          docker compose build magic-nugger-web-server
+          docker compose build magic-nugger-web-server magic-nugger-cron
           echo "==> docker compose up"
-          docker compose up -d magic-nugger-web-server
+          docker compose up -d magic-nugger-web-server magic-nugger-cron
           echo "==> container started"

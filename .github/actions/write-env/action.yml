@@ -50,7 +50,7 @@ inputs:
     required: true
   internal_secret:
     required: true
-  game_session_resume_window_ms:
+  game_session_stale_threshold_ms:
     required: false
     default: "1800000"
 
@@ -80,13 +80,13 @@ runs:
         DB_SSL_MODE: ${{ inputs.db_ssl_mode }}
         PARTMAN_PASSWORD: ${{ inputs.partman_password }}
         INTERNAL_SECRET: ${{ inputs.internal_secret }}
-        GAME_SESSION_RESUME_WINDOW_MS: ${{ inputs.game_session_resume_window_ms }}
+        GAME_SESSION_STALE_THRESHOLD_MS: ${{ inputs.game_session_stale_threshold_ms }}
       with:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         timeout: 60s
-        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_HOST,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,PARTMAN_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN,PORT,RPM_LIMIT,DB_POOL_MAX,DB_POOL_IDLE_TIMEOUT_MS,DB_POOL_CONNECTION_TIMEOUT_MS,DB_QUERY_TIMEOUT_MS,DB_SSL_MODE,GAME_SESSION_RESUME_WINDOW_MS,INTERNAL_SECRET
+        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_HOST,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,PARTMAN_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN,PORT,RPM_LIMIT,DB_POOL_MAX,DB_POOL_IDLE_TIMEOUT_MS,DB_POOL_CONNECTION_TIMEOUT_MS,DB_QUERY_TIMEOUT_MS,DB_SSL_MODE,GAME_SESSION_STALE_THRESHOLD_MS,INTERNAL_SECRET
         script: |
           echo "==> writing /magic-nugger/.env"
           {
@@ -114,7 +114,7 @@ runs:
             printf 'DB_POOL_CONNECTION_TIMEOUT_MS=%s\n'   "$DB_POOL_CONNECTION_TIMEOUT_MS"
             printf 'DB_QUERY_TIMEOUT_MS=%s\n'             "$DB_QUERY_TIMEOUT_MS"
             printf 'DB_SSL_MODE=%s\n'                     "$DB_SSL_MODE"
-            printf 'GAME_SESSION_RESUME_WINDOW_MS=%s\n'   "$GAME_SESSION_RESUME_WINDOW_MS"
+            printf 'GAME_SESSION_STALE_THRESHOLD_MS=%s\n'   "$GAME_SESSION_STALE_THRESHOLD_MS"
           } > /magic-nugger/.env
           chmod 600 /magic-nugger/.env
           echo "==> env written"

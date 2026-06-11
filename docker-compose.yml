@@ -95,7 +95,7 @@ services:
       APP_USER_PASSWORD: ${APP_USER_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-magic_nugger}
       POSTGRES_HOST: magic-nugger-postgres
-      GAME_SESSION_RESUME_WINDOW_MS: ${GAME_SESSION_RESUME_WINDOW_MS:-1800000}
+      GAME_SESSION_STALE_THRESHOLD_MS: ${GAME_SESSION_STALE_THRESHOLD_MS:-1800000}
     depends_on:
       magic-nugger-postgres:
         condition: service_healthy

@@ -22,6 +22,7 @@ async function reconcileCompletedRooms(client) {
            LEFT JOIN game_sessions gs ON gs.id = rm.game_session_id
            WHERE rm.room_id = r.id
              AND rm.deleted_at IS NULL
+             AND rm.player_id != r.host_id
              AND (rm.game_session_id IS NULL OR gs.status = 'in_progress')
          )
      )

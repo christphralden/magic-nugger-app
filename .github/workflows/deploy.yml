@@ -78,7 +78,7 @@ jobs:
           db_query_timeout_ms: ${{ vars.DB_QUERY_TIMEOUT_MS }}
           db_ssl_mode: ${{ vars.DB_SSL_MODE }}
           internal_secret: ${{ secrets.INTERNAL_SECRET }}
-          game_session_resume_window_ms: ${{ vars.GAME_SESSION_RESUME_WINDOW_MS }}
+          game_session_stale_threshold_ms: ${{ vars.GAME_SESSION_STALE_THRESHOLD_MS }}
 
       - name: Configure server
         uses: ./.github/actions/configure-server

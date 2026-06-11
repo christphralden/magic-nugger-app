@@ -11,7 +11,6 @@ import { levelService } from "@/services/level.service.js";
 import { playerService } from "@/services/player.service.js";
 import { eloService } from "@/services/elo.service.js";
 import { roomService } from "@/services/room.service.js";
-import { GameSessionConfig } from "@/constants/game-session.js";
 
 export const gameService = {
   async start({
@@ -28,7 +27,7 @@ export const gameService = {
     ip: string;
     userAgent: string | null;
     roomId?: string;
-  }): Promise<{ session: GameSession; created: boolean }> {
+  }): Promise<GameSession> {
     return tx(async () => {
       if (roomId) {
         const room = await roomService.getById(roomId);
@@ -48,10 +47,6 @@ export const gameService = {
         userId,
       });
       if (existing) {
-        const ageMs = Date.now() - new Date(existing.started_at).getTime();
-        if (ageMs <= GameSessionConfig.RESUME_WINDOW_MS) {
-          return { session: existing, created: false };
-        }
         await gameSessionService.abandon({ sessionId: existing.id });
         if (!existing.room_id) {
           await gameSessionService.reconcileAbandonedElo({
@@ -82,7 +77,7 @@ export const gameService = {
         });
       }
 
-      return { session, created: true };
+      return session;
     });
   },
 
