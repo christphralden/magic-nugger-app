@@ -26,7 +26,7 @@ Launch an Ubuntu 22.04 LTS `t3.micro` (or larger) with:
 
 ---
 
-## 2. Bootstrap the Server
+## 2. Bootstrap the Server (already in workflow)
 
 Run `scripts/bootstrap.sh` as root. The easiest way is to paste it into the EC2 **User Data** field before launching — it runs automatically on first boot. Alternatively, SSH in and run it manually:
 
@@ -38,7 +38,7 @@ This installs Docker, Nginx, Certbot, Node 20, and creates `/magic-nugger` and `
 
 ---
 
-## 3. Configure Nginx
+## 3. Configure Nginx (already in workflow)
 
 Copy the config from this repo to the server and set your domain:
 
