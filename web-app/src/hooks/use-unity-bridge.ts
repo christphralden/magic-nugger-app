@@ -218,27 +218,27 @@ export function useUnityBridge(
     [dispatch, sendMessage, options.onSessionFinished],
   );
 
-  useEffect(() => {
-    addEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
-    return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
-  }, [addEventListener, removeEventListener, handleInit]);
-
-  useEffect(() => {
-    addEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
-    return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
-  }, [addEventListener, removeEventListener, handleLevel]);
-
-  useEffect(() => {
-    addEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
-    return () =>
-      removeEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
-  }, [addEventListener, removeEventListener, handleAnswer]);
-
-  useEffect(() => {
-    addEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
-    return () =>
-      removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
-  }, [addEventListener, removeEventListener, handleFinished]);
+  // useEffect(() => {
+  //   addEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
+  //   return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
+  // }, [addEventListener, removeEventListener, handleInit]);
+  //
+  // useEffect(() => {
+  //   addEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
+  //   return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
+  // }, [addEventListener, removeEventListener, handleLevel]);
+  //
+  // useEffect(() => {
+  //   addEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
+  //   return () =>
+  //     removeEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
+  // }, [addEventListener, removeEventListener, handleAnswer]);
+  //
+  // useEffect(() => {
+  //   addEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
+  //   return () =>
+  //     removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
+  // }, [addEventListener, removeEventListener, handleFinished]);
 
   useEffect(() => {
     detachAndUnloadRef.current = UNSAFE__detachAndUnloadImmediate;
