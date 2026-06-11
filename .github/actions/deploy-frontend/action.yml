@@ -8,18 +8,30 @@ inputs:
     required: true
   ssh_key:
     required: true
+  web_server_url:
+    required: true
+  api_url:
+    required: true
 
 runs:
   using: composite
   steps:
     - uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+      env:
+        WEB_SERVER_URL: ${{ inputs.web_server_url }}
+        API_URL: ${{ inputs.api_url }}
       with:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
+        envs: WEB_SERVER_URL,API_URL
         script: |
           cd /magic-nugger/web-app
           npm ci
           npm run build
+
+          sed -i "s|__WEB_SERVER_URL__|$WEB_SERVER_URL|g" dist/config.js
+          sed -i "s|__API_URL__|$API_URL|g" dist/config.js
+
           sudo rsync -a --delete /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
           sudo nginx -s reload

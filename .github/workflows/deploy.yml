@@ -88,6 +88,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           ssh_key: ${{ secrets.EC2_SSH_KEY }}
+          web_server_url: ${{ vars.WEB_SERVER_URL }}
+          api_url: ${{ vars.API_URL }}
 
       - name: Deploy server
         uses: ./.github/actions/deploy-server

@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
+import { config } from "@/lib/config";
 
-export const WEB_SERVER_URL =
-  import.meta.env.VITE_WEB_SERVER_URL ?? "http://localhost:3000";
-export const API_VERSION_BASE = import.meta.env.VITE_API_URL ?? "api/v1";
+export const WEB_SERVER_URL = config.webServerUrl;
+export const API_VERSION_BASE = config.apiUrl;

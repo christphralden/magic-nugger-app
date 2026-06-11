@@ -1,5 +1,5 @@
 name: Configure server
-description: One-time nginx config + Certbot SSL. Skips each step if already done.
+description: One-time nginx config + Certbot SSL. Reconfigures automatically when domain changes.
 
 inputs:
   host:
@@ -26,7 +26,13 @@ runs:
         key: ${{ inputs.ssh_key }}
         envs: DOMAIN,CERTBOT_EMAIL
         script: |
-          if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+          CONFIGURED_DOMAIN=$(cat /etc/nginx/.configured-domain 2>/dev/null || echo "")
+
+          if [ "$CONFIGURED_DOMAIN" != "$DOMAIN" ]; then
+            if [ -n "$CONFIGURED_DOMAIN" ]; then
+              certbot delete --cert-name "$CONFIGURED_DOMAIN" --non-interactive || true
+            fi
+
             systemctl stop nginx || true
             certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos -m "$CERTBOT_EMAIL"
 
@@ -34,12 +40,11 @@ runs:
             printf '#!/bin/bash\nsystemctl stop nginx\n' > /etc/letsencrypt/renewal-hooks/pre/nginx-stop.sh
             printf '#!/bin/bash\nsystemctl start nginx\n' > /etc/letsencrypt/renewal-hooks/post/nginx-start.sh
             chmod +x /etc/letsencrypt/renewal-hooks/pre/nginx-stop.sh /etc/letsencrypt/renewal-hooks/post/nginx-start.sh
-          fi
 
-          if [ ! -f /etc/nginx/.magic-nugger-configured ]; then
             cp /magic-nugger/nginx/frontend.nginx.conf /etc/nginx/nginx.conf
             sed -i "s/your-domain\.com/$DOMAIN/g" /etc/nginx/nginx.conf
-            touch /etc/nginx/.magic-nugger-configured
+
+            echo "$DOMAIN" > /etc/nginx/.configured-domain
           fi
 
           nginx -t && systemctl start nginx
