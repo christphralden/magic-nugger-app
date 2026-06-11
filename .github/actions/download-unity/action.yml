@@ -1,0 +1,42 @@
+name: Download Unity build
+description: Downloads Unity WebGL release zip on the runner, extracts it, then SCPs the full Calculon directory to the nginx serve directory.
+
+inputs:
+  host:
+    required: true
+  username:
+    required: true
+  ssh_key:
+    required: true
+  gh_token:
+    required: true
+  repo:
+    required: true
+  tag:
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Download and extract Unity build
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.gh_token }}
+      run: |
+        gh release download ${{ inputs.tag }} \
+          --repo ${{ inputs.repo }} \
+          --pattern "calculon.tar.gz" \
+          --dir /tmp/ \
+          --clobber
+        mkdir -p /tmp/unity
+        tar -xzf /tmp/calculon.tar.gz -C /tmp/unity/ --strip-components=2
+
+    - uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ inputs.ssh_key }}
+        source: /tmp/unity/Calculon
+        target: /var/www/magic-nugger/web-app/
+        strip_components: 2

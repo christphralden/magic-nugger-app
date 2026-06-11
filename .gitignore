@@ -50,3 +50,8 @@ shared/src/**/*.d.ts
 *.key
 *.crt
 **/.DS_Store
+
+# Builds
+
+*.tar.gz
+*.zip

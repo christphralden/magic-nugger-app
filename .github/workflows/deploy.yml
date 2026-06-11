@@ -98,6 +98,15 @@ jobs:
           web_server_url: ${{ vars.WEB_SERVER_URL }}
           api_url: ${{ vars.API_URL }}
 
+      - name: Download Unity build
+        uses: ./.github/actions/download-unity
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key: ${{ secrets.EC2_SSH_KEY }}
+          gh_token: ${{ github.token }}
+          repo: ${{ github.repository }}
+
       - name: Deploy server
         uses: ./.github/actions/deploy-server
         with:
