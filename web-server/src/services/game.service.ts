@@ -264,6 +264,7 @@ export const gameService = {
 
   async abandon({ sessionId }: { sessionId: string }): Promise<{
     roomId: string | null;
+    roomCompleted: boolean;
     correctCount: number | null;
     incorrectCount: number | null;
     maxStreak: number | null;
@@ -271,15 +272,24 @@ export const gameService = {
   }> {
     return tx<{
       roomId: string | null;
+      roomCompleted: boolean;
       correctCount: number | null;
       incorrectCount: number | null;
       maxStreak: number | null;
       eloDelta: number | null;
     }>(async () => {
       const session = await gameSessionService.getActiveById({ sessionId });
+      if (!session) {
+        throw new AppError(HttpCode.NOT_FOUND, "Session not found");
+      }
       await gameSessionService.abandon({ sessionId });
+      let roomCompleted = false;
+      if (session.room_id) {
+        roomCompleted = await roomService.reconcileRoom(session.room_id);
+      }
       return {
         roomId: session?.room_id ?? null,
+        roomCompleted: roomCompleted,
         correctCount: session?.correct_count ?? null,
         incorrectCount: session?.incorrect_count ?? null,
         maxStreak: session?.max_streak ?? null,

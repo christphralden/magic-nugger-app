@@ -46,6 +46,29 @@ export function useUnityBridge(
   const lastAnswerAtRef = useRef<number | null>(null);
   const currentLevelIdRef = useRef<number | null>(null);
   const currentScoreRef = useRef<number>(0);
+
+  /**
+   * This shit is not working. .data files are ok but .wasm is not available as value in IndexDB,
+   * i have no idea theres still an open issue on github for this https://github.com/jeffreylanters/react-unity-webgl/issues/552
+   *
+   * @param {string} url
+   *
+   * @returns cache control options
+   */
+  const handleCacheControl = (url: string) => {
+    if (url.match(/\.data/) || url.match(/\.wasm/)) {
+      console.log(
+        "[web-app] url matched data or bundle for cache must-revalidate: ",
+        url,
+      );
+      return "must-revalidate";
+    }
+    if (url.match(/\.png/)) {
+      return "immutable";
+    }
+    return "must-revalidate";
+  };
+
   const {
     unityProvider: provider,
     sendMessage,
@@ -57,9 +80,7 @@ export function useUnityBridge(
     dataUrl: `${PATH_TO_UNITY}/Calculon.data`,
     frameworkUrl: `${PATH_TO_UNITY}/Calculon.framework.js`,
     codeUrl: `${PATH_TO_UNITY}/Calculon.wasm`,
-    cacheControl: (_url: string) => {
-      return "must-revalidate";
-    },
+    cacheControl: handleCacheControl,
     webglContextAttributes: {
       alpha: true,
       antialias: true,

@@ -47,4 +47,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        app: path.resolve(__dirname, "index.html"),
+        "unity-worker": path.resolve(__dirname, "worker/unity-worker.ts"),
+      },
+      output: {
+        entryFileNames: (chunk) =>
+          chunk.name === "unity-worker"
+            ? "[name].js"
+            : "assets/[name]-[hash].js",
+      },
+    },
+  },
 });

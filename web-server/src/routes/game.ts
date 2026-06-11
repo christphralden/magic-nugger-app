@@ -215,7 +215,7 @@ gameRouter.post("/:id/fail", async (req, res) => {
 
 gameRouter.post("/:id/abandon", async (req, res) => {
   const user = getUser(req);
-  const { roomId, correctCount, incorrectCount, maxStreak } =
+  const { roomId, roomCompleted, correctCount, incorrectCount, maxStreak } =
     await gameService.abandon({ sessionId: req.params.id });
   loggingService.log({
     event: "session:abandoned",
@@ -230,7 +230,6 @@ gameRouter.post("/:id/abandon", async (req, res) => {
       incorrect_count: incorrectCount,
       max_streak: maxStreak,
     });
-    const roomCompleted = await roomService.reconcileRoom(roomId);
     if (roomCompleted) {
       roomEventBus.publish(roomId, ROOM_SSE_EVENTS.ROOM_COMPLETED, {
         ended_at: new Date().toISOString(),
