@@ -28,6 +28,9 @@ jobs:
           if [[ -z "${{ secrets.POSTGRES_PASSWORD }}" ]]; then
             echo "::error::POSTGRES_PASSWORD is not set in GitHub Secrets" && exit 1
           fi
+          if [[ -z "${{ vars.NODE_ENV }}" ]]; then
+            echo "::error::NODE_ENV is not set in GitHub Variables" && exit 1
+          fi
 
       - name: Bootstrap
         uses: ./.github/actions/bootstrap
@@ -72,6 +75,7 @@ jobs:
           db_ssl_mode: ${{ vars.DB_SSL_MODE }}
           internal_secret: ${{ secrets.INTERNAL_SECRET }}
           game_session_resume_window_ms: ${{ vars.GAME_SESSION_RESUME_WINDOW_MS }}
+          node_env: ${{ vars.NODE_ENV }}
 
       - name: Configure server
         uses: ./.github/actions/configure-server

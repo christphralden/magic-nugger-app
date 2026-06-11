@@ -17,7 +17,7 @@ export const errorHandler = (
     description: (error as any).message || "",
   });
   console.log("[web-server][error] caught unhandled error", error);
-  const isLocalEnvironment = process.env.ENVIRONMENT === "local";
+  const isProd = process.env.NODE_ENV === "production";
 
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
@@ -28,7 +28,7 @@ export const errorHandler = (
   }
 
   if (isPgError(error)) {
-    const hint = isLocalEnvironment ? ` (dev) Hint: ${error.message}` : "";
+    const hint = isProd ? "" : ` (dev) Hint: ${error.message}`;
     switch (error.code) {
       case PgErrorCode.UNIQUE_VIOLATION:
         return res.status(HttpCode.CONFLICT).json({

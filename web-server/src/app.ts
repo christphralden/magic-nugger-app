@@ -20,7 +20,6 @@ import { getClientIp } from "@/utils/connectivity";
 import { audit } from "@/middleware/audit";
 import { internalRouter } from "./routes/internal";
 
-const isLocalEnvironment = process.env.ENVIRONMENT === "local";
 const isProd = process.env.NODE_ENV === "production";
 
 const app = express();
@@ -29,7 +28,7 @@ if (isProd) {
   app.set("trust proxy", 1);
 }
 
-if (isLocalEnvironment) {
+if (!isProd) {
   app.use(
     cors({
       origin: process.env.CORS_ORIGIN ?? true,
@@ -42,7 +41,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 
 app.use(express.json({ limit: "1mb" }));
 
-if (!isLocalEnvironment) {
+if (isProd) {
   const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
     limit: process.env.RPM_LIMIT ? Number(process.env.RPM_LIMIT) : 3000,

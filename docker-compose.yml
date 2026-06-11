@@ -47,7 +47,7 @@ services:
       tags:
         - magic-nugger-web-server:latest
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV}
       POSTGRES_HOST: magic-nugger-postgres
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}

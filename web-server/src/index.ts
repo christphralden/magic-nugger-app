@@ -7,12 +7,8 @@ import { HttpCode } from "@magic-nugger-app/shared";
 if (!process.env.PORT) {
   throw new Error("env {{PORT}} is not set");
 }
-if (!process.env.ENVIRONMENT) {
-  throw new Error("env {{ENVIRONMENT}} is not set");
-}
-
 const PORT = Number(process.env.PORT);
-const isLocalEnvironment = process.env.ENVIRONMENT === "local";
+const isProd = process.env.NODE_ENV === "production";
 
 app.get("/health", async (_req, res) => {
   try {
@@ -66,7 +62,7 @@ function gracefulShutdown(signal: string) {
   });
 }
 
-if (!isLocalEnvironment) {
+if (isProd) {
   process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
   process.once("SIGINT", () => gracefulShutdown("SIGINT"));
 }
