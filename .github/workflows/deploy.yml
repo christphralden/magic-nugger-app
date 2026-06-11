@@ -73,6 +73,15 @@ jobs:
           ssh_key: ${{ secrets.EC2_SSH_KEY }}
           repo_url: ${{ github.server_url }}/${{ github.repository }}.git
 
+      - name: Configure server
+        uses: ./.github/actions/configure-server
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key: ${{ secrets.EC2_SSH_KEY }}
+          domain: ${{ vars.DOMAIN }}
+          certbot_email: ${{ vars.CERTBOT_EMAIL }}
+
       - name: Deploy frontend
         uses: ./.github/actions/deploy-frontend
         with:

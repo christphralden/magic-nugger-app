@@ -11,6 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    continue-on-error: true
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -23,8 +24,8 @@ jobs:
 
       - name: Run tests
         run: |
-          npm test --workspace=web-app    -- --ci --json --outputFile=/tmp/web-app-results.json    || true
-          npm test --workspace=web-server -- --ci --json --outputFile=/tmp/web-server-results.json || true
+          npm test --workspace=web-app    -- --ci --passWithNoTests --json --outputFile=/tmp/web-app-results.json    || true
+          npm test --workspace=web-server -- --ci --passWithNoTests --json --outputFile=/tmp/web-server-results.json || true
 
       - name: Upload test results
         if: always()

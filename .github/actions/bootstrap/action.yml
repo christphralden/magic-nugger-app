@@ -1,5 +1,5 @@
 name: Bootstrap
-description: One-time server setup. Skips if /magic-nugger/.bootstrapped exists.
+description: One-time server setup. Skips if /root/.magic-nugger-bootstrapped exists.
 
 inputs:
   host:
@@ -18,7 +18,7 @@ runs:
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         script: |
-          if [ -f /magic-nugger/.bootstrapped ]; then
+          if [ -f /root/.magic-nugger-bootstrapped ]; then
             echo "Already bootstrapped, skipping."
             exit 0
           fi
@@ -28,6 +28,5 @@ runs:
           systemctl enable nginx
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
           apt install -y nodejs
-          mkdir -p /magic-nugger
           mkdir -p /var/www/magic-nugger/web-app
-          touch /magic-nugger/.bootstrapped
+          touch /root/.magic-nugger-bootstrapped
