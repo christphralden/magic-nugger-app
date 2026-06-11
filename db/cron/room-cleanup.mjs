@@ -8,7 +8,7 @@ const IN_PROGRESS_TIMEOUT_MS = parseInt(
 const BATCH_SIZE = parseInt(process.env.ROOM_CLEANUP_BATCH_SIZE ?? "50", 10);
 const source = process.stdout.isTTY ? "manual" : "cron";
 const host = process.env.POSTGRES_HOST ?? "localhost";
-const connectionString = `postgresql://${process.env.APP_USER}:${process.env.APP_USER_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
+const connectionString = `postgresql://${encodeURIComponent(process.env.APP_USER)}:${encodeURIComponent(process.env.APP_USER_PASSWORD)}@${host}:5432/${process.env.POSTGRES_DB}`;
 
 async function reconcileCompletedRooms(client) {
   const { rows } = await client.query(

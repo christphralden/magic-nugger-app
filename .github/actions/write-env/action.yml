@@ -95,7 +95,9 @@ runs:
             printf 'POSTGRES_HOST=%s\n'                   "$POSTGRES_HOST"
             printf 'APP_USER=%s\n'                        "$APP_USER"
             printf 'APP_USER_PASSWORD=%s\n'               "$APP_USER_PASSWORD"
-            printf 'DATABASE_URL=postgresql://%s:%s@127.0.0.1:5432/%s\n' "$APP_USER" "$APP_USER_PASSWORD" "$POSTGRES_DB"
+            ENCODED_USER=$(printf '%s' "$APP_USER" | jq -sRr @uri)
+            ENCODED_PASSWORD=$(printf '%s' "$APP_USER_PASSWORD" | jq -sRr @uri)
+            printf 'DATABASE_URL=postgresql://%s:%s@magic-nugger-postgres:5432/%s\n' "$ENCODED_USER" "$ENCODED_PASSWORD" "$POSTGRES_DB"
             printf 'APP_RO_USER=%s\n'                     "$APP_RO_USER"
             printf 'APP_RO_PASSWORD=%s\n'                 "$APP_RO_PASSWORD"
             printf 'PARTMAN_PASSWORD=%s\n'                "$PARTMAN_PASSWORD"

@@ -11,7 +11,7 @@ const BATCH_SIZE = parseInt(
 );
 const source = process.stdout.isTTY ? "manual" : "cron";
 const host = process.env.POSTGRES_HOST ?? "localhost";
-const connectionString = `postgresql://${process.env.APP_USER_PASSWORD}:${process.env.APP_PASSWORD}@${host}:5432/${process.env.POSTGRES_DB}`;
+const connectionString = `postgresql://${encodeURIComponent(process.env.APP_USER)}:${encodeURIComponent(process.env.APP_USER_PASSWORD)}@${host}:5432/${process.env.POSTGRES_DB}`;
 
 async function resolveRoomsForAbandonedSessions(client, roomIds) {
   if (roomIds.length === 0) return 0;

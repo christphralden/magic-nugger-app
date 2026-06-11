@@ -25,7 +25,7 @@ runs:
           fi
           apt update && apt upgrade -y
           apt install -y docker.io docker-compose-v2
-          apt install -y nginx certbot python3-certbot-nginx
+          apt install -y nginx certbot python3-certbot-nginx jq
           systemctl enable nginx
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
           apt install -y nodejs
