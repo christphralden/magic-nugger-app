@@ -1,6 +1,7 @@
 # Build output
 dist/
 build/
+!public/Calculon/*
 
 # Coverage
 coverage/
@@ -18,4 +19,3 @@ coverage/
 
 # Misc
 *.tsbuildinfo
-# /public/Calculon/
