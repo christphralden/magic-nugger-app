@@ -31,7 +31,7 @@ levelsRouter.get("/", async (req, res) => {
 
 levelsRouter.get("/unlocked", async (req, res) => {
   const user = getUser(req);
-  const names = await levelService.getUnlockedByPlayer(user.id);
+  const names = await levelService.getUnlockedByPlayer(user.id, isAdmin(req));
   res.json({
     code: HttpCode.OK,
     error: null,

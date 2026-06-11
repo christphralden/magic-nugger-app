@@ -71,7 +71,7 @@ export const levelService = {
     return rows[0];
   },
 
-  async getUnlockedByPlayer(playerId: string): Promise<string[]> {
+  async getUnlockedByPlayer(playerId: string, admin = false): Promise<string[]> {
     const { rows } = await getDb().query<{ name: string }>(
       `SELECT l.name FROM levels_unlocked lu
        JOIN levels l ON l.id = lu.level_id
@@ -81,10 +81,17 @@ export const levelService = {
        UNION
 
        SELECT name FROM levels
-       WHERE order_index <= 1
+       WHERE order_index BETWEEN 0 AND 1
          AND is_active = true
+
+       UNION
+
+       SELECT name FROM levels
+       WHERE order_index < 0
+         AND is_active = true
+         AND $2::boolean
       `,
-      [playerId],
+      [playerId, admin],
     );
     return rows.map((r) => r.name);
   },
