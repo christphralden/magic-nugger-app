@@ -14,5 +14,6 @@ COPY web-server/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 USER node
 EXPOSE 3000
-ENTRYPOINT ["dumb-init", "--", "./entrypoint.sh"]
-CMD ["node_modules/.bin/tsx", "web-server/src/index.ts"]
+WORKDIR /app/web-server
+ENTRYPOINT ["dumb-init", "--", "/app/entrypoint.sh"]
+CMD ["../node_modules/.bin/tsx", "src/index.ts"]
