@@ -17,18 +17,25 @@ runs:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
-        timeout: 5m
+        timeout: 20m
         command_timeout: 20m
         script: |
           if [ -f /root/.magic-nugger-bootstrapped ]; then
             echo "Already bootstrapped, skipping."
             exit 0
           fi
+          echo "==> apt update && upgrade"
           apt update && apt upgrade -y
+          echo "==> installing docker"
           apt install -y docker.io docker-compose-v2
+          echo "==> installing nginx, certbot, jq"
           apt install -y nginx certbot python3-certbot-nginx jq
+          echo "==> enabling nginx"
           systemctl enable nginx
+          echo "==> installing node 20"
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
           apt install -y nodejs
+          echo "==> creating web-app directory"
           mkdir -p /var/www/magic-nugger/web-app
           touch /root/.magic-nugger-bootstrapped
+          echo "==> bootstrap complete"

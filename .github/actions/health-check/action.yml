@@ -22,12 +22,13 @@ runs:
         script: |
           cd /magic-nugger
           for i in $(seq 1 30); do
+            echo "==> attempt $i/30"
             if curl -fsS http://127.0.0.1:3000/health >/dev/null 2>&1; then
-              echo "Health check passed"
+              echo "==> health check passed"
               exit 0
             fi
             if [ "$i" -eq 30 ]; then
-              echo "Health check failed after 30 attempts"
+              echo "==> health check failed after 30 attempts"
               docker compose logs --tail=50 magic-nugger-web-server
               exit 1
             fi

@@ -25,8 +25,12 @@ runs:
         envs: REPO_URL
         script: |
           if [ ! -d /magic-nugger/.git ]; then
+            echo "==> cloning repo"
             git clone "$REPO_URL" /magic-nugger
+          else
+            echo "==> repo exists, fetching"
           fi
           cd /magic-nugger
           git fetch origin
           git reset --hard origin/master
+          echo "==> at $(git rev-parse --short HEAD)"

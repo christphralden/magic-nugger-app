@@ -29,11 +29,14 @@ runs:
         envs: WEB_SERVER_URL,API_URL
         script: |
           cd /magic-nugger/web-app
+          echo "==> npm ci"
           npm ci
+          echo "==> npm run build"
           npm run build
-
+          echo "==> patching config.js"
           sed -i "s|__WEB_SERVER_URL__|$WEB_SERVER_URL|g" dist/config.js
           sed -i "s|__API_URL__|$API_URL|g" dist/config.js
-
+          echo "==> rsyncing to /var/www"
           sudo rsync -a --delete /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
           sudo nginx -s reload
+          echo "==> frontend deployed"
