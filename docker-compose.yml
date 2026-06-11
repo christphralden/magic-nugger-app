@@ -42,8 +42,8 @@ services:
   magic-nugger-web-server:
     container_name: magic-nugger-web-server
     build:
-      context: ./web-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web-server/Dockerfile
       tags:
         - magic-nugger-web-server:latest
     environment:

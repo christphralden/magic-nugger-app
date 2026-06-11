@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-npm run db:migrate
+node db/runner.mjs up
 
 echo "Starting server..."
 exec "$@"

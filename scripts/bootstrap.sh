@@ -9,7 +9,6 @@ apt update && apt upgrade -y
 
 echo "=== Installing Docker ==="
 apt install -y docker.io docker-compose-v2
-usermod -aG docker ubuntu
 
 echo "=== Installing Nginx + Certbot ==="
 apt install -y nginx certbot python3-certbot-nginx
@@ -21,7 +20,6 @@ apt install -y nodejs
 
 echo "=== Creating directories ==="
 mkdir -p /magic-nugger
-chown ubuntu:ubuntu /magic-nugger
 mkdir -p /var/www/magic-nugger/web-app
 
 echo "=== Bootstrap complete ==="

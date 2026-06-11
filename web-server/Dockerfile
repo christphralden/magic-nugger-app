@@ -1,28 +1,18 @@
-FROM node:20-alpine AS base
-WORKDIR /magic-nugger
-COPY package*.json ./
-RUN npm ci
-
-FROM base AS dev
-COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
-
-FROM base AS builder
-COPY . .
-RUN npm run build
-
-FROM node:20-alpine AS production
-# dumb-init handles PID 1 signal forwarding properly
+FROM node:20-alpine
 RUN apk add --no-cache dumb-init wget
-WORKDIR /magic-nugger
-COPY --from=builder /magic-nugger/dist ./dist
-COPY --from=builder /magic-nugger/db ./db
-COPY --from=builder /magic-nugger/package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-COPY entrypoint.sh /magic-nugger/entrypoint.sh
-RUN chmod +x /magic-nugger/entrypoint.sh
+WORKDIR /app
+COPY package*.json ./
+COPY web-server/package*.json ./web-server/
+COPY shared/package*.json ./shared/
+RUN npm ci
+COPY web-server/src ./web-server/src
+COPY web-server/tsconfig.json ./web-server/tsconfig.json
+COPY shared ./shared
+COPY db ./db
+COPY package.json ./
+COPY web-server/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 USER node
 EXPOSE 3000
-ENTRYPOINT ["dumb-init", "--", "/magic-nugger/entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["dumb-init", "--", "./entrypoint.sh"]
+CMD ["node_modules/.bin/tsx", "web-server/src/index.ts"]
