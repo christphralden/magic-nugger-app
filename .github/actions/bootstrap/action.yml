@@ -20,6 +20,13 @@ runs:
         timeout: 10m
         command_timeout: 10m
         script: |
+          echo "==> configuring ssh for github"
+          mkdir -p /root/.ssh
+          chmod 700 /root/.ssh
+          printf 'Host github.com\n  Hostname ssh.github.com\n  Port 443\n' > /root/.ssh/config
+          chmod 600 /root/.ssh/config
+          ssh-keyscan -p 443 ssh.github.com >> /root/.ssh/known_hosts 2>/dev/null
+
           if [ -f /root/.magic-nugger-bootstrapped ]; then
             echo "Already bootstrapped, skipping."
             exit 0
