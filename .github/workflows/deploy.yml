@@ -111,6 +111,7 @@ jobs:
           web_server_url: ${{ vars.WEB_SERVER_URL }}
           api_url: ${{ vars.API_URL }}
           unity_checksum: ${{ steps.unity.outputs.unity_checksum }}
+          unity_dir: ${{ steps.unity.outputs.unity_dir }}
 
       - name: Deploy server
         uses: ./.github/actions/deploy-server

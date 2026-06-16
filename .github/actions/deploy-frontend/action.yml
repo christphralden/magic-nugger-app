@@ -14,6 +14,8 @@ inputs:
     required: true
   unity_checksum:
     required: true
+  unity_dir:
+    required: true
 
 runs:
   using: composite
@@ -23,13 +25,14 @@ runs:
         WEB_SERVER_URL: ${{ inputs.web_server_url }}
         API_URL: ${{ inputs.api_url }}
         UNITY_CHECKSUM: ${{ inputs.unity_checksum }}
+        UNITY_DIR: ${{ inputs.unity_dir }}
       with:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         timeout: 60s
         command_timeout: 10m
-        envs: WEB_SERVER_URL,API_URL,UNITY_CHECKSUM
+        envs: WEB_SERVER_URL,API_URL,UNITY_CHECKSUM,UNITY_DIR
         script: |
           set -euo pipefail
           cd /magic-nugger/web-app
@@ -42,6 +45,6 @@ runs:
           sed -i "s|__API_URL__|$API_URL|g" dist/config.js
           sed -i "s|__UNITY_CHECKSUM__|$UNITY_CHECKSUM|g" dist/config.js
           echo "==> rsyncing to /var/www"
-          sudo rsync -a --delete /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
+          sudo rsync -a --delete --exclude="$UNITY_DIR" /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
           sudo nginx -s reload
           echo "==> frontend deployed"
