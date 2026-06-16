@@ -99,7 +99,8 @@ export function useUnityBridge(
       // xrCompatible: true,
     },
   });
-  const detachAndUnloadRef = useRef(UNSAFE__detachAndUnloadImmediate);
+  const detachAndUnloadRef = useRef<any | null>(null);
+  detachAndUnloadRef.current = UNSAFE__detachAndUnloadImmediate;
 
   const handleInit = useCallback(() => {
     if (!currentPlayer) return;
@@ -247,7 +248,7 @@ export function useUnityBridge(
 
   useEffect(() => {
     return () => {
-      detachAndUnloadRef.current().catch(() => {});
+      detachAndUnloadRef.current?.().catch(() => {});
     };
   }, []);
 
