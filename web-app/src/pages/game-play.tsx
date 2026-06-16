@@ -135,6 +135,7 @@ export function RoomGameView() {
     handleRoomCancelled,
     onSseError,
   } = useRoom();
+
   const questions = roomData?.room.questions?.data;
 
   const { provider, isLoaded } = useUnityBridge({
@@ -166,11 +167,6 @@ export function RoomGameView() {
             navigate(`/game/room/${roomId}`);
             break;
           case "in_progress":
-            if (isHost) {
-              allowNavRef.current = true;
-              navigate(`/game/room/${roomId}/finished`);
-              return;
-            }
             gameActiveRef.current = true;
             setRoomData(data);
             break;
@@ -217,6 +213,14 @@ export function RoomGameView() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [roomId]);
+
+  useEffect(() => {
+    if (isHost) {
+      allowNavRef.current = true;
+      navigate(`/game/room/${roomId}/finished`);
+      return;
+    }
+  }, [isHost]);
 
   return (
     <PageLayout title="Game" headless>
