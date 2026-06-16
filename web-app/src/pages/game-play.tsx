@@ -20,7 +20,12 @@ import {
 import { selectCurrentPlayer } from "@/feature/auth/state/auth.slice";
 import { Unity } from "react-unity-webgl";
 
-import { useNavigate, useParams, useBlocker, type BlockerFunction } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useBlocker,
+  type BlockerFunction,
+} from "react-router-dom";
 import { useRoomSse } from "@/hooks/use-room-sse";
 import { useRoom } from "@/contexts/room.context";
 import { ROOM_SSE_EVENTS } from "@magic-nugger-app/shared";
@@ -84,7 +89,7 @@ function GameView() {
       {blocker.state === "blocked" && (
         <ConfirmLeaveDialog
           title="Leave game?"
-          description="Your current session will be lost."
+          description="Are you sure you want to leave?"
           onConfirm={() => blocker.proceed?.()}
           onCancel={() => blocker.reset?.()}
         />
@@ -122,8 +127,14 @@ export function RoomGameView() {
   const allowNavRef = useRef(false);
   const gameActiveRef = useRef(false);
 
-  const { roomId, roomData, setRoomData, isHost, handleRoomCancelled, onSseError } =
-    useRoom();
+  const {
+    roomId,
+    roomData,
+    setRoomData,
+    isHost,
+    handleRoomCancelled,
+    onSseError,
+  } = useRoom();
   const questions = roomData?.room.questions?.data;
 
   const { provider, isLoaded } = useUnityBridge({
@@ -212,7 +223,7 @@ export function RoomGameView() {
       {blocker.state === "blocked" && (
         <ConfirmLeaveDialog
           title="Abandon game?"
-          description="Your session will be marked as abandoned and affect your ELO."
+          description="Are you sure you want to leave?"
           onConfirm={() => {
             allowNavRef.current = true;
             fetch(
