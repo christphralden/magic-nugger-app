@@ -28,6 +28,12 @@ Launch an Ubuntu 22.04 LTS `t3.micro` (or larger) with:
 
 ## 4. SSL (Certbot)
 
+### CI/CD
+
+Change DOMAIN on github variables will reexecute certbot [configure-server](https://github.com/christphralden/magic-nugger-app/blob/master/.github/actions/configure-server/action.yml)
+
+### Manual
+
 Point your DNS A record to the EC2 public IP first, then:
 
 ```bash
@@ -39,6 +45,8 @@ Certbot adds the 443 block, SSL cert paths, HTTP redirect, and HSTS automaticall
 ```bash
 sudo certbot renew --dry-run
 ```
+
+Change nginx to your domain
 
 ---
 
