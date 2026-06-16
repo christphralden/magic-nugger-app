@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
 import { CloudPixel } from "@/components/decor/cloud-pixel";
+import { FeatureFlags } from "@/constants";
 
 function LoginGoogleButton() {
   return (
@@ -170,6 +171,7 @@ function LoginSignupLink() {
 
 function LoginCard() {
   const { loading } = useLoginContext();
+  const isOauthEnabled = FeatureFlags.ENABLE_OAUTH_LOGIN;
   return (
     <AuthPageLayout>
       <div className="absolute top-6 left-[8%] animate-float-slow">
@@ -193,7 +195,7 @@ function LoginCard() {
             </Typography>
             <Typography variant="label">Your hero missed you</Typography>
           </div>
-          <LoginGoogleButton />
+          {isOauthEnabled && <LoginGoogleButton />}
           <LoginForm />
           <LoginSignupLink />
         </div>

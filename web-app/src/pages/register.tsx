@@ -33,6 +33,7 @@ import { CloudPixel } from "@/components/decor/cloud-pixel";
 import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
 import { Button } from "@/components/ui/button";
+import { FeatureFlags } from "@/constants";
 
 const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
   fox: AvatarFox,
@@ -74,12 +75,14 @@ function InfoStep() {
     handleTogglePassword,
     handleNavigateLogin,
   } = useRegisterContext();
-
+  const isOauthEnabled = FeatureFlags.ENABLE_OAUTH_LOGIN;
   return (
     <>
-      <CartoonButton variant="secondary" className="w-full" type="button">
-        <GoogleIcon /> Sign up with Google
-      </CartoonButton>
+      {isOauthEnabled && (
+        <CartoonButton variant="secondary" className="w-full" type="button">
+          <GoogleIcon /> Sign up with Google
+        </CartoonButton>
+      )}
 
       <Form {...form}>
         <form

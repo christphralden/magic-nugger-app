@@ -22,3 +22,7 @@ export const DISABLED_CANVAS_EVENTS: (keyof GlobalEventHandlersEventMap)[] = [
   "dragstart",
   "scroll",
 ];
+
+export const FeatureFlags = {
+  ENABLE_OAUTH_LOGIN: false,
+};
