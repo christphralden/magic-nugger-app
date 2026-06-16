@@ -34,7 +34,7 @@ export const playerService = {
         updated_at     = now()
        WHERE id = $1
        RETURNING
-        id, username, display_name, current_elo,
+        id, username, display_name, email, current_elo,
         total_questions_answered, total_correct, total_incorrect, longest_streak,
         avatar_url, age, grade, guardian_email
       `,
