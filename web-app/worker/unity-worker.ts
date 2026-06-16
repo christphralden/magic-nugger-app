@@ -1,6 +1,6 @@
-declare const __COMMIT_HASH__: string;
+declare const __UNITY_CHECKSUM__: string;
 
-const CACHE_NAME = `unity-v${__COMMIT_HASH__}`;
+const CACHE_NAME = `unity-v${__UNITY_CHECKSUM__}`;
 
 const UNITY_PATHS = new Set([
   "/Calculon/Build/Calculon.data",
