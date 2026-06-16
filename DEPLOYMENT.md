@@ -79,17 +79,22 @@ Go to **GitHub → Settings → Secrets and variables → Actions**.
 
 Non-sensitive config passed via `vars.*`:
 
-| Variable                        | Value                   |
-| ------------------------------- | ----------------------- |
-| `POSTGRES_HOST`                 | `magic-nugger-postgres` |
-| `PORT`                          | `3000`                  |
-| `RPM_LIMIT`                     | `3000`                  |
-| `DB_POOL_MAX`                   | `20`                    |
-| `DB_POOL_IDLE_TIMEOUT_MS`       | `30000`                 |
-| `DB_POOL_CONNECTION_TIMEOUT_MS` | `5000`                  |
-| `DB_QUERY_TIMEOUT_MS`           | `30000`                 |
-| `DB_SSL_MODE`                   | `prefer`                |
-| `GAME_SESSION_RESUME_WINDOW_MS` | `1800000`               |
+| Variable                        | Value                          |
+| ------------------------------- | ------------------------------ |
+| `API_URL`                       | `api/v1`                       |
+| `WEB_SERVER_URL`                | `https://youractualdomain.com` |
+| `CERTBOT_EMAIL`                 | `foo@email.com`                |
+| `DOMAIN`                        | `youractualdomain.com`         |
+| `UNITY_RELEASE_TAG`             | `latest`                       |
+| `POSTGRES_HOST`                 | `magic-nugger-postgres`        |
+| `PORT`                          | `3000`                         |
+| `RPM_LIMIT`                     | `3000`                         |
+| `DB_POOL_MAX`                   | `20`                           |
+| `DB_POOL_IDLE_TIMEOUT_MS`       | `30000`                        |
+| `DB_POOL_CONNECTION_TIMEOUT_MS` | `5000`                         |
+| `DB_QUERY_TIMEOUT_MS`           | `30000`                        |
+| `DB_SSL_MODE`                   | `prefer`                       |
+| `GAME_SESSION_RESUME_WINDOW_MS` | `1800000`                      |
 
 Also create a `production` environment under **GitHub → Settings → Environments** — this gates the deploy workflow and allows adding required reviewers.
 
