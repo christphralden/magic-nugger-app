@@ -132,7 +132,14 @@ export function ProfileTab() {
 
     const result = await dispatch(patchPlayer({ body }));
     if (patchPlayer.fulfilled.match(result)) {
-      form.reset(values);
+      form.reset({
+        username: player.username,
+        guardian_email: player.guardian_email ?? undefined,
+        grade: player.grade ? String(player.grade) : undefined,
+        age: player.age ? String(player.age) : undefined,
+        display_name: player.display_name ?? undefined,
+        ...values,
+      });
     } else {
       toastError((result.payload as string) ?? "Failed to update profile");
     }
