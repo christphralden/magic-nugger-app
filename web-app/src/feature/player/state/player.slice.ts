@@ -41,7 +41,12 @@ const playerSlice = createSlice({
       })
       .addCase(patchPlayer.fulfilled, (state, action) => {
         state.loading = false;
-        state.players[action.payload.id] = action.payload;
+        if (state.players[action.payload.id]) {
+          state.players[action.payload.id] = {
+            ...state.players[action.payload.id],
+            ...action.payload,
+          };
+        }
       })
       .addCase(patchPlayer.rejected, (state, action) => {
         state.loading = false;
@@ -52,10 +57,7 @@ const playerSlice = createSlice({
     selectPlayerLoading: (state) => state.loading,
     selectPlayerError: (state) => state.error,
     selectPlayerById: createSelector(
-      [
-        (state: PlayerState) => state,
-        (_state: PlayerState, id: string) => id,
-      ],
+      [(state: PlayerState) => state, (_state: PlayerState, id: string) => id],
       (playerState, id) => playerState.players[id] ?? null,
       { memoize: weakMapMemoize },
     ),
