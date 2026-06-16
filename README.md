@@ -2,11 +2,11 @@
 
 ## Educational tower defense game for ages 6–12. Solve math equations to defend against enemies.
 
-## Game Repo: ![Calculon](https://github.com/KRook0110/MagicNagger)
+## Game Repo: [Calculon](https://github.com/KRook0110/MagicNagger)
 
 ## Release Notes
 
-On new ![Unity Build](https://github.com/KRook0110/MagicNagger) update release
+On new [Unity Build](https://github.com/KRook0110/MagicNagger) update release
 
 ```bash
 git tag -d <tag>
