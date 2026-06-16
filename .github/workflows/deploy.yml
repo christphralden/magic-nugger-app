@@ -91,16 +91,8 @@ jobs:
           domain: ${{ vars.DOMAIN }}
           certbot_email: ${{ vars.CERTBOT_EMAIL }}
 
-      - name: Deploy frontend
-        uses: ./.github/actions/deploy-frontend
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          ssh_key: ${{ secrets.EC2_SSH_KEY }}
-          web_server_url: ${{ vars.WEB_SERVER_URL }}
-          api_url: ${{ vars.API_URL }}
-
       - name: Download Unity build
+        id: unity
         uses: ./.github/actions/download-unity
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -109,6 +101,16 @@ jobs:
           gh_token: ${{ github.token }}
           repo: ${{ github.repository }}
           tag: ${{ vars.UNITY_RELEASE_TAG || 'latest' }}
+
+      - name: Deploy frontend
+        uses: ./.github/actions/deploy-frontend
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          ssh_key: ${{ secrets.EC2_SSH_KEY }}
+          web_server_url: ${{ vars.WEB_SERVER_URL }}
+          api_url: ${{ vars.API_URL }}
+          unity_checksum: ${{ steps.unity.outputs.unity_checksum }}
 
       - name: Deploy server
         uses: ./.github/actions/deploy-server

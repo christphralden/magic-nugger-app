@@ -12,6 +12,8 @@ inputs:
     required: true
   api_url:
     required: true
+  unity_checksum:
+    required: true
 
 runs:
   using: composite
@@ -20,13 +22,14 @@ runs:
       env:
         WEB_SERVER_URL: ${{ inputs.web_server_url }}
         API_URL: ${{ inputs.api_url }}
+        UNITY_CHECKSUM: ${{ inputs.unity_checksum }}
       with:
         host: ${{ inputs.host }}
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         timeout: 60s
         command_timeout: 10m
-        envs: WEB_SERVER_URL,API_URL
+        envs: WEB_SERVER_URL,API_URL,UNITY_CHECKSUM
         script: |
           set -euo pipefail
           cd /magic-nugger/web-app
@@ -37,6 +40,7 @@ runs:
           echo "==> patching config.js"
           sed -i "s|__WEB_SERVER_URL__|$WEB_SERVER_URL|g" dist/config.js
           sed -i "s|__API_URL__|$API_URL|g" dist/config.js
+          sed -i "s|__UNITY_CHECKSUM__|$UNITY_CHECKSUM|g" dist/config.js
           echo "==> rsyncing to /var/www"
           sudo rsync -a --delete /magic-nugger/web-app/dist/ /var/www/magic-nugger/web-app/
           sudo nginx -s reload
