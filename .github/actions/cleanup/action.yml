@@ -19,4 +19,5 @@ runs:
         key: ${{ inputs.ssh_key }}
         timeout: 60s
         script: |
+          set -euo pipefail
           docker image prune -f

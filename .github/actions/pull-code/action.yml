@@ -24,6 +24,7 @@ runs:
         timeout: 60s
         envs: REPO_URL
         script: |
+          set -euo pipefail
           if [ ! -d /magic-nugger/.git ]; then
             echo "==> cloning repo"
             git clone "$REPO_URL" /magic-nugger

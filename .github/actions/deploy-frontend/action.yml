@@ -28,6 +28,7 @@ runs:
         command_timeout: 10m
         envs: WEB_SERVER_URL,API_URL
         script: |
+          set -euo pipefail
           cd /magic-nugger/web-app
           echo "==> npm ci"
           npm ci

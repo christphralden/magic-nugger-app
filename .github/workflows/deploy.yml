@@ -23,6 +23,7 @@ jobs:
 
       - name: Validate secrets
         run: |
+          set -euo pipefail
           if [[ -z "${{ secrets.SESSION_SECRET }}" ]]; then
             echo "::error::SESSION_SECRET is not set in GitHub Secrets" && exit 1
           fi

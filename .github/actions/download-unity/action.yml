@@ -24,6 +24,7 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.gh_token }}
       run: |
+        set -euo pipefail
         gh release download ${{ inputs.tag }} \
           --repo ${{ inputs.repo }} \
           --pattern "calculon.tar.gz" \

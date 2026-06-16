@@ -28,6 +28,7 @@ runs:
         command_timeout: 5m
         envs: DOMAIN,CERTBOT_EMAIL
         script: |
+          set -euo pipefail
           CONFIGURED_DOMAIN=$(cat /etc/nginx/.configured-domain 2>/dev/null || echo "")
 
           if [ "$CONFIGURED_DOMAIN" != "$DOMAIN" ]; then

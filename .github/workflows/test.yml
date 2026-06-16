@@ -24,6 +24,7 @@ jobs:
 
       - name: Run tests
         run: |
+          set -euo pipefail
           npm test --workspace=web-app    -- --ci --passWithNoTests --json --outputFile=/tmp/web-app-results.json    || true
           npm test --workspace=web-server -- --ci --passWithNoTests --json --outputFile=/tmp/web-server-results.json || true
 

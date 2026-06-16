@@ -78,6 +78,7 @@ export function useUnityBridge(
     // https://github.com/jeffreylanters/react-unity-webgl/issues/22
     // it said that doing unload on window navigation causes Quit() not to be invoked correctly
     // react yanks canvas away so it never sees a canvas it needed to destroy
+    // @ts-ignore
     UNSAFE__detachAndUnloadImmediate,
   } = useUnityContext({
     loaderUrl: `${PATH_TO_UNITY}/Calculon.loader.js`,
@@ -90,7 +91,7 @@ export function useUnityBridge(
       antialias: true,
       depth: true,
       failIfMajorPerformanceCaveat: true,
-      powerPreference: 2,
+      powerPreference: "high-performance",
       premultipliedAlpha: true,
       // preserveDrawingBuffer: true,
       // stencil: true,
@@ -218,27 +219,27 @@ export function useUnityBridge(
     [dispatch, sendMessage, options.onSessionFinished],
   );
 
-  // useEffect(() => {
-  //   addEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
-  //   return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
-  // }, [addEventListener, removeEventListener, handleInit]);
-  //
-  // useEffect(() => {
-  //   addEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
-  //   return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
-  // }, [addEventListener, removeEventListener, handleLevel]);
-  //
-  // useEffect(() => {
-  //   addEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
-  //   return () =>
-  //     removeEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
-  // }, [addEventListener, removeEventListener, handleAnswer]);
-  //
-  // useEffect(() => {
-  //   addEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
-  //   return () =>
-  //     removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
-  // }, [addEventListener, removeEventListener, handleFinished]);
+  useEffect(() => {
+    addEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
+    return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.INIT, handleInit);
+  }, [addEventListener, removeEventListener, handleInit]);
+
+  useEffect(() => {
+    addEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
+    return () => removeEventListener(UNITY_SUBSCRIBED_EVENT.LEVEL, handleLevel);
+  }, [addEventListener, removeEventListener, handleLevel]);
+
+  useEffect(() => {
+    addEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
+    return () =>
+      removeEventListener(UNITY_SUBSCRIBED_EVENT.ANSWER, handleAnswer);
+  }, [addEventListener, removeEventListener, handleAnswer]);
+
+  useEffect(() => {
+    addEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
+    return () =>
+      removeEventListener(UNITY_SUBSCRIBED_EVENT.FINISHED, handleFinished);
+  }, [addEventListener, removeEventListener, handleFinished]);
 
   useEffect(() => {
     detachAndUnloadRef.current = UNSAFE__detachAndUnloadImmediate;

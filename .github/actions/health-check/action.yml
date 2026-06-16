@@ -20,6 +20,7 @@ runs:
         timeout: 60s
         command_timeout: 3m
         script: |
+          set -euo pipefail
           cd /magic-nugger
           for i in $(seq 1 30); do
             echo "==> attempt $i/30"

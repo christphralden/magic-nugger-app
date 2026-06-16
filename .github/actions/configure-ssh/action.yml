@@ -19,6 +19,7 @@ runs:
         key: ${{ inputs.ssh_key }}
         timeout: 60s
         script: |
+          set -euo pipefail
           mkdir -p /root/.ssh
           chmod 700 /root/.ssh
           printf 'Host github.com\n  Hostname ssh.github.com\n  Port 443\n' > /root/.ssh/config

@@ -20,6 +20,7 @@ runs:
         timeout: 60s
         command_timeout: 15m
         script: |
+          set -euo pipefail
           cd /magic-nugger
           echo "==> docker compose build"
           docker compose build magic-nugger-web-server magic-nugger-cron
