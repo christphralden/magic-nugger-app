@@ -90,8 +90,7 @@ function LoginPasswordField() {
 }
 
 function LoginFormFooter() {
-  const { rememberMe, handleToggleRememberMe, handleForgotPassword } =
-    useLoginContext();
+  const { rememberMe, handleToggleRememberMe } = useLoginContext();
   return (
     <div className="flex justify-between items-center">
       <Button
@@ -120,14 +119,6 @@ function LoginFormFooter() {
           )}
         </span>
         <Typography variant={"label"}>Keep me signed in</Typography>
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        className="font-bold text-[14px] text-coral p-0 h-auto hover:bg-transparent"
-        onClick={handleForgotPassword}
-      >
-        <Typography variant={"label"}>Forgot password?</Typography>
       </Button>
     </div>
   );
