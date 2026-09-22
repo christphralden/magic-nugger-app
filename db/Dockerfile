@@ -1,4 +1,4 @@
-FROM postgres:16-alpine
+FROM postgres:16-alpine3.24
 
 ENV PG_PARTMAN_VERSION=v5.4.3
 
@@ -7,8 +7,8 @@ RUN apk add --no-cache --virtual .build-deps \
     make \
     gcc \
     musl-dev \
-    clang19 \
-    llvm19-dev \
+    clang21 \
+    llvm21-dev \
     icu-dev
 
 RUN git clone --branch ${PG_PARTMAN_VERSION} https://github.com/pgpartman/pg_partman.git /tmp/pg_partman \
