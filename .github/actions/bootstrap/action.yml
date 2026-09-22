@@ -37,7 +37,7 @@ runs:
           systemctl enable nginx
           echo "==> installing node 20"
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-          apt install -y nodejs
+          apt install -y nodejs npm
           echo "==> creating web-app directory"
           mkdir -p /var/www/magic-nugger/web-app
           touch /root/.magic-nugger-bootstrapped
