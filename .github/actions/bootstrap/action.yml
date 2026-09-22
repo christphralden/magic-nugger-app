@@ -25,6 +25,8 @@ runs:
             echo "Already bootstrapped, skipping."
             exit 0
           fi
+          echo "==> configuring apt to wait for locks instead of failing"
+          echo 'DPkg::Lock::Timeout "60";' > /etc/apt/apt.conf.d/99-lock-timeout
           echo "==> apt update && upgrade"
           apt update && apt upgrade -y
           echo "==> installing docker"
