@@ -73,20 +73,33 @@ authRouter.get(
   passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
+const frontendUrl = process.env.FRONTEND_URL ?? "";
+
 authRouter.get("/oauth/google/callback", (req, res, next) => {
-  passport.authenticate("google", (err: unknown, user: Express.User) => {
-    if (err || !user) return res.redirect("/");
-    req.logIn(user, (loginErr) => {
-      if (loginErr) return next(loginErr);
-      loggingService.log({
-        event: "auth:oauth_login",
-        level: "info",
-        userId: user.id,
-        description: user.email,
+  passport.authenticate(
+    "google",
+    (err: unknown, user: Express.User, info?: { message?: string }) => {
+      if (err || !user) {
+        loggingService.log({
+          event: "auth:oauth_login_failed",
+          level: "warning",
+          description: err ? String(err) : (info?.message ?? "unknown"),
+        });
+        const reason = info?.message ?? "oauth_failed";
+        return res.redirect(`${frontendUrl}/login?error=${reason}`);
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) return next(loginErr);
+        loggingService.log({
+          event: "auth:oauth_login",
+          level: "info",
+          userId: user.id,
+          description: user.email,
+        });
+        return res.redirect(`${frontendUrl}/levels`);
       });
-      return res.redirect("/levels");
-    });
-  })(req, res, next);
+    },
+  )(req, res, next);
 });
 
 authRouter.use(authenticate);

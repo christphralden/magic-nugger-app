@@ -30,6 +30,11 @@ inputs:
     required: true
   google_client_secret:
     required: true
+  google_callback_url:
+    required: true
+  frontend_url:
+    required: false
+    default: ""
   cors_origin:
     required: true
   port:
@@ -70,6 +75,8 @@ runs:
         SESSION_SECRET: ${{ inputs.session_secret }}
         GOOGLE_CLIENT_ID: ${{ inputs.google_client_id }}
         GOOGLE_CLIENT_SECRET: ${{ inputs.google_client_secret }}
+        GOOGLE_CALLBACK_URL: ${{ inputs.google_callback_url }}
+        FRONTEND_URL: ${{ inputs.frontend_url }}
         CORS_ORIGIN: ${{ inputs.cors_origin }}
         PORT: ${{ inputs.port }}
         RPM_LIMIT: ${{ inputs.rpm_limit }}
@@ -86,7 +93,7 @@ runs:
         username: ${{ inputs.username }}
         key: ${{ inputs.ssh_key }}
         timeout: 60s
-        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_HOST,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,PARTMAN_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CORS_ORIGIN,PORT,RPM_LIMIT,DB_POOL_MAX,DB_POOL_IDLE_TIMEOUT_MS,DB_POOL_CONNECTION_TIMEOUT_MS,DB_QUERY_TIMEOUT_MS,DB_SSL_MODE,GAME_SESSION_STALE_THRESHOLD_MS,INTERNAL_SECRET
+        envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_HOST,APP_USER,APP_USER_PASSWORD,APP_RO_USER,APP_RO_PASSWORD,PARTMAN_PASSWORD,SESSION_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,GOOGLE_CALLBACK_URL,FRONTEND_URL,CORS_ORIGIN,PORT,RPM_LIMIT,DB_POOL_MAX,DB_POOL_IDLE_TIMEOUT_MS,DB_POOL_CONNECTION_TIMEOUT_MS,DB_QUERY_TIMEOUT_MS,DB_SSL_MODE,GAME_SESSION_STALE_THRESHOLD_MS,INTERNAL_SECRET
         script: |
           set -euo pipefail
           echo "==> writing /magic-nugger/.env"
@@ -106,6 +113,8 @@ runs:
             printf 'SESSION_SECRET=%s\n'                  "$SESSION_SECRET"
             printf 'GOOGLE_CLIENT_ID=%s\n'                "$GOOGLE_CLIENT_ID"
             printf 'GOOGLE_CLIENT_SECRET=%s\n'            "$GOOGLE_CLIENT_SECRET"
+            printf 'GOOGLE_CALLBACK_URL=%s\n'             "$GOOGLE_CALLBACK_URL"
+            printf 'FRONTEND_URL=%s\n'                     "$FRONTEND_URL"
             printf 'CORS_ORIGIN=%s\n'                     "$CORS_ORIGIN"
             printf 'PORT=%s\n'                            "$PORT"
             printf 'RPM_LIMIT=%s\n'                       "$RPM_LIMIT"

@@ -13,6 +13,7 @@ export const LogEventSchema = z.enum([
   "auth:login",
   "auth:logout",
   "auth:oauth_login",
+  "auth:oauth_login_failed",
   "auth:unauthorized",
   "session:started",
   "session:ended",

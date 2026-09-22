@@ -24,5 +24,5 @@ export const DISABLED_CANVAS_EVENTS: (keyof GlobalEventHandlersEventMap)[] = [
 ];
 
 export const FeatureFlags = {
-  ENABLE_OAUTH_LOGIN: false,
+  ENABLE_OAUTH_LOGIN: true,
 };

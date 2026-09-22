@@ -71,6 +71,7 @@ jobs:
           session_secret: ${{ secrets.SESSION_SECRET }}
           google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          google_callback_url: https://${{ vars.DOMAIN }}/api/v1/auth/oauth/google/callback
           cors_origin: ${{ secrets.CORS_ORIGIN }}
           port: ${{ vars.PORT }}
           rpm_limit: ${{ vars.RPM_LIMIT }}

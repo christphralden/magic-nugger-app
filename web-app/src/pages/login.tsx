@@ -20,10 +20,18 @@ import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
 import { CloudPixel } from "@/components/decor/cloud-pixel";
 import { FeatureFlags } from "@/constants";
+import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 
 function LoginGoogleButton() {
   return (
-    <CartoonButton variant="secondary" className="w-full" type="button">
+    <CartoonButton
+      variant="secondary"
+      className="w-full"
+      type="button"
+      onClick={() => {
+        window.location.href = `${WEB_SERVER_URL}/${API_VERSION_BASE}/auth/oauth/google`;
+      }}
+    >
       <GoogleIcon /> Continue with Google
     </CartoonButton>
   );

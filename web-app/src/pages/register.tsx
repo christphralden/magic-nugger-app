@@ -34,6 +34,7 @@ import { Typography } from "@/components/ui/typography";
 import { AuthPageLayout, AuthCard } from "@/components/layout/auth-layout";
 import { Button } from "@/components/ui/button";
 import { FeatureFlags } from "@/constants";
+import { WEB_SERVER_URL, API_VERSION_BASE } from "@/lib/api";
 
 const AVATAR_COMPONENTS: Record<AvatarId, ComponentType<{ size?: number }>> = {
   fox: AvatarFox,
@@ -79,7 +80,14 @@ function InfoStep() {
   return (
     <>
       {isOauthEnabled && (
-        <CartoonButton variant="secondary" className="w-full" type="button">
+        <CartoonButton
+          variant="secondary"
+          className="w-full"
+          type="button"
+          onClick={() => {
+            window.location.href = `${WEB_SERVER_URL}/${API_VERSION_BASE}/auth/oauth/google`;
+          }}
+        >
           <GoogleIcon /> Sign up with Google
         </CartoonButton>
       )}

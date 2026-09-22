@@ -67,13 +67,17 @@ passport.use(
   ),
 );
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+if (
+  process.env.GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_SECRET &&
+  process.env.GOOGLE_CALLBACK_URL
+) {
   passport.use(
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/v1/auth/oauth/google/callback",
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
@@ -85,27 +89,53 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           if (rows[0]) return done(null, rows[0]);
 
           const email = profile.emails?.[0]?.value;
-          if (!email) return done(null, false);
+          if (!email) return done(null, false, { message: "no_email" });
+          if (!profile.emails?.[0]?.verified) {
+            return done(null, false, { message: "email_not_verified" });
+          }
 
-          await getDb().query(
-            `INSERT INTO players (username, email, display_name, avatar_url, oauth_provider, oauth_id)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [
-              profile.displayName ?? email.split("@")[0],
-              email,
-              profile.displayName ?? null,
-              profile.photos?.[0]?.value ?? null,
-              "google",
-              profile.id,
-            ],
+          const { rows: existingRows } = await getDb().query<{ id: string }>(
+            `SELECT id FROM players WHERE email = $1`,
+            [email],
           );
+          const existing = existingRows[0];
 
-          const { rows: inserted } = await getDb().query<AppUser>(
+          if (existing) {
+            await getDb().query(
+              `UPDATE players SET oauth_provider = $1, oauth_id = $2 WHERE id = $3`,
+              ["google", profile.id, existing.id],
+            );
+          } else {
+            const username = (profile.displayName ?? email.split("@")[0])
+              .replace(/\s+/g, "_")
+              .slice(0, 24);
+            const { rows: usernameConflict } = await getDb().query<{
+              id: string;
+            }>(`SELECT id FROM players WHERE username = $1`, [username]);
+            const uniqueUsername = usernameConflict[0]
+              ? `${username}_${profile.id.slice(-8)}`.slice(0, 32)
+              : username;
+
+            await getDb().query(
+              `INSERT INTO players (username, email, display_name, avatar_url, oauth_provider, oauth_id)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              [
+                uniqueUsername,
+                email,
+                profile.displayName ?? null,
+                profile.photos?.[0]?.value ?? null,
+                "google",
+                profile.id,
+              ],
+            );
+          }
+
+          const { rows: result } = await getDb().query<AppUser>(
             `${userSelect()} WHERE p.email = $1`,
             [email],
           );
 
-          return done(null, inserted[0]);
+          return done(null, result[0]);
         } catch (err) {
           return done(err);
         }
